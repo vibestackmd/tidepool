@@ -1,6 +1,6 @@
 {
   "name": "surfpool-helius",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Helius DAS, running on your laptop. A drop-in Helius-compatible RPC proxy on top of Surfpool.",
   "type": "module",
   "main": "./dist/index.js",

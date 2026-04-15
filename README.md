@@ -64,20 +64,27 @@ You're building on Solana with [Helius](https://www.helius.dev/) in production. 
                          └──────────────────┘
 ```
 
-`getAsset` fetches the raw account from Surfpool via `getAccountInfo`, runs it through a pluggable decoder (MplCore by default), and returns a DAS-shaped response. `searchAssets` queries an in-memory cache populated by prior `getAsset` calls — no `getProgramAccounts` scan, which would never terminate against Surfpool's mainnet-forked upstream anyway.
+`getAsset` fetches the raw account from Surfpool via `getAccountInfo`, runs it through a pluggable decoder (MplCore by default), and returns a DAS-shaped response. Every asset that passes through the proxy is indexed by owner, authority, and grouping, so `searchAssets`, `getAssetsByOwner`, `getAssetsByGroup`, and `getAssetsByAuthority` all serve from that index — no `getProgramAccounts` scan, which would never terminate against Surfpool's mainnet-forked upstream anyway. Assets the proxy has never fetched are invisible to the index, which is the documented local-dev tradeoff.
 
 ## Supported methods
 
-| Method                 | Status  | Notes                                            |
-|------------------------|---------|--------------------------------------------------|
-| `getAsset`             | ✅ v0.1 | MplCore assets + collections                     |
-| `searchAssets`         | ✅ v0.1 | Filters: `ownerAddress`, `interface`, `grouping` |
-| `signatureSubscribe`   | ✅ v0.1 | Polyfilled via HTTP polling                      |
-| `signatureUnsubscribe` | ✅ v0.1 | Cancels the polling timer                        |
-| `getAssetsByOwner`     | ⏳ v0.2 | On the roadmap                                   |
-| `getAssetsByGroup`     | ⏳ v0.2 | On the roadmap                                   |
-| `getAssetProof`        | ⏳ v0.3 | Compressed NFT proofs                            |
-| Everything else        | ✅ v0.1 | Passed through to Surfpool unchanged             |
+| Method                  | Status  | Notes                                                             |
+|-------------------------|---------|-------------------------------------------------------------------|
+| `getAsset`              | ✅ v0.1 | MplCore assets + collections                                      |
+| `getAssetBatch`         | ✅ v0.2 | Up to 1000 ids per batch; parallel upstream reads                 |
+| `getAssetsByOwner`      | ✅ v0.2 | Indexes assets as they're fetched                                 |
+| `getAssetsByGroup`      | ✅ v0.2 | For MplCore: `groupKey: "collection"`                             |
+| `getAssetsByAuthority`  | ✅ v0.2 | Matches the MplCore update authority                              |
+| `searchAssets`          | ✅ v0.2 | Full filter surface: owner, authority, grouping, interface, type  |
+| `signatureSubscribe`    | ✅ v0.1 | Polyfilled via HTTP polling                                       |
+| `signatureUnsubscribe`  | ✅ v0.1 | Cancels the polling timer                                         |
+| `surfpoolHeliusInfo`    | ✅ v0.1 | Custom. Returns the full compatibility manifest for introspection |
+| `getAssetsByCreator`    | ⏳ v0.3 | Needs MplCore plugin parsing or Token Metadata decoder            |
+| `getAssetProof`         | ⏳ v0.3 | Compressed NFT merkle proofs                                      |
+| `getNftEditions`        | ⏳ v0.3 | Needs Token Metadata decoder                                      |
+| Everything else         | ✅ v0.1 | Passed through to Surfpool unchanged                              |
+
+**Tip:** POST `{"method": "surfpoolHeliusInfo"}` to the proxy to get a live, machine-readable list of every Helius method and its local compatibility level. That's the source of truth — this table is regenerated from it.
 
 ## Configuration
 
@@ -152,9 +159,11 @@ The proxy picks a decoder by matching the account's owner program ID. First matc
 
 ## Roadmap
 
-- **v0.1** — MplCore decoder, `getAsset`, `searchAssets`, `signatureSubscribe` polyfill, pass-through proxy
-- **v0.2** — `getAssetsByOwner`, `getAssetsByGroup`, more DAS endpoints, optional persistent cache
-- **v0.3** — Compressed NFT support (`getAssetProof`), rate-limit simulation matching Helius production
+- **v0.1** — MplCore decoder, `getAsset`, `searchAssets`, `signatureSubscribe` polyfill, pass-through proxy, compatibility manifest
+- **v0.2** — `getAssetBatch`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, full `searchAssets` filtering, `authorities` field on decoded assets
+- **v0.3** — MplCore plugin parsing (unlocks `getAssetsByCreator`), priority fee estimation, Helius V2 RPC wrappers, staking helpers
+- **v0.4** — Compressed NFT support (`getAssetProof`), Enhanced Transactions parser for common tx types, Token Metadata decoder
+- **v0.5** — Local webhook simulator (polling-based delivery against Surfpool)
 - **Maybe** — Rust port, standalone binary, local [Dragon's Mouth](https://docs.triton.one/project-yellowstone/dragons-mouth-grpc-subscriptions) (Yellowstone gRPC) polyfill
 
 ## Related

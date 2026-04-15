@@ -26,6 +26,7 @@ export interface DasAsset {
     };
     files: Array<{ uri: string; mime: string }>;
   };
+  authorities: Array<{ address: string; scopes: string[] }>;
   ownership: {
     frozen: boolean;
     delegated: boolean;

@@ -155,6 +155,7 @@ function buildDasAsset(
   name: string,
   uri: string,
   owner: string,
+  authorities: Array<{ address: string; scopes: string[] }>,
   grouping: Array<{ group_key: string; group_value: string }>,
   metadata: Record<string, unknown> | null
 ): DasAsset {
@@ -178,6 +179,7 @@ function buildDasAsset(
       },
       files: files.map((f) => ({ uri: f.uri ?? "", mime: f.type ?? "" })),
     },
+    authorities,
     ownership: {
       frozen: false,
       delegated: false,
@@ -203,6 +205,26 @@ export const mplCoreDecoder: AccountDecoder = {
         const parsed = parseAssetV1(data);
         const metadata = await fetchMetadata(parsed.uri);
 
+        // For AssetV1, the authority depends on the updateAuthority variant:
+        //   Address    → that pubkey is the direct update authority
+        //   Collection → authority is inherited from the collection; we can't
+        //                know it without fetching the collection, so we emit
+        //                the collection pubkey as a "collection" scope. Real
+        //                Helius resolves this via their indexer.
+        //   None       → no authority
+        const authorities: Array<{ address: string; scopes: string[] }> = [];
+        if (parsed.updateAuthority.kind === "Address") {
+          authorities.push({
+            address: parsed.updateAuthority.pubkey,
+            scopes: ["full"],
+          });
+        } else if (parsed.updateAuthority.kind === "Collection") {
+          authorities.push({
+            address: parsed.updateAuthority.pubkey,
+            scopes: ["collection"],
+          });
+        }
+
         const grouping =
           parsed.updateAuthority.kind === "Collection"
             ? [{ group_key: "collection", group_value: parsed.updateAuthority.pubkey }]
@@ -214,6 +236,7 @@ export const mplCoreDecoder: AccountDecoder = {
           parsed.name,
           parsed.uri,
           parsed.owner,
+          authorities,
           grouping,
           metadata
         );
@@ -223,12 +246,17 @@ export const mplCoreDecoder: AccountDecoder = {
         const parsed = parseCollectionV1(data);
         const metadata = await fetchMetadata(parsed.uri);
 
+        const authorities = [
+          { address: parsed.updateAuthority, scopes: ["full"] },
+        ];
+
         return buildDasAsset(
           pubkey,
           "MplCoreCollection",
           parsed.name,
           parsed.uri,
           parsed.updateAuthority,
+          authorities,
           [],
           metadata
         );
