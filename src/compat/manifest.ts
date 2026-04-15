@@ -68,7 +68,7 @@ export const manifest: readonly MethodEntry[] = [
     sinceVersion: "0.1.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getasset",
     notes:
-      "MplCore assets + collections via Codama-generated Kit client at src/generated/mpl-core (plugin walker added in v0.3). v0.5.0 adds legacy Metaplex Token Metadata NFTs via src/generated/token-metadata — `getAsset(mint)` routes through the Metadata PDA and resolves the token holder via a getProgramAccounts memcmp scan of SPL Token accounts (Surfpool's getTokenLargestAccounts times out). Both decoders regenerate from pinned IDLs (idls/*.source.json).",
+      "MplCore assets + collections via Codama-generated Kit client at src/generated/mpl-core (plugin walker added in v0.3). v0.5.0 adds legacy Metaplex Token Metadata NFTs via src/generated/token-metadata — `getAsset(mint)` routes through the Metadata PDA and resolves the token holder via a getProgramAccounts memcmp scan of the owning token program (Surfpool's getTokenLargestAccounts times out). v0.5.1 extends the mint-as-id path to Token-2022 mints (both programs share the Metadata PDA derivation). Both decoders regenerate from pinned IDLs (idls/*.source.json).",
   },
   {
     method: "searchAssets",
@@ -161,7 +161,7 @@ export const manifest: readonly MethodEntry[] = [
     sinceVersion: "0.5.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das",
     notes:
-      "Master edition supply / max_supply are EXACT — read directly from the on-chain MasterEditionV1/V2 account via a Codama-generated decoder. The editions[] list is LOCAL_INDEX: v0.5.0 returns it empty with a note. A background indexer for discovered prints is a follow-up; the handler shape doesn't change when it lands.",
+      "Master edition supply / max_supply are EXACT — read directly from the on-chain MasterEditionV1/V2 account via a Codama-generated decoder. The editions[] list is LOCAL_INDEX: as of v0.5.1 it reflects print editions fetch.ts has observed while routing mint-as-id requests. A print mint that has never been fetched through this proxy will not appear; fetch it once via getAsset(printMint) and it's indexed for the next call. Pagination is page/limit, applied in-memory.",
   },
   {
     method: "getTokenAccounts",

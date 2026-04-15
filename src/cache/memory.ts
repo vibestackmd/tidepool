@@ -3,7 +3,11 @@
 // Every putAsset walks the asset fields once and updates every index.
 
 import type { DasAsset } from "../decoders/index.js";
-import type { CacheStore, SearchAssetsFilter } from "./store.js";
+import type {
+  CacheStore,
+  EditionRecord,
+  SearchAssetsFilter,
+} from "./store.js";
 
 const COLLECTION_INTERFACES = new Set(["MplCoreCollection"]);
 
@@ -23,6 +27,12 @@ export function createMemoryCache(): CacheStore {
   const byGrouping = new Map<string, Set<string>>();
   const byAuthority = new Map<string, Set<string>>();
   const byCreator = new Map<string, Set<string>>();
+
+  // v0.5.1 — Token Metadata print editions, keyed by master edition
+  // PDA. Inner map is edition number → {mint, edition_address} so
+  // repeated observations of the same print are idempotent and reads
+  // return sorted-by-number trivially.
+  const editionsByMaster = new Map<string, Map<number, EditionRecord>>();
 
   function addToIndex(
     index: Map<string, Set<string>>,
@@ -97,6 +107,21 @@ export function createMemoryCache(): CacheStore {
     async getAssetsByCreator(creator) {
       const ids = byCreator.get(creator);
       return ids ? materialize(ids) : [];
+    },
+
+    async putEdition(masterEditionAddress, record) {
+      let inner = editionsByMaster.get(masterEditionAddress);
+      if (!inner) {
+        inner = new Map();
+        editionsByMaster.set(masterEditionAddress, inner);
+      }
+      inner.set(record.edition, record);
+    },
+
+    async getEditionsByMaster(masterEditionAddress) {
+      const inner = editionsByMaster.get(masterEditionAddress);
+      if (!inner) return [];
+      return Array.from(inner.values()).sort((a, b) => a.edition - b.edition);
     },
 
     async searchAssets(filter: SearchAssetsFilter) {

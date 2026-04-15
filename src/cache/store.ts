@@ -22,6 +22,16 @@ export interface SearchAssetsFilter {
   sortBy?: { sortBy: SortBy; sortDirection?: SortDirection };
 }
 
+/** Record for one discovered Metaplex print edition of a master. */
+export interface EditionRecord {
+  /** Mint address of the print edition itself. */
+  mint: string;
+  /** Edition PDA for this print (owned by the Token Metadata program). */
+  edition_address: string;
+  /** Edition number (1-indexed — matches the on-chain Edition.edition field). */
+  edition: number;
+}
+
 export interface CacheStore {
   putAsset(asset: DasAsset): Promise<void>;
   getAsset(id: string): Promise<DasAsset | null>;
@@ -31,5 +41,12 @@ export interface CacheStore {
   getAssetsByAuthority(authority: string): Promise<DasAsset[]>;
   getAssetsByCreator(creator: string): Promise<DasAsset[]>;
   searchAssets(filter: SearchAssetsFilter): Promise<DasAsset[]>;
+
+  // v0.5.1 — Token Metadata print editions. Indexed as a side effect
+  // when fetch.ts observes an EditionV1 account during mint-as-id
+  // routing. Keyed by the master edition PDA, not the master mint.
+  putEdition(masterEditionAddress: string, record: EditionRecord): Promise<void>;
+  getEditionsByMaster(masterEditionAddress: string): Promise<EditionRecord[]>;
+
   close?(): Promise<void>;
 }

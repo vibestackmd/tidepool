@@ -4,6 +4,7 @@
 
 export type {
   CacheStore,
+  EditionRecord,
   SearchAssetsFilter,
   SortBy,
   SortDirection,

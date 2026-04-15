@@ -5,21 +5,22 @@
  *    the Metaplex SDK makes — getLatestBlockhash, sendTransaction,
  *    confirmTransaction, getAccountInfo — flows through surfpool-helius.
  * 2. Generate a fresh keypair and airdrop SOL on the local validator.
- * 3. Mint three assets:
+ * 3. Mint assets:
  *      (a) a plain MplCore asset (validates the base-header decode path)
  *      (b) an MplCore asset with a Royalties plugin (validates the plugin
  *          walker and DasAsset.creators population added in v0.3)
- *      (c) a legacy Metaplex Token Metadata NFT (validates the
- *          Codama-generated decoder, the mint-as-id routing in fetch.ts,
- *          and the getTokenLargestAccounts owner resolution — all added
- *          in v0.5.0)
+ *      (c) a legacy Metaplex Token Metadata master edition NFT with
+ *          `printSupply: Limited(10)` (validates the Codama-generated
+ *          decoder, mint-as-id routing in fetch.ts, and the
+ *          getProgramAccounts holder scan — all v0.5.0)
+ *      (d) a print edition of (c) via `printV1` — validates v0.5.1's
+ *          Edition PDA side-effect indexing that populates
+ *          getNftEditions.editions[]
  * 4. `sendAndConfirm` internally uses `signatureSubscribe`, which Surfpool
  *    doesn't support natively — the proxy's WS polyfill carries the weight.
- * 5. Query all three assets back via `getAsset`. For (c), also call
- *    `getNftEditions` to prove the MasterEditionV2 decode path works.
- *    Finally, query `getAssetsByCreator` and `searchAssets` to confirm
- *    the local index picked up creators from both the MplCore Royalties
- *    plugin (b) and the Token Metadata creators array (c).
+ * 5. Query all four assets back via `getAsset`. `getNftEditions` is called
+ *    twice on (c): once BEFORE (d) is fetched (asserts editions[] is
+ *    empty) and once AFTER (asserts the print is in the list).
  *
  * Prereqs: `pnpm install` in this folder, Surfpool running (`make up` in the
  * repo root), and the proxy running (`make dev`).
@@ -32,8 +33,11 @@ import {
   ruleSet,
 } from "@metaplex-foundation/mpl-core";
 import {
+  TokenStandard,
   createNft,
   mplTokenMetadata,
+  printSupply,
+  printV1,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
   generateSigner,
@@ -153,6 +157,7 @@ async function main() {
     creators: [
       { address: publicKey(payer.publicKey), share: 100, verified: true },
     ],
+    printSupply: printSupply("Limited", [10]),
   }).sendAndConfirm(umi);
 
   // ── Query C via getAsset (mint-as-id routing) ───────────────────────
@@ -168,18 +173,56 @@ async function main() {
   console.log(`  owner:     ${dasC.ownership.owner}`);
   console.log(`  creators:  ${JSON.stringify(dasC.creators)}`);
 
-  // ── Query C's master edition via getNftEditions ─────────────────────
-  console.log("\n→ getNftEditions on C…");
-  const editions = await rpc<{
+  // ── Initial getNftEditions on C (empty-before proof) ────────────────
+  console.log("\n→ getNftEditions on C (before printing any)…");
+  const editionsBefore = await rpc<{
     master_edition_address: string;
     supply: number;
     max_supply: number;
+    total: number;
     editions: unknown[];
   }>("getNftEditions", { mint: mintC.publicKey.toString() });
-  console.log(`  master_edition_address: ${editions.master_edition_address}`);
-  console.log(`  supply:                 ${editions.supply}`);
-  console.log(`  max_supply:             ${editions.max_supply}`);
-  console.log(`  editions.length:        ${editions.editions.length}`);
+  console.log(`  master_edition_address: ${editionsBefore.master_edition_address}`);
+  console.log(`  supply:                 ${editionsBefore.supply}`);
+  console.log(`  max_supply:             ${editionsBefore.max_supply}`);
+  console.log(`  editions.length:        ${editionsBefore.editions.length}`);
+
+  // ── Print edition 1 of C as asset D ─────────────────────────────────
+  // v0.5.1 adds side-effect indexing: when fetch.ts sees an EditionV1
+  // account while processing a mint-as-id lookup, it records the
+  // parent + edition number in the CacheStore edition index. The
+  // subsequent getNftEditions call on C should surface D.
+  const mintD = generateSigner(umi);
+  console.log(`\n→ printing edition 1 of C: ${mintD.publicKey}`);
+  await printV1(umi, {
+    masterTokenAccountOwner: umi.identity,
+    masterEditionMint: mintC.publicKey,
+    editionMint: mintD,
+    editionNumber: 1,
+    tokenStandard: TokenStandard.NonFungible,
+  }).sendAndConfirm(umi);
+
+  // ── Query D via getAsset (triggers edition-index side effect) ───────
+  console.log("\n→ getAsset on D (print edition, by mint)…");
+  const dasD = await rpc<DasAssetResponse>("getAsset", {
+    id: mintD.publicKey.toString(),
+  });
+  console.log(`  id:        ${dasD.id}`);
+  console.log(`  interface: ${dasD.interface}`);
+  console.log(`  owner:     ${dasD.ownership.owner}`);
+
+  // ── Re-query getNftEditions on C (indexed-after proof) ──────────────
+  console.log("\n→ getNftEditions on C (after fetching D)…");
+  const editionsAfter = await rpc<{
+    master_edition_address: string;
+    supply: number;
+    max_supply: number;
+    total: number;
+    editions: Array<{ mint: string; edition: number; edition_address: string }>;
+  }>("getNftEditions", { mint: mintC.publicKey.toString() });
+  console.log(`  supply:          ${editionsAfter.supply}`);
+  console.log(`  total:           ${editionsAfter.total}`);
+  console.log(`  editions[0]:     ${JSON.stringify(editionsAfter.editions[0])}`);
 
   // ── Query both B and C via getAssetsByCreator ───────────────────────
   console.log("\n→ getAssetsByCreator(payer)…");
@@ -250,36 +293,55 @@ async function main() {
     ["C creator share is 100", dasC.creators[0]?.share === 100],
     ["C creator is verified", dasC.creators[0]?.verified === true],
 
-    // ── getNftEditions ──────────────────────────────────────────────
+    // ── Initial getNftEditions (empty-before proof) ─────────────────
     [
-      "getNftEditions master_edition_address present",
-      typeof editions.master_edition_address === "string" &&
-        editions.master_edition_address.length > 0,
+      "editionsBefore.master_edition_address present",
+      typeof editionsBefore.master_edition_address === "string" &&
+        editionsBefore.master_edition_address.length > 0,
     ],
-    ["getNftEditions supply is 0", editions.supply === 0],
+    ["editionsBefore supply is 0", editionsBefore.supply === 0],
     [
-      "getNftEditions editions[] empty (LOCAL_INDEX)",
-      editions.editions.length === 0,
+      "editionsBefore editions[] empty (LOCAL_INDEX, nothing seen yet)",
+      editionsBefore.editions.length === 0,
+    ],
+
+    // ── Print edition D ─────────────────────────────────────────────
+    ["D id matches print mint", dasD.id === mintD.publicKey.toString()],
+    ["D interface is V1_NFT", dasD.interface === "V1_NFT"],
+    ["D owner is payer", dasD.ownership.owner === payer.publicKey.toString()],
+
+    // ── Post-print getNftEditions (indexed-after proof) ─────────────
+    [
+      "editionsAfter master_edition_address matches",
+      editionsAfter.master_edition_address === editionsBefore.master_edition_address,
+    ],
+    ["editionsAfter supply is 1", editionsAfter.supply === 1],
+    ["editionsAfter total is 1", editionsAfter.total === 1],
+    [
+      "editionsAfter.editions[0].mint matches D",
+      editionsAfter.editions[0]?.mint === mintD.publicKey.toString(),
+    ],
+    [
+      "editionsAfter.editions[0].edition is 1",
+      editionsAfter.editions[0]?.edition === 1,
     ],
 
     // ── Cross-asset cache indexes ───────────────────────────────────
     [
-      "getAssetsByCreator returns B and C (2)",
-      byCreator.total === 2 &&
-        byCreatorIds.has(assetB.publicKey.toString()) &&
+      "getAssetsByCreator includes B and C",
+      byCreatorIds.has(assetB.publicKey.toString()) &&
         byCreatorIds.has(mintC.publicKey.toString()),
     ],
     [
-      "getAssetsByOwner returns A, B, and C (3)",
-      byOwner.total === 3 &&
-        byOwnerIds.has(assetA.publicKey.toString()) &&
+      "getAssetsByOwner includes A, B, C, and D",
+      byOwnerIds.has(assetA.publicKey.toString()) &&
         byOwnerIds.has(assetB.publicKey.toString()) &&
-        byOwnerIds.has(mintC.publicKey.toString()),
+        byOwnerIds.has(mintC.publicKey.toString()) &&
+        byOwnerIds.has(mintD.publicKey.toString()),
     ],
     [
-      "searchAssets(creatorAddress) returns B and C (2)",
-      search.total === 2 &&
-        searchIds.has(assetB.publicKey.toString()) &&
+      "searchAssets(creatorAddress) includes B and C",
+      searchIds.has(assetB.publicKey.toString()) &&
         searchIds.has(mintC.publicKey.toString()),
     ],
   ];
