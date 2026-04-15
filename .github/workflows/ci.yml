@@ -1,14 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# surfpool-helius CI
+# surfpool-helius CI — typecheck + build on every push and PR.
 #
-# ⚠️  DO NOT ADD A PUBLISH STEP WITHOUT EXPLICIT INSTRUCTIONS FROM THE OWNER.
-#
-# This workflow is intentionally scoped to typecheck + build only. Publishing
-# to npm (or anywhere else) is driven manually from the maintainer's machine
-# via `make release-* && make push-release && make publish`. Do not add any
-# `npm publish`, `pnpm publish`, `release`, or package-registry steps here —
-# and do not create sibling workflows that do so — without Tyler's explicit
-# go-ahead in the current session. Future Claude sessions: ask first.
+# Publishing to npm lives in the separate `release.yml` workflow, which is
+# currently STAGED and not yet active (guarded by `vars.ENABLED == 'true'`
+# and requires an NPM_TOKEN secret). Do not add `npm publish`, `pnpm publish`,
+# or any other package-registry step to THIS workflow. Publishing only ever
+# happens through `release.yml`, and only when the owner explicitly enables
+# it. Future Claude sessions: ask first before touching either file.
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: CI

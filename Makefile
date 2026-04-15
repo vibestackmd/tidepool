@@ -5,7 +5,7 @@
 
 .PHONY: install up down logs status dev build typecheck clean \
         version release-patch release-minor release-major \
-        publish push-release help
+        push-release help
 
 # ── Setup ────────────────────────────────────────────────
 
@@ -44,9 +44,11 @@ typecheck: ## Run TypeScript type checking
 	pnpm typecheck
 
 # ── Release ──────────────────────────────────────────────
-# package.json version is the source of truth. The VERSION file mirrors it,
-# written on every bump. Release targets bump, sync, commit, and tag — they
-# DO NOT push or publish. Push and publish are separate, explicit steps.
+# package.json is the source of truth; VERSION mirrors it. Local release
+# targets bump, sync, commit, and tag — they never push. `push-release`
+# pushes the tag, which (once the release workflow is enabled) triggers a
+# clean-room build on GitHub Actions that publishes to npm with signed
+# provenance. Nothing publishes from this machine.
 
 version: ## Print current version
 	@node -p "require('./package.json').version"
@@ -77,18 +79,14 @@ _bump:
 	git tag "v$$NEW_VERSION"; \
 	echo ""; \
 	echo "  Tagged v$$NEW_VERSION locally."; \
-	echo "  Next:  make push-release   # push commit + tag"; \
-	echo "         make publish        # publish to npm"
+	echo "  Next:  make push-release   # push commit + tag → CI publishes to npm"
 
-push-release: ## Push the release commit and tag to origin
+push-release: ## Push release commit + tag → CI handles the npm publish
 	git push origin HEAD
 	git push origin --tags
-
-publish: ## Publish the current version to npm (requires `npm login`)
-	@CURRENT=$$(node -p "require('./package.json').version"); \
-	echo "About to publish surfpool-helius@$$CURRENT to npm."; \
-	read -p "Continue? [y/N] " yn && [ "$$yn" = "y" ] || (echo "Aborted." && exit 1)
-	pnpm publish --access public
+	@echo ""
+	@echo "  Pushed. If the release workflow is enabled, the publish run is here:"
+	@echo "    https://github.com/tylerthebuildor/surfpool-helius/actions/workflows/release.yml"
 
 # ── Cleanup ──────────────────────────────────────────────
 
