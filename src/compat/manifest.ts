@@ -11,6 +11,15 @@
 //   BEST_EFFORT  — reduced fidelity vs. real Helius. Documented limits.
 //   SHIM         — behaviorally close but mechanically different (e.g.
 //                  local polling vs. push webhook delivery).
+//   SDK_WRAPPER  — a helius-sdk client-side helper that composes standard
+//                  wire-level RPC methods under the hood. The proxy does
+//                  NOT intercept these — they run in the SDK in the
+//                  user's app, make several wire-level RPC calls that
+//                  pass through this proxy, and "just work" as long as
+//                  the underlying wire methods are supported. The entry
+//                  exists in the manifest so users know what works when
+//                  they point helius-sdk at this proxy, even though no
+//                  handler code lives here.
 //   PLANNED      — known method, not yet implemented.
 //   SKIPPED      — known method, explicitly out of scope (requires cloud
 //                  infrastructure we can't reproduce locally).
@@ -24,6 +33,7 @@ export type CompatLevel =
   | "LOCAL_INDEX"
   | "BEST_EFFORT"
   | "SHIM"
+  | "SDK_WRAPPER"
   | "PLANNED"
   | "SKIPPED";
 
@@ -185,53 +195,58 @@ export const manifest: readonly MethodEntry[] = [
     method: "getPriorityFeeEstimate",
     namespace: "tx",
     heliusSdkPath: "helius.tx.getPriorityFeeEstimate",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "BEST_EFFORT",
+    sinceVersion: "0.4.0",
     sourceDoc: "https://www.helius.dev/docs/priority-fee-api",
     notes:
-      "Will be implemented via local percentile computation over getRecentPrioritizationFees. Close approximation, not identical to Helius's statistical model.",
+      "Percentiles (Min/Low/Medium/High/VeryHigh/UnsafeMax) are computed locally over getRecentPrioritizationFees samples from the upstream. Close to real Helius but not identical — they use their own fleet-wide fee aggregation. On Surfpool (local, no contention) all percentiles are typically 0.",
   },
   {
     method: "getComputeUnits",
     namespace: "tx",
     heliusSdkPath: "helius.tx.getComputeUnits",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/sending-transactions/optimizing-transactions",
+    notes:
+      "helius-sdk client-side helper. Calls simulateTransaction on the provided transaction and extracts the compute units used. Works transparently against this proxy via the simulateTransaction passthrough.",
   },
   {
     method: "sendSmartTransaction",
     namespace: "tx",
     heliusSdkPath: "helius.tx.sendSmartTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/sending-transactions/optimizing-transactions",
     notes:
-      "Will implement compute estimation + basic retry. Lookup table auto-management not planned for v0.3; caller can provide tables manually.",
+      "helius-sdk composition: simulateTransaction → getPriorityFeeEstimate → getLatestBlockhash → sendTransaction → getSignatureStatuses polling. Every underlying call passes through this proxy and works without a dedicated handler.",
   },
   {
     method: "createSmartTransaction",
     namespace: "tx",
     heliusSdkPath: "helius.tx.createSmartTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/sending-transactions/optimizing-transactions",
+    notes: "Same underlying RPC calls as sendSmartTransaction, minus the final send. Works transparently.",
   },
   {
     method: "broadcastTransaction",
     namespace: "tx",
     heliusSdkPath: "helius.tx.broadcastTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/sending-transactions",
+    notes: "helius-sdk helper that wraps sendTransaction + getSignatureStatuses polling. Works transparently.",
   },
   {
     method: "pollTransactionConfirmation",
     namespace: "tx",
     heliusSdkPath: "helius.tx.pollTransactionConfirmation",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/sending-transactions",
+    notes: "helius-sdk helper that polls getSignatureStatuses until confirmed or timeout. Works transparently.",
   },
   {
     method: "sendTransactionWithSender",
@@ -249,34 +264,42 @@ export const manifest: readonly MethodEntry[] = [
     method: "getProgramAccountsV2",
     namespace: "rpc",
     heliusSdkPath: "helius.getProgramAccountsV2",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "BEST_EFFORT",
+    sinceVersion: "0.4.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/rpc/http/getprogramaccountsv2",
+    notes:
+      "Passthrough to standard getProgramAccounts with cursor wrapping for pagination. `changedSinceSlot` is not supported (no per-account slot tracking locally) — the response includes a note field when the param is passed.",
   },
   {
     method: "getAllProgramAccounts",
     namespace: "rpc",
     heliusSdkPath: "helius.getAllProgramAccounts",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/rpc/optimization-techniques",
+    notes:
+      "helius-sdk auto-paginating wrapper around getProgramAccountsV2. Loops in the client until paginationKey is null. Works transparently against this proxy.",
   },
   {
     method: "getTokenAccountsByOwnerV2",
     namespace: "rpc",
     heliusSdkPath: "helius.getTokenAccountsByOwnerV2",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "BEST_EFFORT",
+    sinceVersion: "0.4.0",
     sourceDoc:
       "https://www.helius.dev/docs/api-reference/rpc/http/gettokenaccountsbyownerv2",
+    notes:
+      "Passthrough to standard getTokenAccountsByOwner with cursor wrapping. Same changedSinceSlot limitation as getProgramAccountsV2.",
   },
   {
     method: "getAllTokenAccountsByOwner",
     namespace: "rpc",
     heliusSdkPath: "helius.getAllTokenAccountsByOwner",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/rpc/optimization-techniques",
+    notes:
+      "helius-sdk auto-paginating wrapper around getTokenAccountsByOwnerV2.",
   },
   {
     method: "getTransactionsForAddress",
@@ -285,74 +308,90 @@ export const manifest: readonly MethodEntry[] = [
     compat: "PLANNED",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/rpc/gettransactionsforaddress",
+    notes:
+      "Helius built this on their proprietary archival storage backend (replaced BigTable). Meaningful local reproduction requires transaction-level indexing we don't have yet — deferring to the same release as Enhanced Transactions parsing.",
   },
 
   // ─── staking ──────────────────────────────────────────────────────
+  // All helius.staking.* methods are SDK_WRAPPER: they run entirely
+  // client-side in helius-sdk, building standard Solana stake program
+  // instructions and returning serialized transactions or instruction
+  // arrays. The only RPC calls they make (if any) are getLatestBlockhash
+  // — which passes through to Surfpool. Nothing for us to intercept.
   {
     method: "createStakeTransaction",
     namespace: "staking",
     heliusSdkPath: "helius.staking.createStakeTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
     notes:
-      "Pure local instruction builder. No Helius backend required beyond knowing the Helius validator pubkey.",
+      "helius-sdk client-side instruction builder. Constructs a standard Solana stake program transaction delegating to the Helius validator. Only RPC touch is getLatestBlockhash, which passes through.",
   },
   {
     method: "createUnstakeTransaction",
     namespace: "staking",
     heliusSdkPath: "helius.staking.createUnstakeTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes: "Client-side stake-deactivation instruction builder. Works transparently.",
   },
   {
     method: "createWithdrawTransaction",
     namespace: "staking",
     heliusSdkPath: "helius.staking.createWithdrawTransaction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes: "Client-side withdraw instruction builder. Works transparently.",
   },
   {
     method: "getStakeInstructions",
     namespace: "staking",
     heliusSdkPath: "helius.staking.getStakeInstructions",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes: "Returns the raw stake instructions without wrapping them in a transaction. Pure local.",
   },
   {
     method: "getUnstakeInstruction",
     namespace: "staking",
     heliusSdkPath: "helius.staking.getUnstakeInstruction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes: "Pure local.",
   },
   {
     method: "getWithdrawInstruction",
     namespace: "staking",
     heliusSdkPath: "helius.staking.getWithdrawInstruction",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes: "Pure local.",
   },
   {
     method: "getWithdrawableAmount",
     namespace: "staking",
     heliusSdkPath: "helius.staking.getWithdrawableAmount",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes:
+      "helius-sdk reads the stake account via getAccountInfo and inspects its state. The getAccountInfo call passes through; the rest is client-side parsing.",
   },
   {
     method: "getHeliusStakeAccounts",
     namespace: "staking",
     heliusSdkPath: "helius.staking.getHeliusStakeAccounts",
-    compat: "PLANNED",
+    compat: "SDK_WRAPPER",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/staking/how-to-stake-with-helius-programmatically",
+    notes:
+      "helius-sdk calls getProgramAccounts on the Stake program filtered by owner = caller's wallet, then filters for Helius's validator. getProgramAccounts passes through.",
   },
 
   // ─── webhooks ─────────────────────────────────────────────────────
@@ -532,6 +571,7 @@ export interface ManifestSummary {
   localIndex: number;
   bestEffort: number;
   shim: number;
+  sdkWrapper: number;
   planned: number;
   skipped: number;
   total: number;
@@ -543,6 +583,7 @@ export function summarize(entries: readonly MethodEntry[]): ManifestSummary {
     localIndex: 0,
     bestEffort: 0,
     shim: 0,
+    sdkWrapper: 0,
     planned: 0,
     skipped: 0,
     total: entries.length,
@@ -560,6 +601,9 @@ export function summarize(entries: readonly MethodEntry[]): ManifestSummary {
         break;
       case "SHIM":
         s.shim++;
+        break;
+      case "SDK_WRAPPER":
+        s.sdkWrapper++;
         break;
       case "PLANNED":
         s.planned++;

@@ -68,6 +68,8 @@ You're building on Solana with [Helius](https://www.helius.dev/) in production. 
 
 ## Supported methods
 
+### DAS (Helius-specific wire methods)
+
 | Method                  | Status  | Notes                                                             |
 |-------------------------|---------|-------------------------------------------------------------------|
 | `getAsset`              | ✅ v0.1 | MplCore assets + collections; plugins walked since v0.3           |
@@ -77,14 +79,46 @@ You're building on Solana with [Helius](https://www.helius.dev/) in production. 
 | `getAssetsByAuthority`  | ✅ v0.2 | Matches the MplCore update authority                              |
 | `getAssetsByCreator`    | ✅ v0.3 | Derived from Royalties + VerifiedCreators plugins                 |
 | `searchAssets`          | ✅ v0.3 | Full filter surface including `creatorAddress`                    |
+| `getAssetProof`         | ⏳ v0.5 | Compressed NFT merkle proofs                                      |
+| `getNftEditions`        | ⏳ v0.5 | Needs Token Metadata decoder                                      |
+
+### Tx and V2 RPC (Helius-specific wire methods)
+
+| Method                       | Status  | Notes                                                                   |
+|------------------------------|---------|-------------------------------------------------------------------------|
+| `getPriorityFeeEstimate`     | ✅ v0.4 | Percentiles computed locally over `getRecentPrioritizationFees` samples |
+| `getProgramAccountsV2`       | ✅ v0.4 | Cursor-paginated passthrough; `changedSinceSlot` unsupported            |
+| `getTokenAccountsByOwnerV2`  | ✅ v0.4 | Cursor-paginated passthrough                                            |
+| `getTransactionsForAddress`  | ⏳ v0.5 | Needs local transaction indexing                                        |
+
+### WebSocket and meta
+
+| Method                  | Status  | Notes                                                             |
+|-------------------------|---------|-------------------------------------------------------------------|
 | `signatureSubscribe`    | ✅ v0.1 | Polyfilled via HTTP polling                                       |
 | `signatureUnsubscribe`  | ✅ v0.1 | Cancels the polling timer                                         |
 | `surfpoolHeliusInfo`    | ✅ v0.1 | Custom. Returns the full compatibility manifest for introspection |
-| `getAssetProof`         | ⏳ v0.4 | Compressed NFT merkle proofs                                      |
-| `getNftEditions`        | ⏳ v0.4 | Needs Token Metadata decoder                                      |
 | Everything else         | ✅ v0.1 | Passed through to Surfpool unchanged                              |
 
 **Tip:** POST `{"method": "surfpoolHeliusInfo"}` to the proxy to get a live, machine-readable list of every Helius method and its local compatibility level. That's the source of truth — this table is regenerated from it.
+
+## Using `helius-sdk` against this proxy
+
+Most of `helius-sdk`'s surface is client-side composition over standard wire-level RPC methods. `helius.tx.sendSmartTransaction()`, `helius.tx.getComputeUnits()`, the entire `helius.staking.*` namespace, `helius.wallet.*` — these run in your app, make several standard RPC calls under the hood, and **work transparently against this proxy** because the proxy handles the underlying wire methods (`simulateTransaction`, `sendTransaction`, `getLatestBlockhash`, `getAccountInfo`, `getProgramAccounts`, and so on) via passthrough to Surfpool.
+
+So if you initialize:
+
+```ts
+import { createHelius } from "helius-sdk";
+
+const helius = createHelius("any-key", {
+  baseUrl: "http://localhost:8897",
+});
+```
+
+…and call `helius.tx.sendSmartTransaction(instructions, signers)`, the SDK composes the usual sequence (simulate → priority fee → send → poll) and every step flows through this proxy. Nothing on our end to implement; the composition Just Works.
+
+The compatibility manifest marks these methods as `SDK_WRAPPER` to make the distinction explicit. POST `surfpoolHeliusInfo` to see every `helius-sdk` method grouped by compat level — `EXACT`, `LOCAL_INDEX`, `BEST_EFFORT`, `SHIM`, `SDK_WRAPPER`, `PLANNED`, or `SKIPPED`.
 
 ## Configuration
 
@@ -163,8 +197,8 @@ The proxy picks a decoder by matching the account's owner program ID. First matc
 - **v0.2** — `getAssetBatch`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, full `searchAssets` filtering, `authorities` field on decoded assets
 - **v0.2.1** — Codama-generated Kit-native decoder replaces hand-rolled Borsh reader (pinned IDL at `idls/mpl_core.json`, `make update-idl` to refresh)
 - **v0.3** — MplCore plugin walker, `creators` field on decoded assets, `getAssetsByCreator`, `searchAssets` creator filter
-- **v0.4** — Priority fee estimation, Helius V2 RPC wrappers, staking helpers, Tx namespace
-- **v0.5** — Compressed NFT support (`getAssetProof`), Enhanced Transactions parser for common tx types, Token Metadata decoder
+- **v0.4** — `getPriorityFeeEstimate` (local percentiles), `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, `SDK_WRAPPER` compat level documenting that `helius.tx.*`, `helius.staking.*`, and other SDK compositions work transparently
+- **v0.5** — Compressed NFT support (`getAssetProof`), Token Metadata decoder, Enhanced Transactions parser for common tx types, `getTransactionsForAddress`
 - **v0.6** — Local webhook simulator (polling-based delivery against Surfpool)
 - **Maybe** — Rust port, standalone binary, local [Dragon's Mouth](https://docs.triton.one/project-yellowstone/dragons-mouth-grpc-subscriptions) (Yellowstone gRPC) polyfill
 

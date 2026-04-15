@@ -4,7 +4,11 @@
 
 import type { Handler } from "../context.js";
 import { dasHandlers } from "./das/index.js";
+import { txHandlers } from "./tx/index.js";
+import { rpcHandlers } from "./rpc/index.js";
 
 export const handlers: Record<string, Handler> = {
   ...dasHandlers,
+  ...txHandlers,
+  ...rpcHandlers,
 };
