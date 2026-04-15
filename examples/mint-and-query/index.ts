@@ -5,12 +5,15 @@
  *    the Metaplex SDK makes — getLatestBlockhash, sendTransaction,
  *    confirmTransaction, getAccountInfo — flows through surfpool-helius.
  * 2. Generate a fresh keypair and airdrop SOL on the local validator.
- * 3. Mint an MplCore asset via the real Metaplex `create` instruction.
- *    `sendAndConfirm` internally uses `signatureSubscribe`, which Surfpool
+ * 3. Mint two MplCore assets:
+ *      (a) a plain asset (validates the base-header decode path)
+ *      (b) an asset with a Royalties plugin (validates the plugin walker
+ *          and DasAsset.creators population added in v0.3)
+ * 4. `sendAndConfirm` internally uses `signatureSubscribe`, which Surfpool
  *    doesn't support natively — the proxy's WS polyfill carries the weight.
- * 4. Query the asset back via `getAsset`. The proxy fetches the raw account
- *    from Surfpool and runs it through the MplCore decoder.
- * 5. Assert the round-trip worked.
+ * 5. Query both assets back via `getAsset`. Then query `getAssetsByCreator`
+ *    and `searchAssets` to confirm the local index picked up the creator
+ *    address from the Royalties plugin on asset (b).
  *
  * Prereqs: `pnpm install` in this folder, Surfpool running (`make up` in the
  * repo root), and the proxy running (`make dev`).
@@ -20,6 +23,7 @@ import {
   create,
   fetchAssetV1,
   mplCore,
+  ruleSet,
 } from "@metaplex-foundation/mpl-core";
 import {
   generateSigner,
@@ -31,75 +35,138 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 
 const PROXY_URL = process.env.PROXY_URL ?? "http://127.0.0.1:8897";
 
+interface DasAssetResponse {
+  id: string;
+  interface: string;
+  content: { metadata: { name: string }; json_uri: string };
+  ownership: { owner: string };
+  creators: Array<{ address: string; share: number; verified: boolean }>;
+}
+
+async function rpc<T>(method: string, params: unknown): Promise<T> {
+  const resp = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
+  const json = (await resp.json()) as { result?: T; error?: unknown };
+  if (json.error || json.result === undefined) {
+    throw new Error(
+      `${method} failed: ${JSON.stringify(json.error ?? "no result")}`,
+    );
+  }
+  return json.result;
+}
+
 async function main() {
   console.log(`→ proxy: ${PROXY_URL}`);
 
-  // Point UMI at the proxy. Every RPC and WS call goes through surfpool-helius.
   const umi = createUmi(PROXY_URL).use(mplCore());
 
-  // Fresh keypair for this run — no persistent state needed.
   const payer = generateSigner(umi);
   umi.use(signerIdentity(payer));
   console.log(`→ payer: ${payer.publicKey}`);
 
-  // Airdrop — forwarded to Surfpool via the proxy.
   console.log("→ airdropping 1 SOL…");
   await umi.rpc.airdrop(payer.publicKey, sol(1));
 
-  // Mint an MplCore asset.
-  const asset = generateSigner(umi);
-  console.log(`→ minting asset: ${asset.publicKey}`);
+  // ── Mint asset A: no plugins ────────────────────────────────────────
+  const assetA = generateSigner(umi);
+  console.log(`→ minting asset A (no plugins): ${assetA.publicKey}`);
   await create(umi, {
-    asset,
+    asset: assetA,
     name: "surfpool-helius demo",
     uri: "https://example.com/demo.json",
   }).sendAndConfirm(umi);
 
-  // Confirm the asset exists on-chain via UMI (hits the proxy's passthrough).
-  const fetched = await fetchAssetV1(umi, publicKey(asset.publicKey));
-  console.log(`→ on-chain name: ${fetched.name}`);
+  const fetchedA = await fetchAssetV1(umi, publicKey(assetA.publicKey));
+  console.log(`→ on-chain name: ${fetchedA.name}`);
 
-  // Now query it through surfpool-helius's DAS endpoint.
-  console.log("→ calling getAsset via the proxy…");
-  const resp = await fetch(PROXY_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method: "getAsset",
-      params: { id: asset.publicKey.toString() },
-    }),
+  // ── Mint asset B: with a Royalties plugin ───────────────────────────
+  // Royalties carries a creators[] list with address + percentage. The
+  // plugin walker in v0.3 reads this and populates DasAsset.creators.
+  const assetB = generateSigner(umi);
+  console.log(`→ minting asset B (with Royalties plugin): ${assetB.publicKey}`);
+  await create(umi, {
+    asset: assetB,
+    name: "surfpool-helius plugin demo",
+    uri: "https://example.com/demo.json",
+    plugins: [
+      {
+        type: "Royalties",
+        basisPoints: 500,
+        creators: [
+          { address: publicKey(payer.publicKey), percentage: 100 },
+        ],
+        ruleSet: ruleSet("None"),
+      },
+    ],
+  }).sendAndConfirm(umi);
+
+  // ── Query A via getAsset ────────────────────────────────────────────
+  console.log("\n→ getAsset on A…");
+  const dasA = await rpc<DasAssetResponse>("getAsset", {
+    id: assetA.publicKey.toString(),
   });
-  const dasResponse = (await resp.json()) as {
-    result?: {
-      id: string;
-      interface: string;
-      content: { metadata: { name: string }; json_uri: string };
-      ownership: { owner: string };
-    };
-    error?: unknown;
-  };
+  console.log(`  id:       ${dasA.id}`);
+  console.log(`  name:     ${dasA.content.metadata.name}`);
+  console.log(`  owner:    ${dasA.ownership.owner}`);
+  console.log(`  creators: ${JSON.stringify(dasA.creators)}`);
 
-  if (dasResponse.error || !dasResponse.result) {
-    console.error("✖ getAsset failed:", dasResponse.error ?? "no result");
-    process.exit(1);
-  }
+  // ── Query B via getAsset ────────────────────────────────────────────
+  console.log("\n→ getAsset on B…");
+  const dasB = await rpc<DasAssetResponse>("getAsset", {
+    id: assetB.publicKey.toString(),
+  });
+  console.log(`  id:       ${dasB.id}`);
+  console.log(`  name:     ${dasB.content.metadata.name}`);
+  console.log(`  owner:    ${dasB.ownership.owner}`);
+  console.log(`  creators: ${JSON.stringify(dasB.creators)}`);
 
-  const das = dasResponse.result;
-  console.log("\n✔ DAS response:");
-  console.log(`  id:        ${das.id}`);
-  console.log(`  interface: ${das.interface}`);
-  console.log(`  name:      ${das.content.metadata.name}`);
-  console.log(`  json_uri:  ${das.content.json_uri}`);
-  console.log(`  owner:     ${das.ownership.owner}`);
+  // ── Query B via getAssetsByCreator ──────────────────────────────────
+  console.log("\n→ getAssetsByCreator(payer)…");
+  const byCreator = await rpc<{ total: number; items: DasAssetResponse[] }>(
+    "getAssetsByCreator",
+    { creatorAddress: payer.publicKey.toString() },
+  );
+  console.log(`  total: ${byCreator.total}`);
 
-  // Sanity checks.
+  // ── Query B via searchAssets ────────────────────────────────────────
+  console.log("\n→ searchAssets({ creatorAddress: payer })…");
+  const search = await rpc<{ total: number; items: DasAssetResponse[] }>(
+    "searchAssets",
+    { creatorAddress: payer.publicKey.toString() },
+  );
+  console.log(`  total: ${search.total}`);
+
+  // ── Assertions ──────────────────────────────────────────────────────
   const assertions: Array<[string, boolean]> = [
-    ["id matches", das.id === asset.publicKey.toString()],
-    ["interface is MplCoreAsset", das.interface === "MplCoreAsset"],
-    ["name matches", das.content.metadata.name === "surfpool-helius demo"],
-    ["owner is payer", das.ownership.owner === payer.publicKey.toString()],
+    ["A id matches", dasA.id === assetA.publicKey.toString()],
+    ["A interface is MplCoreAsset", dasA.interface === "MplCoreAsset"],
+    ["A owner is payer", dasA.ownership.owner === payer.publicKey.toString()],
+    ["A has no creators (no plugins)", dasA.creators.length === 0],
+
+    ["B id matches", dasB.id === assetB.publicKey.toString()],
+    ["B interface is MplCoreAsset", dasB.interface === "MplCoreAsset"],
+    ["B owner is payer", dasB.ownership.owner === payer.publicKey.toString()],
+    ["B has exactly 1 creator", dasB.creators.length === 1],
+    [
+      "B creator address is payer",
+      dasB.creators[0]?.address === payer.publicKey.toString(),
+    ],
+    ["B creator share is 100", dasB.creators[0]?.share === 100],
+
+    ["getAssetsByCreator returns 1", byCreator.total === 1],
+    [
+      "getAssetsByCreator returns asset B",
+      byCreator.items[0]?.id === assetB.publicKey.toString(),
+    ],
+
+    ["searchAssets(creatorAddress) returns 1", search.total === 1],
+    [
+      "searchAssets returns asset B",
+      search.items[0]?.id === assetB.publicKey.toString(),
+    ],
   ];
 
   console.log("\n→ assertions:");
@@ -114,7 +181,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("\n✔ round-trip succeeded — mint, confirm, fetch, and DAS query all went through the proxy.");
+  console.log(
+    "\n✔ round-trip succeeded — mint (plain + with plugins), confirm, fetch, and DAS queries all went through the proxy.",
+  );
 }
 
 main().catch((err: Error) => {

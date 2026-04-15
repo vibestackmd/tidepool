@@ -6,24 +6,17 @@
 // at `idls/mpl_core.json` (see `idls/mpl_core.source.json` for the
 // upstream commit). Re-regenerate with `make update-idl`.
 //
-// The previous hand-rolled Borsh reader lived here before v0.2.1. It
-// worked for the base AssetV1 / CollectionV1 header but had no way to
-// track upstream layout changes. Switching to Codama means:
-//   - Base layout stays current with mpl-core via a one-command refresh
-//   - ~200 LOC of byte-reading code is gone
-//   - The DasAsset shape this file emits is unchanged — v0.1/v0.2
-//     consumers see byte-for-byte identical responses
-//
-// Plugin parsing (VerifiedCreators, Royalties, Attributes, etc.) is
-// still a v0.3 concern. It's not just "add more codecs" — plugins live
-// at explicit byte offsets behind a PluginHeaderV1 + PluginRegistryV1
-// pair, so it needs a small walker. The IDL has all the types; the
-// walker is the future work.
+// As of v0.3, this decoder also walks the plugin registry (via
+// mpl-core-plugins.ts) so the emitted DasAsset includes a `creators`
+// list merged from the Royalties and VerifiedCreators plugins. The
+// base AssetV1 / CollectionV1 structs are decoded here; anything past
+// the base struct is handled by the plugin walker.
 
 import type { AccountDecoder, DasAsset } from "./index.js";
-import { getAssetV1Decoder } from "../generated/mpl-core/accounts/assetV1.js";
 import { getCollectionV1Decoder } from "../generated/mpl-core/accounts/collectionV1.js";
 import type { UpdateAuthority } from "../generated/mpl-core/types/updateAuthority.js";
+import type { Plugin } from "../generated/mpl-core/types/plugin.js";
+import { walkAssetV1 } from "./mpl-core-plugins.js";
 
 export const MPL_CORE_PROGRAM_ID = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d";
 
@@ -73,6 +66,40 @@ function groupingFromUpdateAuthority(
   return [];
 }
 
+// Merge Royalties.creators (share) and VerifiedCreators.signatures
+// (verified flag) into the DAS-shaped creators list. Both plugins are
+// optional — a creator can appear in one, the other, both, or neither.
+// Addresses present only in Royalties default to verified=false;
+// addresses present only in VerifiedCreators default to share=0.
+function creatorsFromPlugins(
+  plugins: Partial<Record<Plugin["__kind"], Plugin>>,
+): Array<{ address: string; share: number; verified: boolean }> {
+  const map = new Map<string, { address: string; share: number; verified: boolean }>();
+
+  const royalties = plugins.Royalties;
+  if (royalties?.__kind === "Royalties") {
+    for (const c of royalties.fields[0].creators) {
+      const address = c.address as string;
+      map.set(address, { address, share: c.percentage, verified: false });
+    }
+  }
+
+  const verified = plugins.VerifiedCreators;
+  if (verified?.__kind === "VerifiedCreators") {
+    for (const sig of verified.fields[0].signatures) {
+      const address = sig.address as string;
+      const existing = map.get(address);
+      if (existing) {
+        existing.verified = sig.verified;
+      } else {
+        map.set(address, { address, share: 0, verified: sig.verified });
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 function buildDasAsset(
   id: string,
   iface: "MplCoreAsset" | "MplCoreCollection",
@@ -80,6 +107,7 @@ function buildDasAsset(
   uri: string,
   owner: string,
   authorities: Array<{ address: string; scopes: string[] }>,
+  creators: Array<{ address: string; share: number; verified: boolean }>,
   grouping: Array<{ group_key: string; group_value: string }>,
   metadata: Record<string, unknown> | null,
 ): DasAsset {
@@ -104,6 +132,7 @@ function buildDasAsset(
       files: files.map((f) => ({ uri: f.uri ?? "", mime: f.type ?? "" })),
     },
     authorities,
+    creators,
     ownership: {
       frozen: false,
       delegated: false,
@@ -116,8 +145,9 @@ function buildDasAsset(
   };
 }
 
-// Reuse the decoders across calls — they're pure and don't hold state.
-const assetV1Decoder = getAssetV1Decoder();
+// CollectionV1 is a simpler, plugin-free path for now. (Collections can
+// carry plugins too; handling those is a future pass once we see a real
+// collection with plugins during testing.)
 const collectionV1Decoder = getCollectionV1Decoder();
 
 export const mplCoreDecoder: AccountDecoder = {
@@ -130,17 +160,18 @@ export const mplCoreDecoder: AccountDecoder = {
 
     try {
       if (key === KEY_ASSET_V1) {
-        const parsed = assetV1Decoder.decode(data);
-        const metadata = await fetchMetadata(parsed.uri);
+        const { base, plugins } = walkAssetV1(data);
+        const metadata = await fetchMetadata(base.uri);
 
         return buildDasAsset(
           pubkey,
           "MplCoreAsset",
-          parsed.name,
-          parsed.uri,
-          parsed.owner as string,
-          authoritiesFromUpdateAuthority(parsed.updateAuthority),
-          groupingFromUpdateAuthority(parsed.updateAuthority),
+          base.name,
+          base.uri,
+          base.owner as string,
+          authoritiesFromUpdateAuthority(base.updateAuthority),
+          creatorsFromPlugins(plugins),
+          groupingFromUpdateAuthority(base.updateAuthority),
           metadata,
         );
       }
@@ -156,6 +187,7 @@ export const mplCoreDecoder: AccountDecoder = {
           parsed.uri,
           parsed.updateAuthority as string,
           [{ address: parsed.updateAuthority as string, scopes: ["full"] }],
+          [],
           [],
           metadata,
         );

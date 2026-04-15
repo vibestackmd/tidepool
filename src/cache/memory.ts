@@ -22,6 +22,7 @@ export function createMemoryCache(): CacheStore {
   const byOwner = new Map<string, Set<string>>();
   const byGrouping = new Map<string, Set<string>>();
   const byAuthority = new Map<string, Set<string>>();
+  const byCreator = new Map<string, Set<string>>();
 
   function addToIndex(
     index: Map<string, Set<string>>,
@@ -64,6 +65,10 @@ export function createMemoryCache(): CacheStore {
       for (const a of asset.authorities) {
         addToIndex(byAuthority, a.address, asset.id);
       }
+
+      for (const c of asset.creators) {
+        addToIndex(byCreator, c.address, asset.id);
+      }
     },
 
     async getAsset(id) {
@@ -89,6 +94,11 @@ export function createMemoryCache(): CacheStore {
       return ids ? materialize(ids) : [];
     },
 
+    async getAssetsByCreator(creator) {
+      const ids = byCreator.get(creator);
+      return ids ? materialize(ids) : [];
+    },
+
     async searchAssets(filter: SearchAssetsFilter) {
       // Start from the narrowest index we have. Each filter further
       // refines the candidate set. No filters = full scan.
@@ -99,6 +109,9 @@ export function createMemoryCache(): CacheStore {
         candidates = ids ? materialize(ids) : [];
       } else if (filter.authorityAddress) {
         const ids = byAuthority.get(filter.authorityAddress);
+        candidates = ids ? materialize(ids) : [];
+      } else if (filter.creatorAddress) {
+        const ids = byCreator.get(filter.creatorAddress);
         candidates = ids ? materialize(ids) : [];
       } else if (filter.grouping) {
         const [gk, gv] = filter.grouping;
@@ -118,6 +131,11 @@ export function createMemoryCache(): CacheStore {
       if (filter.authorityAddress) {
         candidates = candidates.filter((a) =>
           a.authorities.some((x) => x.address === filter.authorityAddress),
+        );
+      }
+      if (filter.creatorAddress) {
+        candidates = candidates.filter((a) =>
+          a.creators.some((x) => x.address === filter.creatorAddress),
         );
       }
       if (filter.grouping) {

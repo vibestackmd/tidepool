@@ -3,13 +3,12 @@
 // getAsset / getAssetBatch calls. LOCAL_INDEX: assets the proxy has
 // never seen are invisible, which is the documented tradeoff.
 //
-// Supported filter dimensions (in v0.2):
+// Supported filter dimensions (as of v0.3):
 //   ownerAddress       — exact owner match
-//   authorityAddress   — exact update-authority match (via the new
-//                        `authorities` field, NOT the v0.1 shortcut
-//                        that aliased to owner)
-//   creatorAddress     — reserved; accepted but returns empty until
-//                        plugin parsing lands (v0.3)
+//   authorityAddress   — exact update-authority match against the
+//                        `authorities` field
+//   creatorAddress     — match against the `creators` field, populated
+//                        from Royalties + VerifiedCreators plugins
 //   interface          — MplCoreAsset / MplCoreCollection / etc
 //   grouping           — [groupKey, groupValue]
 //   tokenType          — fungible / nonFungible / all
@@ -43,17 +42,10 @@ interface SearchAssetsParams extends PageParams {
 export const searchAssets: Handler = async (ctx, params, id) => {
   const p = params as SearchAssetsParams;
 
-  // creatorAddress is accepted but not yet implementable — MplCore
-  // creators live in plugin data that the current decoder skips. Any
-  // creatorAddress filter returns empty so callers can feature-detect
-  // cleanly rather than getting wrong results.
-  if (p.creatorAddress) {
-    return jsonRpcResult(id, paginate([], p));
-  }
-
   const filter: SearchAssetsFilter = {
     ownerAddress: p.ownerAddress,
     authorityAddress: p.authorityAddress,
+    creatorAddress: p.creatorAddress,
     interface: p.interface,
     grouping: p.grouping,
     tokenType: p.tokenType,

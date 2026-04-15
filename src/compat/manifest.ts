@@ -58,7 +58,7 @@ export const manifest: readonly MethodEntry[] = [
     sinceVersion: "0.1.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getasset",
     notes:
-      "MplCore assets + collections. Base account layout is decoded via a Codama-generated Kit client (src/generated/mpl-core), regenerated from a pinned IDL — see idls/mpl_core.source.json. Plugin data (VerifiedCreators, Royalties, etc.) is not yet parsed; v0.3 work.",
+      "MplCore assets + collections. Base account layout and plugin registry are decoded via a Codama-generated Kit client (src/generated/mpl-core), regenerated from a pinned IDL — see idls/mpl_core.source.json. Plugin walker (v0.3) extracts creators from the Royalties and VerifiedCreators plugins.",
   },
   {
     method: "searchAssets",
@@ -68,7 +68,7 @@ export const manifest: readonly MethodEntry[] = [
     sinceVersion: "0.1.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/searchassets",
     notes:
-      "v0.2 expanded filter surface: ownerAddress, authorityAddress (now correctly matches the authorities field), interface, grouping, tokenType, compressed, sortBy. creatorAddress accepted but returns empty until plugin parsing ships.",
+      "Full filter surface as of v0.3: ownerAddress, authorityAddress, creatorAddress, interface, grouping, tokenType, compressed, sortBy. All filters backed by secondary indexes on the local cache.",
   },
   {
     method: "getAssetBatch",
@@ -119,10 +119,11 @@ export const manifest: readonly MethodEntry[] = [
     method: "getAssetsByCreator",
     namespace: "das",
     heliusSdkPath: "helius.das.getAssetsByCreator",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "LOCAL_INDEX",
+    sinceVersion: "0.3.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getassetsbycreator",
-    notes: "MplCore creators live in plugin data the current decoder skips. Ships when plugin parsing or Token Metadata decoder lands (v0.3+).",
+    notes:
+      "Creators are derived from the Royalties and VerifiedCreators MplCore plugins, merged into a single {address, share, verified} list. Supports `onlyVerified` filter.",
   },
   {
     method: "getAssetsByAuthority",

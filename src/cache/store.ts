@@ -29,6 +29,7 @@ export interface CacheStore {
   getAssetsByOwner(owner: string): Promise<DasAsset[]>;
   getAssetsByGroup(groupKey: string, groupValue: string): Promise<DasAsset[]>;
   getAssetsByAuthority(authority: string): Promise<DasAsset[]>;
+  getAssetsByCreator(creator: string): Promise<DasAsset[]>;
   searchAssets(filter: SearchAssetsFilter): Promise<DasAsset[]>;
   close?(): Promise<void>;
 }

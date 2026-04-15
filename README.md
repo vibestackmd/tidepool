@@ -70,18 +70,18 @@ You're building on Solana with [Helius](https://www.helius.dev/) in production. 
 
 | Method                  | Status  | Notes                                                             |
 |-------------------------|---------|-------------------------------------------------------------------|
-| `getAsset`              | ✅ v0.1 | MplCore assets + collections                                      |
+| `getAsset`              | ✅ v0.1 | MplCore assets + collections; plugins walked since v0.3           |
 | `getAssetBatch`         | ✅ v0.2 | Up to 1000 ids per batch; parallel upstream reads                 |
 | `getAssetsByOwner`      | ✅ v0.2 | Indexes assets as they're fetched                                 |
 | `getAssetsByGroup`      | ✅ v0.2 | For MplCore: `groupKey: "collection"`                             |
 | `getAssetsByAuthority`  | ✅ v0.2 | Matches the MplCore update authority                              |
-| `searchAssets`          | ✅ v0.2 | Full filter surface: owner, authority, grouping, interface, type  |
+| `getAssetsByCreator`    | ✅ v0.3 | Derived from Royalties + VerifiedCreators plugins                 |
+| `searchAssets`          | ✅ v0.3 | Full filter surface including `creatorAddress`                    |
 | `signatureSubscribe`    | ✅ v0.1 | Polyfilled via HTTP polling                                       |
 | `signatureUnsubscribe`  | ✅ v0.1 | Cancels the polling timer                                         |
 | `surfpoolHeliusInfo`    | ✅ v0.1 | Custom. Returns the full compatibility manifest for introspection |
-| `getAssetsByCreator`    | ⏳ v0.3 | Needs MplCore plugin parsing or Token Metadata decoder            |
-| `getAssetProof`         | ⏳ v0.3 | Compressed NFT merkle proofs                                      |
-| `getNftEditions`        | ⏳ v0.3 | Needs Token Metadata decoder                                      |
+| `getAssetProof`         | ⏳ v0.4 | Compressed NFT merkle proofs                                      |
+| `getNftEditions`        | ⏳ v0.4 | Needs Token Metadata decoder                                      |
 | Everything else         | ✅ v0.1 | Passed through to Surfpool unchanged                              |
 
 **Tip:** POST `{"method": "surfpoolHeliusInfo"}` to the proxy to get a live, machine-readable list of every Helius method and its local compatibility level. That's the source of truth — this table is regenerated from it.
@@ -161,9 +161,11 @@ The proxy picks a decoder by matching the account's owner program ID. First matc
 
 - **v0.1** — MplCore decoder, `getAsset`, `searchAssets`, `signatureSubscribe` polyfill, pass-through proxy, compatibility manifest
 - **v0.2** — `getAssetBatch`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, full `searchAssets` filtering, `authorities` field on decoded assets
-- **v0.3** — MplCore plugin parsing (unlocks `getAssetsByCreator`), priority fee estimation, Helius V2 RPC wrappers, staking helpers
-- **v0.4** — Compressed NFT support (`getAssetProof`), Enhanced Transactions parser for common tx types, Token Metadata decoder
-- **v0.5** — Local webhook simulator (polling-based delivery against Surfpool)
+- **v0.2.1** — Codama-generated Kit-native decoder replaces hand-rolled Borsh reader (pinned IDL at `idls/mpl_core.json`, `make update-idl` to refresh)
+- **v0.3** — MplCore plugin walker, `creators` field on decoded assets, `getAssetsByCreator`, `searchAssets` creator filter
+- **v0.4** — Priority fee estimation, Helius V2 RPC wrappers, staking helpers, Tx namespace
+- **v0.5** — Compressed NFT support (`getAssetProof`), Enhanced Transactions parser for common tx types, Token Metadata decoder
+- **v0.6** — Local webhook simulator (polling-based delivery against Surfpool)
 - **Maybe** — Rust port, standalone binary, local [Dragon's Mouth](https://docs.triton.one/project-yellowstone/dragons-mouth-grpc-subscriptions) (Yellowstone gRPC) polyfill
 
 ## Related

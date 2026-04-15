@@ -7,6 +7,7 @@ import { getAssetBatch } from "./get-asset-batch.js";
 import { getAssetsByOwner } from "./get-assets-by-owner.js";
 import { getAssetsByGroup } from "./get-assets-by-group.js";
 import { getAssetsByAuthority } from "./get-assets-by-authority.js";
+import { getAssetsByCreator } from "./get-assets-by-creator.js";
 import { searchAssets } from "./search-assets.js";
 
 export const dasHandlers: Record<string, Handler> = {
@@ -15,5 +16,6 @@ export const dasHandlers: Record<string, Handler> = {
   getAssetsByOwner,
   getAssetsByGroup,
   getAssetsByAuthority,
+  getAssetsByCreator,
   searchAssets,
 };
