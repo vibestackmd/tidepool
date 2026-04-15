@@ -68,7 +68,7 @@ export const manifest: readonly MethodEntry[] = [
     sinceVersion: "0.1.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getasset",
     notes:
-      "MplCore assets + collections. Base account layout and plugin registry are decoded via a Codama-generated Kit client (src/generated/mpl-core), regenerated from a pinned IDL — see idls/mpl_core.source.json. Plugin walker (v0.3) extracts creators from the Royalties and VerifiedCreators plugins.",
+      "MplCore assets + collections via Codama-generated Kit client at src/generated/mpl-core (plugin walker added in v0.3). v0.5.0 adds legacy Metaplex Token Metadata NFTs via src/generated/token-metadata — `getAsset(mint)` routes through the Metadata PDA and resolves the token holder via a getProgramAccounts memcmp scan of SPL Token accounts (Surfpool's getTokenLargestAccounts times out). Both decoders regenerate from pinned IDLs (idls/*.source.json).",
   },
   {
     method: "searchAssets",
@@ -96,7 +96,8 @@ export const manifest: readonly MethodEntry[] = [
     compat: "PLANNED",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getassetproof",
-    notes: "Compressed NFTs only. Requires Bubblegum merkle tree reading — ships with v0.3 compressed NFT support.",
+    notes:
+      "Deferred. Originally scoped as v0.5.0 but reclassified after research proved it can't be a thin wrapper. Concurrent Merkle Tree accounts only store the current root + a rolling changelog — they have no assetId→leafIndex map or historical leaves, so a correct proof requires a full local cNFT indexer replaying every Bubblegum ix. That violates the 'thin wrapper' invariant; see docs/proxy-strategy.md §6 'Research finding' and 'Deferred: cNFT proof support' for the full reasoning and the shape of a future dedicated milestone.",
   },
   {
     method: "getAssetProofBatch",
@@ -105,7 +106,7 @@ export const manifest: readonly MethodEntry[] = [
     compat: "PLANNED",
     sinceVersion: null,
     sourceDoc: "https://www.helius.dev/docs/api-reference/das",
-    notes: "Same dependency as getAssetProof — v0.3 compressed NFT support.",
+    notes: "Deferred alongside getAssetProof — same research finding.",
   },
   {
     method: "getAssetsByOwner",
@@ -156,9 +157,11 @@ export const manifest: readonly MethodEntry[] = [
     method: "getNftEditions",
     namespace: "das",
     heliusSdkPath: "helius.das.getNftEditions",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "LOCAL_INDEX",
+    sinceVersion: "0.5.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das",
+    notes:
+      "Master edition supply / max_supply are EXACT — read directly from the on-chain MasterEditionV1/V2 account via a Codama-generated decoder. The editions[] list is LOCAL_INDEX: v0.5.0 returns it empty with a note. A background indexer for discovered prints is a follow-up; the handler shape doesn't change when it lands.",
   },
   {
     method: "getTokenAccounts",

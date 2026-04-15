@@ -7,8 +7,8 @@
 //   - createProxy              — the main entry point
 //   - ProxyOptions             — the options shape
 //   - AccountDecoder, DasAsset — for users writing custom decoders
-//   - mplCoreDecoder           — the default decoder, re-exported so
-//                                 advanced users can compose it
+//   - mplCoreDecoder,          — the default decoders, re-exported so
+//     tokenMetadataDecoder        advanced users can compose them
 //   - Manifest types           — for consumers that want to introspect
 //                                 the compat surface programmatically
 
@@ -28,13 +28,13 @@ export interface ProxyOptions {
   upstreamWsPort?: number;
   /** Timeout for upstream RPC calls in milliseconds. Default: 10000. */
   rpcTimeoutMs?: number;
-  /** Account decoders. Default: [mplCoreDecoder]. Pass [] to disable DAS entirely. */
+  /** Account decoders. Default: [mplCoreDecoder, tokenMetadataDecoder]. Pass [] to disable DAS entirely. */
   decoders?: AccountDecoder[];
 }
 
 export { createProxy } from "./server/index.js";
 export type { AccountDecoder, DasAsset } from "./decoders/index.js";
-export { mplCoreDecoder } from "./decoders/index.js";
+export { mplCoreDecoder, tokenMetadataDecoder } from "./decoders/index.js";
 export type {
   CompatLevel,
   Namespace,

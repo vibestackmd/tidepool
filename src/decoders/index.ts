@@ -54,3 +54,4 @@ export interface AccountDecoder {
 }
 
 export { mplCoreDecoder } from "./mpl-core.js";
+export { tokenMetadataDecoder } from "./token-metadata.js";

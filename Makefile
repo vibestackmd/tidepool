@@ -4,7 +4,8 @@
 # Use `make help` for the full list.
 
 .PHONY: install up down logs status dev build typecheck clean \
-        codegen update-idl \
+        codegen codegen-mpl-core codegen-token-metadata \
+        update-idl update-idl-mpl-core update-idl-token-metadata \
         version release-patch release-minor release-major \
         push-release help
 
@@ -45,24 +46,42 @@ typecheck: ## Run TypeScript type checking
 	pnpm typecheck
 
 # ── Code generation ──────────────────────────────────────
-# src/generated/mpl-core is produced from a pinned IDL at idls/mpl_core.json.
-# The upstream source + commit SHA are recorded in idls/mpl_core.source.json.
-# Regen is a deliberate manual action — either `make codegen` (same pinned
-# IDL) or `make update-idl` (fetch latest main, then regen).
+# Each supported program is produced from a pinned IDL under idls/. The
+# upstream source + commit SHA live in idls/<name>.source.json. Regen is
+# a deliberate manual action — either `make codegen-<name>` (same pinned
+# IDL) or `make update-idl-<name>` (fetch latest main, then regen).
+#
+# `make codegen` and `make update-idl` without a suffix are back-compat
+# aliases for the mpl-core targets.
 
-codegen: ## Regenerate src/generated/mpl-core from the pinned IDL
-	pnpm tsx scripts/codama.ts
+codegen: codegen-mpl-core ## Regenerate src/generated/mpl-core from the pinned IDL (alias)
 
-update-idl: ## Fetch latest mpl-core IDL from main + regenerate
-	@echo "Fetching latest mpl-core main commit..."
-	@SHA=$$(gh api repos/metaplex-foundation/mpl-core/commits/main --jq '.sha'); \
+codegen-mpl-core: ## Regenerate src/generated/mpl-core from the pinned IDL
+	pnpm tsx scripts/codama.ts mpl-core
+
+codegen-token-metadata: ## Regenerate src/generated/token-metadata from the pinned IDL
+	pnpm tsx scripts/codama.ts token-metadata
+
+update-idl: update-idl-mpl-core ## Fetch latest mpl-core IDL from main + regenerate (alias)
+
+update-idl-mpl-core: ## Fetch latest mpl-core IDL from main + regenerate
+	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-core IDL=mpl_core TARGET=mpl-core
+
+update-idl-token-metadata: ## Fetch latest token-metadata IDL from main + regenerate
+	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-token-metadata IDL=token_metadata TARGET=token-metadata
+
+# Private helper: parameterized IDL refresh.
+# Required vars: REPO, IDL, TARGET.
+_update-idl:
+	@echo "Fetching latest $(REPO) main commit..."
+	@SHA=$$(gh api repos/$(REPO)/commits/main --jq '.sha'); \
 	echo "  commit: $$SHA"; \
-	curl -sL "https://raw.githubusercontent.com/metaplex-foundation/mpl-core/$$SHA/idls/mpl_core.json" -o idls/mpl_core.json; \
+	curl -sL "https://raw.githubusercontent.com/$(REPO)/$$SHA/idls/$(IDL).json" -o idls/$(IDL).json; \
 	FETCHED_AT=$$(date -u +%Y-%m-%d); \
-	PROG_NAME=$$(node -p "require('./idls/mpl_core.json').metadata?.name || 'mpl_core_program'"); \
-	PROG_VERSION=$$(node -p "require('./idls/mpl_core.json').metadata?.version || 'unknown'"); \
-	printf '{\n  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-core/%s/idls/mpl_core.json",\n  "repository": "https://github.com/metaplex-foundation/mpl-core",\n  "commit": "%s",\n  "fetchedAt": "%s",\n  "programName": "%s",\n  "programVersion": "%s",\n  "note": "Pinned. Run `make update-idl` to refresh to the latest commit on mpl-core main."\n}\n' "$$SHA" "$$SHA" "$$FETCHED_AT" "$$PROG_NAME" "$$PROG_VERSION" > idls/mpl_core.source.json
-	@$(MAKE) codegen
+	PROG_NAME=$$(node -p "require('./idls/$(IDL).json').metadata?.name || '$(IDL)'"); \
+	PROG_VERSION=$$(node -p "require('./idls/$(IDL).json').metadata?.version || 'unknown'"); \
+	printf '{\n  "url": "https://raw.githubusercontent.com/%s/%s/idls/%s.json",\n  "repository": "https://github.com/%s",\n  "commit": "%s",\n  "fetchedAt": "%s",\n  "programName": "%s",\n  "programVersion": "%s",\n  "note": "Pinned. Run `make update-idl-$(TARGET)` to refresh to the latest commit on main."\n}\n' "$(REPO)" "$$SHA" "$(IDL)" "$(REPO)" "$$SHA" "$$FETCHED_AT" "$$PROG_NAME" "$$PROG_VERSION" > idls/$(IDL).source.json
+	@pnpm tsx scripts/codama.ts $(TARGET)
 	@echo ""
 	@echo "  IDL refreshed. Review the diff:"
 	@echo "    git status"

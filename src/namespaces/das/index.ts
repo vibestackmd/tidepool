@@ -8,6 +8,7 @@ import { getAssetsByOwner } from "./get-assets-by-owner.js";
 import { getAssetsByGroup } from "./get-assets-by-group.js";
 import { getAssetsByAuthority } from "./get-assets-by-authority.js";
 import { getAssetsByCreator } from "./get-assets-by-creator.js";
+import { getNftEditions } from "./get-nft-editions.js";
 import { searchAssets } from "./search-assets.js";
 
 export const dasHandlers: Record<string, Handler> = {
@@ -17,5 +18,6 @@ export const dasHandlers: Record<string, Handler> = {
   getAssetsByGroup,
   getAssetsByAuthority,
   getAssetsByCreator,
+  getNftEditions,
   searchAssets,
 };

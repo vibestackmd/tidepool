@@ -1,21 +1,27 @@
-// Generate the MPL Core client from a pinned Anchor/Shank IDL.
+// Generate a Kit-native client from a pinned Anchor/Shank IDL.
 //
-// This script reads `idls/mpl_core.json` (pinned to a specific commit on
-// metaplex-foundation/mpl-core — see idls/mpl_core.source.json) and emits
-// a Solana Kit-compatible TypeScript client into src/generated/mpl-core.
+// Usage:
+//   pnpm tsx scripts/codama.ts              # default: mpl-core
+//   pnpm tsx scripts/codama.ts mpl-core
+//   pnpm tsx scripts/codama.ts token-metadata
 //
-// Run via:   make codegen
-// Refresh:   make update-idl   (fetches latest main, rewrites idls/, reruns this)
+// Or via make:
+//   make codegen                            # mpl-core
+//   make codegen-token-metadata
+//   make update-idl                         # refresh mpl-core IDL, then codegen
+//   make update-idl-token-metadata
 //
-// The generated output is committed to the repo so installs are
-// reproducible without running codegen. `src/generated/` is the only
-// place in src/ where you'll see auto-generated files — everything else
-// is hand-maintained.
+// Each registered program maps to a pinned IDL at `idls/<idl>.json` and a
+// generated output directory at `src/generated/<out>/`. The provenance of
+// the pinned IDL lives at `idls/<idl>.source.json`. Both files are
+// committed so installs are reproducible without running codegen.
+// `src/generated/` is the only place in src/ where you'll see
+// auto-generated files — everything else is hand-maintained.
 //
 // Note: Codama's default output is a mini-package layout
 // (<out>/package.json + <out>/src/generated/). We flatten it so our
-// import paths stay shallow: src/generated/mpl-core/accounts/assetV1.ts
-// instead of src/generated/mpl-core/src/generated/accounts/assetV1.ts.
+// import paths stay shallow: src/generated/<out>/accounts/foo.ts
+// instead of src/generated/<out>/src/generated/accounts/foo.ts.
 // Relative imports within the generated code survive the move.
 
 import { createFromRoot } from "codama";
@@ -36,15 +42,39 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
+interface ProgramTarget {
+  /** Filename under `idls/` without extension. */
+  idl: string;
+  /** Subdirectory under `src/generated/`. */
+  out: string;
+}
+
+// Add new Codama targets here. Each entry makes `pnpm tsx scripts/codama.ts <key>`
+// read `idls/<idl>.json` and emit to `src/generated/<out>/`.
+const TARGETS: Record<string, ProgramTarget> = {
+  "mpl-core": { idl: "mpl_core", out: "mpl-core" },
+  "token-metadata": { idl: "token_metadata", out: "token-metadata" },
+};
+
+const programKey = process.argv[2] ?? "mpl-core";
+const target = TARGETS[programKey];
+if (!target) {
+  const known = Object.keys(TARGETS).join(", ");
+  throw new Error(
+    `Unknown program target "${programKey}". Known: ${known}. Add an entry to TARGETS in scripts/codama.ts to register a new program.`,
+  );
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
 
-const idlPath = resolve(repoRoot, "idls", "mpl_core.json");
-const finalOutputPath = resolve(repoRoot, "src", "generated", "mpl-core");
+const idlPath = resolve(repoRoot, "idls", `${target.idl}.json`);
+const finalOutputPath = resolve(repoRoot, "src", "generated", target.out);
 
 const idlRaw = readFileSync(idlPath, "utf-8");
 const idl = JSON.parse(idlRaw) as AnchorIdl;
 
+console.log(`[codama] Target: ${programKey}`);
 console.log(`[codama] IDL:    ${idlPath}`);
 console.log(`[codama] Output: ${finalOutputPath}`);
 

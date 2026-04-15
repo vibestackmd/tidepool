@@ -8,12 +8,12 @@ import type { RequestContext } from "../context.js";
 import { resolveOptions } from "../context.js";
 import { createUpstreamClient } from "../upstream.js";
 import { createMemoryCache } from "../cache/index.js";
-import { mplCoreDecoder } from "../decoders/index.js";
+import { mplCoreDecoder, tokenMetadataDecoder } from "../decoders/index.js";
 import { createHttpServer } from "./http.js";
 import { createWsServer } from "./ws.js";
 
 export function createProxy(options: ProxyOptions = {}): Promise<http.Server> {
-  const opts = resolveOptions(options, [mplCoreDecoder]);
+  const opts = resolveOptions(options, [mplCoreDecoder, tokenMetadataDecoder]);
 
   const ctx: RequestContext = {
     opts,
