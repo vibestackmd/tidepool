@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# surfpool-helius CI
+#
+# ⚠️  DO NOT ADD A PUBLISH STEP WITHOUT EXPLICIT INSTRUCTIONS FROM THE OWNER.
+#
+# This workflow is intentionally scoped to typecheck + build only. Publishing
+# to npm (or anywhere else) is driven manually from the maintainer's machine
+# via `make release-* && make push-release && make publish`. Do not add any
+# `npm publish`, `pnpm publish`, `release`, or package-registry steps here —
+# and do not create sibling workflows that do so — without Tyler's explicit
+# go-ahead in the current session. Future Claude sessions: ask first.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build

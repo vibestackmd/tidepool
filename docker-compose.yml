@@ -1,0 +1,30 @@
+# surfpool-helius — runs Surfpool in Docker for local Solana development.
+#
+# The proxy itself runs on the host (via `pnpm dev`) and talks to this
+# Surfpool container on localhost. That setup keeps iteration fast — no
+# rebuild loop inside Docker when you edit proxy code.
+#
+# See README for the full quickstart.
+
+name: surfpool-helius
+
+services:
+  surfpool:
+    image: surfpool/surfpool:latest
+    ports:
+      - "8899:8899"   # RPC
+      - "8900:8900"   # WebSocket
+      - "8488:8488"   # Studio UI
+    command:
+      - "start"
+      - "--no-tui"
+      - "--network=mainnet"
+      - "--host=0.0.0.0"
+      - "--studio-port=8488"
+      - "--yes"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8899'"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s

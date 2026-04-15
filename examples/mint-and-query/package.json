@@ -1,0 +1,20 @@
+{
+  "name": "surfpool-helius-example-mint-and-query",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mint an MplCore asset and query it through surfpool-helius.",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "@metaplex-foundation/mpl-core": "^1.4.0",
+    "@metaplex-foundation/umi": "^1.4.0",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
