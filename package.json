@@ -3,20 +3,24 @@
   "version": "0.1.0",
   "description": "Helius DAS, running on your laptop. A drop-in Helius-compatible RPC proxy on top of Surfpool.",
   "type": "module",
-  "main": "./dist/proxy.js",
-  "types": "./dist/proxy.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/proxy.d.ts",
-      "import": "./dist/proxy.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./decoders": {
       "types": "./dist/decoders/index.d.ts",
       "import": "./dist/decoders/index.js"
+    },
+    "./compat": {
+      "types": "./dist/compat/index.d.ts",
+      "import": "./dist/compat/index.js"
     }
   },
   "bin": {
-    "surfpool-helius": "./dist/bin.js"
+    "surfpool-helius": "./dist/bin/surfpool-helius.js"
   },
   "files": [
     "dist",
@@ -25,8 +29,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/bin.ts",
-    "start": "node dist/bin.js",
+    "dev": "tsx src/bin/surfpool-helius.ts",
+    "start": "node dist/bin/surfpool-helius.js",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run build"
   },

@@ -1,17 +1,9 @@
 #!/usr/bin/env node
-/**
- * surfpool-helius CLI entry.
- *
- * Usage:
- *   surfpool-helius [--port 8898] [--upstream http://127.0.0.1:8899] [--upstream-ws-port 8900]
- *
- * Environment variables (override defaults, CLI flags override env):
- *   SURFPOOL_HELIUS_PORT
- *   SURFPOOL_HELIUS_UPSTREAM_URL
- *   SURFPOOL_HELIUS_UPSTREAM_WS_PORT
- */
+// CLI entry point. Parses flags and environment variables, then calls
+// createProxy. Everything else is library code — this file is thin on
+// purpose.
 
-import { createProxy } from "./proxy.js";
+import { createProxy } from "../server/index.js";
 
 interface CliArgs {
   port?: number;
