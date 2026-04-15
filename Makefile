@@ -4,6 +4,7 @@
 # Use `make help` for the full list.
 
 .PHONY: install up down logs status dev build typecheck clean \
+        codegen update-idl \
         version release-patch release-minor release-major \
         push-release help
 
@@ -42,6 +43,31 @@ build: ## Build TypeScript to dist/
 
 typecheck: ## Run TypeScript type checking
 	pnpm typecheck
+
+# ── Code generation ──────────────────────────────────────
+# src/generated/mpl-core is produced from a pinned IDL at idls/mpl_core.json.
+# The upstream source + commit SHA are recorded in idls/mpl_core.source.json.
+# Regen is a deliberate manual action — either `make codegen` (same pinned
+# IDL) or `make update-idl` (fetch latest main, then regen).
+
+codegen: ## Regenerate src/generated/mpl-core from the pinned IDL
+	pnpm tsx scripts/codama.ts
+
+update-idl: ## Fetch latest mpl-core IDL from main + regenerate
+	@echo "Fetching latest mpl-core main commit..."
+	@SHA=$$(gh api repos/metaplex-foundation/mpl-core/commits/main --jq '.sha'); \
+	echo "  commit: $$SHA"; \
+	curl -sL "https://raw.githubusercontent.com/metaplex-foundation/mpl-core/$$SHA/idls/mpl_core.json" -o idls/mpl_core.json; \
+	FETCHED_AT=$$(date -u +%Y-%m-%d); \
+	PROG_NAME=$$(node -p "require('./idls/mpl_core.json').metadata?.name || 'mpl_core_program'"); \
+	PROG_VERSION=$$(node -p "require('./idls/mpl_core.json').metadata?.version || 'unknown'"); \
+	printf '{\n  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-core/%s/idls/mpl_core.json",\n  "repository": "https://github.com/metaplex-foundation/mpl-core",\n  "commit": "%s",\n  "fetchedAt": "%s",\n  "programName": "%s",\n  "programVersion": "%s",\n  "note": "Pinned. Run `make update-idl` to refresh to the latest commit on mpl-core main."\n}\n' "$$SHA" "$$SHA" "$$FETCHED_AT" "$$PROG_NAME" "$$PROG_VERSION" > idls/mpl_core.source.json
+	@$(MAKE) codegen
+	@echo ""
+	@echo "  IDL refreshed. Review the diff:"
+	@echo "    git status"
+	@echo "    git diff idls/ src/generated/"
+	@echo "  Then run typecheck + the example before committing."
 
 # ── Release ──────────────────────────────────────────────
 # package.json is the source of truth; VERSION mirrors it. Local release

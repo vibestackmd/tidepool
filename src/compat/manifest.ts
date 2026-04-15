@@ -57,6 +57,8 @@ export const manifest: readonly MethodEntry[] = [
     compat: "EXACT",
     sinceVersion: "0.1.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getasset",
+    notes:
+      "MplCore assets + collections. Base account layout is decoded via a Codama-generated Kit client (src/generated/mpl-core), regenerated from a pinned IDL — see idls/mpl_core.source.json. Plugin data (VerifiedCreators, Royalties, etc.) is not yet parsed; v0.3 work.",
   },
   {
     method: "searchAssets",

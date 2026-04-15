@@ -1,6 +1,6 @@
 {
   "name": "surfpool-helius",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Helius DAS, running on your laptop. A drop-in Helius-compatible RPC proxy on top of Surfpool.",
   "type": "module",
   "main": "./dist/index.js",
@@ -59,12 +59,15 @@
     "url": "https://github.com/TylerTheBuildor/surfpool-helius.git"
   },
   "dependencies": {
-    "bs58": "^6.0.0",
+    "@solana/kit": "^6.8.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.4.1",
+    "@codama/renderers-js": "^2.1.0",
     "@types/node": "^22.10.0",
     "@types/ws": "^8.18.1",
+    "codama": "^1.6.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
