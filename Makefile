@@ -1,31 +1,33 @@
-# surfpool-helius — contributor operations.
+# Tidepool — contributor operations.
 #
-# This Makefile is for the maintainer. End-user docs live in the README.
-# Use `make help` for the full list.
+# Maintainer-side Makefile. User-facing docs live in the README.
+# Use `make help` to list every target.
 
-.PHONY: install up down logs status dev build typecheck clean \
-        codegen codegen-mpl-core codegen-token-metadata \
-        codegen-bubblegum codegen-spl-account-compression \
-        update-idl update-idl-mpl-core update-idl-token-metadata \
-        update-idl-bubblegum update-idl-spl-account-compression \
-        version release-patch release-minor release-major \
-        push-release help
+.PHONY: install up down logs status \
+        build test lint fmt check \
+        dev run \
+        node-build node-test \
+        example-rust example-msw \
+        version release-patch release-minor release-major push-release \
+        clean help
 
 # ── Setup ────────────────────────────────────────────────
 
-install: ## Install dependencies
-	pnpm install
+install: ## Install Rust deps + pnpm deps for examples and napi bridge
+	cargo fetch
+	cd crates/node && pnpm install --ignore-scripts
+	cd examples/msw-integration && pnpm install --ignore-scripts
 
 # ── Infrastructure ───────────────────────────────────────
 
-up: ## Start Surfpool in Docker
+up: ## Start Surfpool in Docker (adjacent to Tidepool)
 	docker compose up -d
 	@echo ""
 	@echo "  Surfpool:        http://localhost:8899"
 	@echo "  Surfpool WS:     ws://localhost:8900"
 	@echo "  Surfpool Studio: http://localhost:8488"
 	@echo ""
-	@echo "  Start the proxy with:  make dev"
+	@echo "  Start Tidepool:  make dev"
 
 down: ## Stop Surfpool
 	docker compose down
@@ -36,92 +38,61 @@ logs: ## Tail Surfpool logs
 status: ## Show Surfpool container status
 	docker compose ps
 
-# ── Proxy ────────────────────────────────────────────────
+# ── Rust workspace ───────────────────────────────────────
 
-dev: ## Run the proxy in watch mode
-	pnpm dev
+build: ## cargo build --release across the workspace
+	cargo build --release --workspace
 
-build: ## Build TypeScript to dist/
-	pnpm build
+test: ## cargo test --workspace
+	cargo test --workspace
 
-typecheck: ## Run TypeScript type checking
-	pnpm typecheck
+lint: ## clippy across the workspace under pedantic lints
+	cargo clippy --workspace --all-targets -- -D warnings
 
-# ── Code generation ──────────────────────────────────────
-# Each supported program is produced from a pinned IDL under idls/. The
-# upstream source + commit SHA live in idls/<name>.source.json. Regen is
-# a deliberate manual action — either `make codegen-<name>` (same pinned
-# IDL) or `make update-idl-<name>` (fetch latest main, then regen).
-#
-# `make codegen` and `make update-idl` without a suffix are back-compat
-# aliases for the mpl-core targets.
+fmt: ## rustfmt everything
+	cargo fmt --all
 
-codegen: codegen-mpl-core ## Regenerate src/generated/mpl-core from the pinned IDL (alias)
+check: lint test ## Lint + test (local pre-push gate)
 
-codegen-mpl-core: ## Regenerate src/generated/mpl-core from the pinned IDL
-	pnpm tsx scripts/codama.ts mpl-core
+dev: ## Run the CLI against a local Surfpool
+	cargo run -p tidepool-rpc-cli -- start \
+		--port 8897 \
+		--upstream http://127.0.0.1:8899
 
-codegen-token-metadata: ## Regenerate src/generated/token-metadata from the pinned IDL
-	pnpm tsx scripts/codama.ts token-metadata
+run: dev ## Alias for `dev`
 
-codegen-bubblegum: ## Regenerate src/generated/bubblegum from the pinned IDL
-	pnpm tsx scripts/codama.ts bubblegum
+# ── Node bridge ──────────────────────────────────────────
 
-codegen-spl-account-compression: ## Regenerate src/generated/spl-account-compression from the pinned IDL
-	pnpm tsx scripts/codama.ts spl-account-compression
+node-build: ## Build the napi .node addon (release mode)
+	cd crates/node && pnpm run build
 
-update-idl: update-idl-mpl-core ## Fetch latest mpl-core IDL from main + regenerate (alias)
+node-test: node-build ## Run the JS smoke tests against the built addon
+	cd crates/node && node --test __test__
 
-update-idl-mpl-core: ## Fetch latest mpl-core IDL from main + regenerate
-	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-core IDL=mpl_core TARGET=mpl-core
+# ── Examples ─────────────────────────────────────────────
 
-update-idl-token-metadata: ## Fetch latest token-metadata IDL from main + regenerate
-	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-token-metadata IDL=token_metadata TARGET=token-metadata
+example-rust: ## Run the Rust library integration example
+	cargo run -p tidepool-rpc-example-rust-integration
 
-# Bubblegum and spl-account-compression share a source repo (mpl-bubblegum
-# ships both IDLs), so they refresh as a pair by default. Either can be
-# refreshed alone if needed.
-update-idl-bubblegum: ## Fetch latest Bubblegum IDL from main + regenerate
-	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-bubblegum IDL=bubblegum TARGET=bubblegum
-
-update-idl-spl-account-compression: ## Fetch latest spl-account-compression IDL (from mpl-bubblegum) + regenerate
-	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-bubblegum IDL=spl_account_compression TARGET=spl-account-compression
-
-# Private helper: parameterized IDL refresh.
-# Required vars: REPO, IDL, TARGET.
-_update-idl:
-	@echo "Fetching latest $(REPO) main commit..."
-	@SHA=$$(gh api repos/$(REPO)/commits/main --jq '.sha'); \
-	echo "  commit: $$SHA"; \
-	curl -sL "https://raw.githubusercontent.com/$(REPO)/$$SHA/idls/$(IDL).json" -o idls/$(IDL).json; \
-	FETCHED_AT=$$(date -u +%Y-%m-%d); \
-	PROG_NAME=$$(node -p "require('./idls/$(IDL).json').metadata?.name || '$(IDL)'"); \
-	PROG_VERSION=$$(node -p "require('./idls/$(IDL).json').metadata?.version || 'unknown'"); \
-	printf '{\n  "url": "https://raw.githubusercontent.com/%s/%s/idls/%s.json",\n  "repository": "https://github.com/%s",\n  "commit": "%s",\n  "fetchedAt": "%s",\n  "programName": "%s",\n  "programVersion": "%s",\n  "note": "Pinned. Run `make update-idl-$(TARGET)` to refresh to the latest commit on main."\n}\n' "$(REPO)" "$$SHA" "$(IDL)" "$(REPO)" "$$SHA" "$$FETCHED_AT" "$$PROG_NAME" "$$PROG_VERSION" > idls/$(IDL).source.json
-	@pnpm tsx scripts/codama.ts $(TARGET)
-	@echo ""
-	@echo "  IDL refreshed. Review the diff:"
-	@echo "    git status"
-	@echo "    git diff idls/ src/generated/"
-	@echo "  Then run typecheck + the example before committing."
+example-msw: node-build ## Run the MSW + vitest integration example
+	cd examples/msw-integration && pnpm install --ignore-scripts && pnpm test
 
 # ── Release ──────────────────────────────────────────────
-# package.json is the source of truth; VERSION mirrors it. Local release
-# targets bump, sync, commit, and tag — they never push. `push-release`
-# pushes the tag, which (once the release workflow is enabled) triggers a
-# clean-room build on GitHub Actions that publishes to npm with signed
-# provenance. Nothing publishes from this machine.
+# Local targets bump, commit, and tag — they never publish.
+# Publishing is deliberately a manual GitHub Actions dispatch;
+# see .github/workflows/node-prebuild.yml (dormant until a
+# maintainer enables it).
 
-version: ## Print current version
-	@node -p "require('./package.json').version"
+version: ## Print current workspace version
+	@grep -m1 '^version' crates/cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/'
 
-release-patch: _require-clean ## Bump patch version (0.1.0 -> 0.1.1)
+release-patch: _require-clean ## Bump patch version across the workspace + tag
 	@$(MAKE) _bump BUMP=patch
 
-release-minor: _require-clean ## Bump minor version (0.1.0 -> 0.2.0)
+release-minor: _require-clean ## Bump minor version across the workspace + tag
 	@$(MAKE) _bump BUMP=minor
 
-release-major: _require-clean ## Bump major version (0.1.0 -> 1.0.0)
+release-major: _require-clean ## Bump major version across the workspace + tag
 	@$(MAKE) _bump BUMP=major
 
 _require-clean:
@@ -131,33 +102,31 @@ _require-clean:
 	fi
 
 _bump:
-	@pnpm typecheck
-	@pnpm build
-	@npm version $(BUMP) --no-git-tag-version >/dev/null
-	@node -p "require('./package.json').version" > VERSION
-	@NEW_VERSION=$$(cat VERSION); \
-	git add package.json VERSION; \
-	git commit -m "release: v$$NEW_VERSION"; \
-	git tag "v$$NEW_VERSION"; \
-	echo ""; \
-	echo "  Tagged v$$NEW_VERSION locally."; \
-	echo "  Next:  make push-release   # push commit + tag → CI publishes to npm"
+	@echo "Bumping ${BUMP} across crates/*/Cargo.toml + crates/node/package.json"
+	@# Delegate to cargo-release if available, else fall back to a manual bump
+	@if command -v cargo-release >/dev/null; then \
+		cargo release $(BUMP) --workspace --no-publish --no-push --execute; \
+	else \
+		echo "cargo-release not installed. Install via: cargo install cargo-release"; \
+		exit 1; \
+	fi
 
-push-release: ## Push release commit + tag → CI handles the npm publish
+push-release: ## Push release commit + tags → CI can then publish
 	git push origin HEAD
 	git push origin --tags
 	@echo ""
-	@echo "  Pushed. If the release workflow is enabled, the publish run is here:"
-	@echo "    https://github.com/tylerthebuildor/surfpool-helius/actions/workflows/release.yml"
+	@echo "  Pushed. Publishing is gated on manual workflow_dispatch."
 
 # ── Cleanup ──────────────────────────────────────────────
 
-clean: ## Remove build artifacts
-	rm -rf dist node_modules
+clean: ## Remove all build artifacts
+	cargo clean
+	rm -rf crates/node/node_modules crates/node/*.node crates/node/index.js crates/node/index.d.ts
+	rm -rf examples/*/node_modules
 
 # ── Help ─────────────────────────────────────────────────
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help

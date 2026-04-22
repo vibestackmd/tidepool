@@ -17,6 +17,7 @@
 
 pub mod cache;
 pub mod cnft;
+pub mod compat;
 pub mod das;
 pub mod upstream;
 

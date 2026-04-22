@@ -13,6 +13,7 @@ use tracing::warn;
 
 use tidepool_rpc::cache::{CacheStore, SearchFilter};
 use tidepool_rpc::cnft::{index_tree, CnftStore, IndexTreeOptions};
+use tidepool_rpc::compat::{manifest, summarize};
 use tidepool_rpc::das::{
     get_asset_full, get_asset_proof, get_asset_proof_batch, get_assets_by_authority,
     get_assets_by_creator, get_assets_by_group, get_assets_by_owner, search_assets,
@@ -355,28 +356,15 @@ where
     C: CacheStore + ?Sized,
     U: UpstreamClient + ?Sized,
 {
-    let methods: Vec<Value> = [
-        Method::GetAsset,
-        Method::GetAssetBatch,
-        Method::GetAssetProof,
-        Method::GetAssetProofBatch,
-        Method::GetAssetsByOwner,
-        Method::GetAssetsByAuthority,
-        Method::GetAssetsByCreator,
-        Method::GetAssetsByGroup,
-        Method::SearchAssets,
-        Method::SurfpoolHeliusInfo,
-        Method::SurfpoolHeliusIndexTree,
-    ]
-    .into_iter()
-    .map(|m| json!({ "method": m.to_wire() }))
-    .collect();
+    let methods = manifest();
+    let summary = summarize(methods);
     ok(
         &req.id,
         json!({
             "name": "tidepool-rpc",
             "version": env!("CARGO_PKG_VERSION"),
             "methods": methods,
+            "summary": summary,
         }),
     )
 }

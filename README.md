@@ -1,73 +1,89 @@
-# surfpool-helius
+# Tidepool
 
-**Helius, running on your laptop.** Drop-in Helius-compatible local dev environment on top of [Surfpool](https://github.com/solana-foundation/surfpool). Point your app at it, develop against mainnet-shaped data for free, ship to production Helius without changing a line of client code.
+**Helius DAS, locally. Built on Surfpool.**
 
-## What you get
+A local, Helius-compatible development environment for Solana. Serves the DAS API, the Helius SDK's wire methods, WebSocket subscriptions, and compressed-NFT merkle proofs — all from a Rust binary you run next to your Surfpool validator. Your app's production Helius integration works locally without a key, without the internet, and without cost.
 
-Three things that are obvious the moment you try them:
+Three things you'll notice in the first five minutes:
 
 ### 1. Local DAS, including compressed NFTs
 
-`getAsset`, `getAssetBatch`, `getAssetProof`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, `getAssetsByCreator`, `searchAssets`, `getNftEditions`. MplCore, Token Metadata (Token / Token-2022), and Bubblegum cNFTs — all resolved locally from real on-chain bytes. No Helius key, no rate limits, no cost, no flaky internet.
+`getAsset`, `getAssetBatch`, `getAssetProof`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, `getAssetsByCreator`, `searchAssets`. MplCore, Token Metadata (both Token and Token-2022), and Bubblegum cNFTs — all resolved locally from real on-chain bytes.
 
-Compressed NFTs go through a full local Bubblegum indexer: mint, transfer, burn, delegate, verifyCreator / unverifyCreator, verifyCollection / unverifyCollection / setAndVerifyCollection, updateMetadata. Authoritative state comes from the noop-CPI LeafSchemaEvent, so proofs match on-chain even after a `setAndVerifyCollection` — the realistic case that breaks simpler cNFT tools.
+Compressed NFTs go through a full local Bubblegum indexer: every mint, transfer, burn, delegate, verify / unverify creator or collection, set-and-verify collection, and update-metadata instruction is replayed. Authoritative state comes from the noop-CPI `LeafSchemaEvent`, so proofs match on-chain even after a `setAndVerifyCollection` — the realistic case that breaks thinner cNFT tooling.
 
 ### 2. `confirmTransaction()` actually works on Surfpool
 
-Surfpool's native WebSocket doesn't implement `signatureSubscribe`, which means `@solana/web3.js`'s `confirmTransaction()` and `sendAndConfirm()` hang forever. We polyfill it via HTTP polling. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works. This alone is worth running the proxy even if you don't touch DAS.
+Surfpool's native WebSocket doesn't implement `signatureSubscribe`, which means `@solana/web3.js`'s `confirmTransaction()` and `sendAndConfirm()` hang against raw Surfpool. Tidepool polyfills it via HTTP polling. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works. This alone is worth running even if you don't touch DAS.
 
-### 3. Plugs into MSW, Nock, or undici for tests — zero new deps
+### 3. Plugs into MSW / Nock / undici for tests — zero extra infrastructure
 
-Transport-agnostic core. `import { createHeliusContext, handleJsonRpcBody } from "surfpool-helius"`, plug the result into any mock-HTTP library you already use, and your test suite gets deterministic Helius-compatible responses without a validator, without the network. Works with MSW, Nock, undici's MockAgent, or anything else that intercepts HTTP.
+Import `tidepool-rpc` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team already uses, and your test suite gets deterministic Helius responses without standing up a validator. Nothing else in this space delivers test-integration ergonomics this directly.
 
 ## Quickstart
 
-You need [Surfpool](https://github.com/solana-foundation/surfpool) and Node 20+.
+Three ways to consume it, pick one.
+
+### As a binary (most common)
 
 ```bash
-# 1. Start Surfpool
-surfpool start                                            # native install
-docker run --rm -p 8899:8899 -p 8900:8900 \
-  surfpool/surfpool:latest start --no-tui --host=0.0.0.0  # or Docker
+# In one terminal:
+surfpool start
 
-# 2. Run the proxy
-npx surfpool-helius
-```
+# In another:
+cargo install tidepool-rpc-cli          # or `npx tidepool-rpc start` post-1.0
+tidepool-rpc start \
+  --port 8897 \
+  --upstream http://127.0.0.1:8899 \
+  --index-tree <your-cNFT-merkle-tree>
 
-Point your app at the proxy:
-
-```ts
+# Your app:
 import { Connection } from "@solana/web3.js";
 const connection = new Connection("http://localhost:8897", "confirmed");
 ```
 
-```bash
-curl -X POST http://localhost:8897 \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"getAsset","params":{"id":"<asset-address>"}}'
+### As a Rust library
+
+```toml
+[dependencies]
+tidepool-rpc = "1"
 ```
 
-For cNFTs, register the tree you want to index:
-
-```bash
-npx surfpool-helius --index-tree <merkle-tree-pubkey>
+```rust
+use tidepool_rpc::cnft::{apply_event, CnftEvent, MemoryCnftStore};
+use tidepool_rpc::das::{get_asset, get_asset_proof};
 ```
 
-Or programmatically at runtime:
+See [`examples/rust-integration/`](examples/rust-integration/) for a runnable walkthrough.
+
+### As a Node / JS test integration
 
 ```bash
-curl -X POST http://localhost:8897 \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"surfpoolHeliusIndexTree","params":{"tree":"<merkle-tree>"}}'
+npm install tidepool-rpc msw vitest
 ```
 
-That's it.
+```ts
+import { HeliusContext, handleJsonRpcBody } from "tidepool-rpc";
+import { http, HttpResponse, passthrough } from "msw";
+import { setupServer } from "msw/node";
+
+const ctx = new HeliusContext();
+
+setupServer(
+  http.post("http://127.0.0.1:8899/", async ({ request }) => {
+    const response = await handleJsonRpcBody(ctx, await request.text());
+    return response ? HttpResponse.json(JSON.parse(response)) : passthrough();
+  }),
+).listen();
+```
+
+Full runnable vitest setup in [`examples/msw-integration/`](examples/msw-integration/).
 
 ## Architecture
 
 ```
   ┌─────────────┐        ┌──────────────────┐        ┌───────────┐
-  │   Your app  │───────▶│  surfpool-helius │───────▶│  Surfpool │
+  │   Your app  │───────▶│     Tidepool     │───────▶│  Surfpool │
   │  RPC_URL =  │        │  HTTP :8897      │        │   :8899   │
   │   :8897     │        │    WS :8898      │        │   WS :8900│
   └─────────────┘        │                  │        └───────────┘
@@ -86,254 +102,112 @@ That's it.
                          └──────────────────┘
 ```
 
-`getAsset` on an uncompressed asset fetches the raw account from the upstream via `getAccountInfo`, runs it through a pluggable decoder, and returns a DAS-shaped response. Every asset that passes through is indexed by owner, authority, creator, and grouping, so `searchAssets`, `getAssetsByOwner`, `getAssetsByGroup`, `getAssetsByAuthority`, and `getAssetsByCreator` all serve from that index. Assets the proxy has never fetched are invisible to the index — the documented local-dev tradeoff.
+Uncompressed `getAsset` fetches the account from the upstream, runs it through a pluggable decoder (`mpl-core` or `mpl-token-metadata`), and returns a DAS-shaped response. The cache populates as a side effect so `searchAssets`, `getAssetsByOwner`, and the other secondary-index queries work.
 
-`getAsset` on a cNFT resolves from the local Bubblegum indexer: when a tree is registered, we walk `getSignaturesForAddress` for that tree, parse every Bubblegum ix (outer + inner, including CPI wrappers like Candy Guard), track authoritative state via the noop LeafSchemaEvent, and serve `getAsset` / `getAssetProof` straight from the replayed state.
+Compressed `getAsset` / `getAssetProof` resolve from a local Bubblegum indexer: `getSignaturesForAddress` walks the tree, `getTransaction` pulls each candidate tx, inner Bubblegum + noop CPIs are parsed for authoritative leaf state. Trees are registered via `--index-tree` at startup or `surfpoolHeliusIndexTree` at runtime.
+
+## Why Surfpool?
+
+Tidepool works with any Solana RPC that speaks standard wire methods — `solana-test-validator` with `--clone`, real devnet, or anything else. Surfpool is the recommended upstream for local dev because its mainnet-forking means any real account you ask about "just works" without you pre-declaring it. That makes the dev-loop feel magic instead of tedious.
+
+The `signatureSubscribe` polyfill specifically exists because Surfpool doesn't implement it — so Tidepool delivers strictly more value when Surfpool is the upstream than when anything else is.
 
 ## Supported methods
 
-Full live truth: `POST {"method":"surfpoolHeliusInfo"}` against a running proxy. The tables below are regenerated from it.
+Full live truth: `POST {"method":"surfpoolHeliusInfo"}` returns the complete manifest + summary. Every entry is classified `EXACT`, `LOCAL_INDEX`, `BEST_EFFORT`, `SHIM`, `SDK_WRAPPER`, `PLANNED`, or `SKIPPED`. The table below is a snapshot.
 
-### DAS
-
-| Method                  | Status        | Notes                                                                 |
-|-------------------------|---------------|-----------------------------------------------------------------------|
-| `getAsset`              | ✅ v0.1       | MplCore, Token Metadata (incl. Token-2022), cNFTs (since v0.6)        |
-| `getAssetBatch`         | ✅ v0.2       | Up to 1000 ids; parallel upstream reads                               |
-| `getAssetProof`         | ✅ v0.6       | cNFTs — requires tree to be registered via `indexTrees` or runtime    |
-| `getAssetProofBatch`    | ✅ v0.6       | Parallel over `getAssetProof`; unknown ids → null                     |
-| `getAssetsByOwner`      | ✅ v0.2       | Serves from the local index                                           |
-| `getAssetsByGroup`      | ✅ v0.2       | MplCore: `groupKey: "collection"`                                     |
-| `getAssetsByAuthority`  | ✅ v0.2       | MplCore update authority                                              |
-| `getAssetsByCreator`    | ✅ v0.3       | Derived from Royalties + VerifiedCreators plugins                     |
-| `searchAssets`          | ✅ v0.3       | Full filter surface including `creatorAddress`                        |
-| `getNftEditions`        | ✅ v0.5       | Master supply is exact; editions[] is local-indexed                   |
-
-### WebSocket + tx ergonomics
-
-| Method                       | Status  | Notes                                                             |
-|------------------------------|---------|-------------------------------------------------------------------|
-| `signatureSubscribe`         | ✅ v0.1 | Polyfilled via HTTP polling — `confirmTransaction()` actually works |
-| `signatureUnsubscribe`       | ✅ v0.1 | Cancels the polling timer                                         |
-| `getPriorityFeeEstimate`     | ✅ v0.4 | Local percentiles over `getRecentPrioritizationFees`              |
-| `getProgramAccountsV2`       | ✅ v0.4 | Cursor-paginated passthrough                                      |
-| `getTokenAccountsByOwnerV2`  | ✅ v0.4 | Cursor-paginated passthrough                                      |
-
-### Also works
-
-- **`helius-sdk` transparent composition** — `helius.tx.sendSmartTransaction`, `helius.staking.*`, `helius.wallet.*`, and every other SDK helper that's built from standard RPC calls. Point `helius-sdk` at the proxy and it just works. See [Using `helius-sdk`](#using-helius-sdk).
-- **Everything else** — any method the proxy doesn't handle is forwarded to the upstream unchanged.
-
-### Roadmap
-
-Enhanced Transactions parsing (`getTransactions`, `getTransactionsByAddress`), Webhooks simulator, Wallet API, additional WS subscriptions (account/logs/program/slot/root). V2 Bubblegum ix family (`mintV2`, `transferV2`, etc.). See `surfpoolHeliusInfo` → `methods[]` filtered on `compat: "PLANNED"` for the full list.
-
-## Plugging into MSW, Nock, or undici MockAgent
-
-If your team already has a mock-HTTP layer — MSW in component tests, Nock in backend tests, undici's MockAgent anywhere native `fetch` runs — surfpool-helius plugs in directly. The library ships a transport-agnostic core (`createHeliusContext` + `handleJsonRpcBody`) that returns a JSON-RPC response for any method it implements, or `null` when it doesn't. You wire that into whichever library's handler shape you already use.
-
-**Zero runtime dependency on MSW, Nock, or undici** — you install what you already use; this library stays neutral.
-
-**One-time setup**, shared across every example below:
-
-```ts
-import { createHeliusContext, createFixtureUpstream } from "surfpool-helius";
-
-const ctx = createHeliusContext({
-  upstream: createFixtureUpstream({
-    // accounts: { "<pubkey>": { data, owner, lamports } }
-  }),
-});
-```
-
-**MSW:**
-
-```ts
-import { setupServer } from "msw/node";
-import { http, HttpResponse, passthrough } from "msw";
-import { handleJsonRpcBody } from "surfpool-helius";
-
-const server = setupServer(
-  http.post("http://127.0.0.1:8899/", async ({ request }) => {
-    const resp = await handleJsonRpcBody(ctx, await request.text());
-    return resp ? HttpResponse.json(resp) : passthrough();
-  }),
-);
-server.listen();
-```
-
-**Nock:**
-
-```ts
-import nock from "nock";
-import { handleJsonRpcBody } from "surfpool-helius";
-
-nock("http://127.0.0.1:8899")
-  .persist()
-  .post("/")
-  .reply(async (_uri, body) => {
-    const resp = await handleJsonRpcBody(ctx, body as Record<string, unknown>);
-    return resp ? [200, resp] : [501, { error: "method not handled" }];
-  });
-// Chain `.allowUnmocked()` on the scope to let unknowns hit the real upstream.
-```
-
-**undici MockAgent** (native `fetch`, no extra library):
-
-```ts
-import { MockAgent, setGlobalDispatcher } from "undici";
-import { handleJsonRpcBody } from "surfpool-helius";
-
-const agent = new MockAgent();
-setGlobalDispatcher(agent);
-agent
-  .get("http://127.0.0.1:8899")
-  .intercept({ path: "/", method: "POST" })
-  .reply(200, async (opts) => {
-    const resp = await handleJsonRpcBody(ctx, String(opts.body));
-    return resp ?? { error: "passthrough" };
-  })
-  .persist();
-```
-
-**Caveats:**
-
-- Passthrough semantics differ per library. `handleJsonRpcBody` returning `null` is your signal to defer.
-- HTTP only. `signatureSubscribe` is available only through `createProxy` (the built-in server).
-- One context per mock instance — cache is stateful; cross-test pollution will surprise you.
-
-## Using `helius-sdk`
-
-Most of `helius-sdk`'s surface is client-side composition over standard wire methods. These work transparently against this proxy because the proxy handles the underlying wire RPC calls:
-
-```ts
-import { createHelius } from "helius-sdk";
-
-const helius = createHelius("any-key", { baseUrl: "http://localhost:8897" });
-
-// All of this works locally:
-await helius.tx.sendSmartTransaction(instructions, signers);
-await helius.das.getAsset({ id });
-await helius.das.getAssetProof({ id });
-await helius.staking.createStakeTransaction({ amount });
-```
-
-The compatibility manifest marks these methods as `SDK_WRAPPER`. `POST {"method":"surfpoolHeliusInfo"}` returns every method grouped by compat level: `EXACT`, `LOCAL_INDEX`, `BEST_EFFORT`, `SHIM`, `SDK_WRAPPER`, `PLANNED`, `SKIPPED`.
-
-## Configuration
-
-All options are optional; defaults target a standard local Surfpool install.
-
-**CLI:**
-
-```bash
-npx surfpool-helius \
-  --port 8897 \
-  --upstream http://127.0.0.1:8899 \
-  --upstream-ws ws://127.0.0.1:8900 \
-  --index-tree <merkle-tree-pubkey>      # repeatable
-```
-
-**Environment variables:**
-`SURFPOOL_HELIUS_PORT`, `SURFPOOL_HELIUS_UPSTREAM_URL`, `SURFPOOL_HELIUS_UPSTREAM_WS_URL`, `SURFPOOL_HELIUS_INDEX_TREES` (comma-separated).
-
-**Programmatic:**
-
-```ts
-import { createProxy, mplCoreDecoder, tokenMetadataDecoder } from "surfpool-helius";
-
-await createProxy({
-  port: 8897,
-  upstreamUrl: "http://127.0.0.1:8899",
-  upstreamWsUrl: "ws://127.0.0.1:8900",
-  rpcTimeoutMs: 10_000,
-  decoders: [mplCoreDecoder, tokenMetadataDecoder],
-  indexTrees: ["<merkle-tree-pubkey>"],
-});
-```
-
-## Pluggable decoders
-
-The built-in MplCore and Token Metadata decoders cover almost every real NFT in the wild. To add another program, implement `AccountDecoder`:
-
-```ts
-import { createProxy, mplCoreDecoder } from "surfpool-helius";
-import type { AccountDecoder } from "surfpool-helius";
-
-const myDecoder: AccountDecoder = {
-  programId: "YourProgram111111111111111111111111111111111",
-  name: "my-program",
-  async decode(pubkey, data) {
-    // Parse `data`, return a DAS-shaped asset or null.
-    return null;
-  },
-};
-
-await createProxy({ decoders: [mplCoreDecoder, myDecoder] });
-```
-
-The proxy picks a decoder by matching the account's owner program ID — first match wins. Pass `decoders: []` to disable account-based DAS entirely (cNFTs still work — they don't go through decoders).
+| Method | Status | Notes |
+|---|---|---|
+| `getAsset` / `getAssetBatch` | ✅ LOCAL_INDEX | MplCore, Token Metadata (incl. Token-2022), cNFTs |
+| `getAssetProof` / `getAssetProofBatch` | ✅ LOCAL_INDEX | Requires tree registered via `--index-tree` or runtime method |
+| `getAssetsByOwner` / `Authority` / `Creator` / `Group` | ✅ LOCAL_INDEX | Cache-backed secondary indexes |
+| `searchAssets` | ✅ LOCAL_INDEX | Multi-filter AND, smallest-index-first narrowing |
+| `signatureSubscribe` / `Unsubscribe` | ✅ SHIM | HTTP polling polyfill |
+| `helius-sdk` composed methods | ✅ SDK_WRAPPER | Send / broadcast / confirm / staking — all work transparently |
+| `getNftEditions` | ⏳ PLANNED | Needs edition-PDA indexing |
+| `getTransactions` / `getTransactionsByAddress` | ⏳ PLANNED | Enhanced Transactions parsers |
+| `getPriorityFeeEstimate` | ⏳ PLANNED | Local percentiles |
+| `createWebhook` family | ⏳ PLANNED | Polling-simulator shim |
+| `accountSubscribe` / `logsSubscribe` | ⏳ PLANNED | WS polyfills beyond signature |
+| Everything else | ✅ Passthrough | Forwarded to the upstream unchanged |
 
 ## Compressed NFTs (cNFTs)
 
-cNFTs don't live on-chain as accounts — they're leaves in a Bubblegum merkle tree. There's no account to fetch, no decoder to run. surfpool-helius ships a local Bubblegum indexer that replays every tree-mutating transaction into an in-memory store, from which `getAsset` / `getAssetProof` serve directly.
+cNFTs live as leaves in a Bubblegum merkle tree, not as standalone accounts. Tidepool ships a local indexer that replays every tree-mutating instruction into an in-memory store, from which `getAsset` / `getAssetProof` serve directly.
 
-**Registering a tree:**
+Register a tree:
 
 ```bash
 # At startup:
-npx surfpool-helius --index-tree <merkle-tree-pubkey>
+tidepool-rpc start --index-tree <merkle-tree>
 
-# At runtime (e.g. in test setup):
+# At runtime (in a vitest setup file, CI script, etc.):
 curl -X POST http://localhost:8897 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"surfpoolHeliusIndexTree","params":{"tree":"<merkle-tree>"}}'
 ```
 
-**Tracked instructions:** `createTree`, `mintV1`, `mintToCollectionV1`, `transfer`, `burn`, `delegate`, `verifyCreator`, `unverifyCreator`, `verifyCollection`, `unverifyCollection`, `setAndVerifyCollection`, `updateMetadata`. For hash-dependent ixs, authoritative new state comes from the noop LeafSchemaEvent CPI, so proofs match on-chain even after multi-step flows like mint → setAndVerifyCollection.
+**Tracked:** `createTree`, `mintV1`, `mintToCollectionV1`, `transfer`, `burn`, `delegate`, `verifyCreator`, `unverifyCreator`, `verifyCollection`, `unverifyCollection`, `setAndVerifyCollection`, `updateMetadata`. For hash-dependent ixs, authoritative state comes from the noop `LeafSchemaEvent` CPI — proofs stay correct through multi-step flows.
 
-**Not yet tracked:** V2 ix family (`mintV2`, `transferV2`, `burnV2`, …). cNFTs minted via the V2 path require the V2 extension — roadmap.
+**Not yet tracked:** the V2 ix family (`mintV2`, `transferV2`, `burnV2`). On the roadmap.
+
+## Examples
+
+- [`examples/msw-integration/`](examples/msw-integration/) — vitest + MSW + Tidepool, three runnable tests
+- [`examples/rust-integration/`](examples/rust-integration/) — cargo example composing the service layer directly
+- [`examples/README.md`](examples/) — all four consumer patterns indexed
+
+## Workspace layout
+
+| Crate | Purpose |
+|---|---|
+| `tidepool-rpc-core` | Pure primitives: keccak, merkle math, LeafSchemaV1 hashing, proof compute/verify. Zero Solana deps — WASM-ready. |
+| `tidepool-rpc` | Service layer: cNFT state machine, DAS handlers, cache, decoders, upstream trait. Depends on `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum`. |
+| `tidepool-rpc-server` | axum HTTP + WS front-end. Method-enum dispatch. `HttpUpstream` via reqwest. |
+| `tidepool-rpc-cli` | `tidepool-rpc` binary. clap-derive args + env-var overlay. |
+| `tidepool-rpc-node` | napi-rs bridge → npm package `tidepool-rpc`. |
+
+Library consumers pull `tidepool-rpc`. Binary users `cargo install tidepool-rpc-cli`. JS users `npm install tidepool-rpc`. Server builders compose `tidepool-rpc` + `tidepool-rpc-server::HttpUpstream` themselves.
 
 ## FAQ
 
 **Is this production-ready?** No. It's a local development tool. Ship to real Helius in production.
 
-**Does this replace Helius?** No. It lets you develop against Helius locally so your production integration has a tight dev loop.
+**Does this replace Helius?** No. It lets you develop against Helius's API locally so your production integration has a tight dev loop.
 
-**Is this endorsed by Helius?** No — it's a community tool. Helius is great and you should use them.
+**Is this endorsed by Helius or Surfpool?** Community tool, no official endorsement. Both are great companies and you should use them.
 
-**Why not depend on `@metaplex-foundation/mpl-core` / `mpl-bubblegum`?** Those packages are UMI-flavored and pull in a large tree. For a lean proxy we hand-roll Borsh decoding via Codama-generated Kit-native clients from pinned IDLs. The `AccountDecoder` interface is pluggable — drop in any decoder you prefer.
+**Why not just hit real Helius in dev?** You'd burn rate limits, pollute prod monitoring, require internet on CI, and can't test without an API key. Tidepool is the answer to "I want the dev loop to be instant + offline."
 
-**Can I use this with `litesvm` or `solana-test-validator` instead of Surfpool?** Yes. The proxy just needs something that speaks standard Solana RPC. Point `--upstream` at any RPC endpoint. Surfpool is the default because it forks mainnet on demand — any mainnet account "just works" without pre-cloning. Other validators work, but require you to load accounts explicitly.
+**Can I use this with `solana-test-validator` or `litesvm`?** `solana-test-validator` works — point `--upstream` at it, clone mainnet accounts you care about via `--clone`. `litesvm` is in-process-only, so there's no RPC endpoint for Tidepool to proxy. Use Surfpool for the magic, test-validator for the boring-but-predictable case.
 
-**Does this work with Solana RPC 2.0 / Triton's new read layer?** Yes. surfpool-helius proxies standard JSON-RPC, which [RPC 2.0](https://blog.triton.one/announcing-rpc-2-0-with-solana-foundation-rethinking-solanas-read-layer-from-the-ground-up/) preserves for backward compatibility. DAS isn't part of RPC 2.0, so the local dev gap this tool fills stays relevant.
+**Why Rust?** The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewrite earned: drop-in `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum` official crates (no Codama pipeline), exhaustive-match method dispatch (compile-time safety for adding new handlers), type-level noop-required-vs-optional enforcement on cNFT events, binary distribution via `cargo install`. And the napi-rs bridge means JS consumers still get the test-integration story via `npm install tidepool-rpc` — one Rust core, two consumption ecosystems.
 
-## Example
-
-[`examples/mint-and-query`](examples/mint-and-query) — full end-to-end: point UMI at the proxy, mint an MplCore asset, wait for confirmation (exercising the `signatureSubscribe` polyfill), fetch it back via `getAsset`.
+**Does the WS polyfill work over compressed transactions?** The polyfill polls `getSignatureStatuses` which resolves any signature the validator has seen. Works for compressed + uncompressed transactions identically.
 
 ## Roadmap
 
-- **v0.1** — MplCore decoder, DAS core, `signatureSubscribe` polyfill, pass-through proxy, compatibility manifest
-- **v0.2** — Batching, by-owner / by-group / by-authority queries, full `searchAssets` filtering
-- **v0.3** — MplCore plugin walker, creators field, `getAssetsByCreator`
-- **v0.4** — `getPriorityFeeEstimate`, V2 RPC (`getProgramAccountsV2`, `getTokenAccountsByOwnerV2`), `SDK_WRAPPER` compat level
-- **v0.5** — Token Metadata decoder (legacy NFTs + Token-2022), `getNftEditions`
-- **v0.6** — **Compressed NFTs** via local Bubblegum indexer (`getAsset` / `getAssetProof` / `getAssetProofBatch` for cNFTs, including noop-CPI parsing for `setAndVerifyCollection` / `verifyCreator` / `updateMetadata`)
-- **v0.7** — Enhanced Transactions parser, `getTransactionsForAddress`
-- **v0.8** — Webhooks simulator, additional WS subscriptions, Wallet API
-- **Maybe** — Rust port, standalone binary, Bubblegum V2 ix family, local [Dragon's Mouth](https://docs.triton.one/project-yellowstone/dragons-mouth-grpc-subscriptions) polyfill
+- **v1.0** — Rust rewrite with MplCore / Token Metadata / cNFT decoders, full DAS surface, WS `signatureSubscribe` polyfill, axum server, CLI binary, napi bridge
+- **v1.1** — `getNftEditions` (edition-PDA indexing), V2 Bubblegum ixs, Token Metadata owner resolution
+- **v1.2** — Enhanced Transactions parsers, `getTransactionsForAddress`
+- **v1.3** — Webhooks simulator, additional WS subscriptions (account / logs / program), Wallet API
+- **Maybe** — Dragon's Mouth (Yellowstone gRPC) polyfill, persistent SQLite-backed stores
+
+## Versions
+
+- **v0.1–v0.6** — TypeScript implementation. Preserved at tags `v0.1.0` through `v0.6.0`. No longer maintained; Rust rewrite is the canonical version going forward.
+- **v1.0+** — Rust. This codebase.
 
 ## Related
 
-- [Surfpool](https://github.com/solana-foundation/surfpool) — the local Solana validator this runs on top of
-- [Helius DAS API](https://www.helius.dev/docs/api-reference/das) — the production API this mimics
-- [Metaplex MplCore](https://developers.metaplex.com/core), [Bubblegum](https://developers.metaplex.com/bubblegum) — the asset standards the built-in decoders handle
-- [Triton RPC 2.0](https://blog.triton.one/announcing-rpc-2-0-with-solana-foundation-rethinking-solanas-read-layer-from-the-ground-up/)
+- [Surfpool](https://github.com/solana-foundation/surfpool) — the local Solana validator Tidepool runs on top of
+- [Helius DAS](https://www.helius.dev/docs/api-reference/das) — the production API Tidepool mimics
+- [Metaplex MplCore](https://developers.metaplex.com/core), [Bubblegum](https://developers.metaplex.com/bubblegum) — the asset standards
+- [mpl-core](https://crates.io/crates/mpl-core), [mpl-token-metadata](https://crates.io/crates/mpl-token-metadata), [mpl-bubblegum](https://crates.io/crates/mpl-bubblegum) — the official Rust crates Tidepool uses
 
 ## Built by
 
-[Tyler Buchea](https://github.com/TylerTheBuildor) — building on Solana since the Candy Machine era. I built this because I needed it, and every team on Helius has felt the same pain. [Twitter](https://twitter.com/TylerTheBuildor).
+[Tyler Buchea](https://github.com/TylerTheBuildor) — building on Solana since the Candy Machine era. Built Tidepool because every team I've worked with on Helius hit the same local-dev wall. [Twitter](https://twitter.com/TylerTheBuildor).
 
 ## License
 
