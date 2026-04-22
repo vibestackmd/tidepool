@@ -1,9 +1,0 @@
-{
-  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-token-metadata/349e061053c6fc5b6b815e03e896e4db57012893/idls/token_metadata.json",
-  "repository": "https://github.com/metaplex-foundation/mpl-token-metadata",
-  "commit": "349e061053c6fc5b6b815e03e896e4db57012893",
-  "fetchedAt": "2026-04-15",
-  "programName": "mpl_token_metadata",
-  "programVersion": "0.3.0",
-  "note": "Pinned. Run `make update-idl-token-metadata` to refresh to the latest commit on mpl-token-metadata main."
-}

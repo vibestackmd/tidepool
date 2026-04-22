@@ -1,9 +1,0 @@
-{
-  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-core/9afdae25783bcca85b835cfc7bd8e2cd47b3198d/idls/mpl_core.json",
-  "repository": "https://github.com/metaplex-foundation/mpl-core",
-  "commit": "9afdae25783bcca85b835cfc7bd8e2cd47b3198d",
-  "fetchedAt": "2026-04-15",
-  "programName": "mpl_core_program",
-  "programVersion": "0.2.0",
-  "note": "Pinned. Run `make update-idl` to refresh to the latest commit on mpl-core main."
-}

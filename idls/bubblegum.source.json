@@ -1,9 +1,0 @@
-{
-  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-bubblegum/e9fde975e730f21e8a54a9dc56fd2a5165ac3471/idls/bubblegum.json",
-  "repository": "https://github.com/metaplex-foundation/mpl-bubblegum",
-  "commit": "e9fde975e730f21e8a54a9dc56fd2a5165ac3471",
-  "fetchedAt": "2026-04-22",
-  "programName": "bubblegum",
-  "programVersion": "0.12.0",
-  "note": "Pinned. Run `make update-idl-bubblegum` to refresh to the latest commit on mpl-bubblegum main."
-}

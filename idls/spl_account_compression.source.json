@@ -1,9 +1,0 @@
-{
-  "url": "https://raw.githubusercontent.com/metaplex-foundation/mpl-bubblegum/e9fde975e730f21e8a54a9dc56fd2a5165ac3471/idls/spl_account_compression.json",
-  "repository": "https://github.com/metaplex-foundation/mpl-bubblegum",
-  "commit": "e9fde975e730f21e8a54a9dc56fd2a5165ac3471",
-  "fetchedAt": "2026-04-22",
-  "programName": "spl_account_compression",
-  "programVersion": "0.1.4",
-  "note": "Pinned alongside Bubblegum — the two IDLs are sibling-released from the mpl-bubblegum repo, so we refresh them as a pair. Run `make update-idl-spl-account-compression`."
-}

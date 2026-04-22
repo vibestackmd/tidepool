@@ -1,13 +1,11 @@
-node_modules/
-dist/
 target/
+node_modules/
 *.log
 .env
 .env.local
 .DS_Store
 .vscode/
 .idea/
-*.tsbuildinfo
 coverage/
 
 # Private strategy / session notes — never commit
