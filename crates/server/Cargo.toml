@@ -1,0 +1,63 @@
+[package]
+name = "tidepool-rpc-server"
+version = "0.1.0"
+description = "Tidepool HTTP + WebSocket JSON-RPC server. Wraps the service layer (cNFT indexing, DAS handlers, passthrough proxy) in an axum front-end."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+keywords = ["solana", "helius", "proxy", "jsonrpc", "axum"]
+categories = ["web-programming::http-server"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Service layer + core primitives.
+tidepool-rpc = { version = "0.1", path = "../service" }
+tidepool-rpc-core = { version = "0.1", path = "../core" }
+
+# Web server.
+axum = { version = "0.8", features = ["ws"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
+
+# Async streams — needed to pump ws Send/Receive halves.
+futures-util = "0.3"
+
+# Async runtime.
+tokio = { version = "1", features = ["full"] }
+
+# Upstream HTTP client. Plain `reqwest` rather than `solana-client` —
+# solana-client's typed API doesn't fit our arbitrary-method dispatch
+# (we need to handle Helius-specific methods and pass unknowns
+# through unchanged). reqwest is the de facto HTTP client and what
+# solana-client uses under the hood anyway.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Serde for JSON-RPC envelopes.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async traits (needed for our UpstreamClient impl).
+async-trait = "0.1"
+
+# Base58 for address parsing in the dispatcher + HttpUpstream's
+# account-decode path.
+bs58 = "0.5"
+
+# Error types.
+thiserror = "1"
+
+# Structured logging.
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "test-util"] }
+tracing-subscriber = "0.3"
+
+# WebSocket client for integration tests of the signatureSubscribe
+# polyfill.
+tokio-tungstenite = "0.24"

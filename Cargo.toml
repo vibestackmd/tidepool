@@ -1,0 +1,38 @@
+# Tidepool — Helius-compatible local dev environment for Solana.
+#
+# Virtual workspace. Each consumer-facing surface (library, server, CLI,
+# napi bridge) lives in its own crate so downstream users only pull what
+# they actually consume. The pure-math `core` crate has zero Solana deps
+# and is suitable for WASM contexts.
+
+[workspace]
+members = ["crates/core", "crates/service", "crates/server"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/TylerTheBuildor/tidepool"
+authors = ["Tyler Buchea <tyler.buchea@gmail.com>"]
+rust-version = "1.75"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+# Numeric-cast pedantry — we use Rust's standard `as` casts where the
+# source range is obviously safe for the target. Explicit `try_from`
+# calls on every constant cast are line-noise, not bug-catchers.
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_lossless = "allow"
+# Doc-comment prose mentions type names freely; requiring backticks
+# around every capitalized identifier in narrative prose is pure noise.
+doc_markdown = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

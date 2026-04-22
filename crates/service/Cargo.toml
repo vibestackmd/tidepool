@@ -1,0 +1,67 @@
+[package]
+name = "tidepool-rpc"
+version = "0.1.0"
+description = "Tidepool — Helius-compatible local RPC service: cNFT indexing, DAS responses, upstream-agnostic. The headline Rust crate."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+keywords = ["solana", "helius", "das", "cnft", "bubblegum"]
+categories = ["api-bindings", "development-tools"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Pure algorithms (keccak, merkle proof).
+tidepool-rpc-core = { version = "0.1", path = "../core" }
+
+# Async utilities. tokio::sync for the memory store's locking. We pick
+# up tokio's multi-threaded runtime at higher layers; here we only need
+# sync primitives.
+tokio = { version = "1", features = ["sync", "rt", "macros"] }
+
+# Async traits: dyn-compatible async fn in trait is still unstable, so
+# we use the `async-trait` macro for `UpstreamClient`, `CnftStore`,
+# etc. Minor boxing cost per call; negligible at our scale.
+async-trait = "0.1"
+
+# Error types.
+thiserror = "1"
+
+# Structured logging. The service layer emits tracing events; binaries
+# wire up a subscriber.
+tracing = "0.1"
+
+# JSON values for the upstream RPC layer. The fixture upstream takes
+# and returns `serde_json::Value`; the real network impl later wraps
+# `solana-client` responses into the same shape.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Bubblegum ix types, LeafSchema, MetadataArgs — everything needed to
+# parse state-mutating on-chain instructions.
+mpl-bubblegum = "3"
+
+# MplCore decoder: AssetV1, CollectionV1, plugin types.
+mpl-core = "0.12"
+
+# Legacy Token Metadata decoder: Metadata, Edition, MasterEdition.
+mpl-token-metadata = "5"
+
+# Solana types transitively used by mpl-bubblegum (Pubkey, etc). We
+# depend on the exact line mpl-bubblegum pins so cargo resolves a
+# single version.
+solana-program = "3"
+
+# Borsh for decoding ix args that Anchor-generated types don't cover
+# (the raw wire format under the 8-byte discriminator).
+borsh = { version = "1", features = ["derive"] }
+
+# Base58 — for diagnostics + tx-wire ix-data decoding.
+bs58 = "0.5"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

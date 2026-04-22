@@ -1,0 +1,24 @@
+[package]
+name = "tidepool-rpc-core"
+version = "0.1.0"
+description = "Pure primitives for Tidepool: keccak merkle math, LeafSchemaV1 hashing, compressed-NFT proof computation. Zero Solana or I/O dependencies."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+keywords = ["solana", "bubblegum", "merkle", "cnft", "keccak"]
+categories = ["cryptography", "data-structures"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Only dep: keccak256. `sha3` ships Keccak256 as the pre-standard variant
+# (the one Ethereum + Solana use) — distinct from NIST SHA-3. Audited,
+# zero-dep itself, no_std-capable.
+sha3 = "0.10"
+
+[dev-dependencies]
+# None. Node's built-in #[test] + integration tests under /tests suffice.
