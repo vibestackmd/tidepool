@@ -1,0 +1,38 @@
+[package]
+name = "tidepool-rpc-cli"
+version = "0.1.0"
+description = "Tidepool CLI — local Helius-compatible RPC server. Ships as the `tidepool-rpc` binary."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+keywords = ["solana", "helius", "cli", "rpc"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "tidepool-rpc"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+tidepool-rpc-server = { version = "0.1", path = "../server" }
+
+# Arg parsing.
+clap = { version = "4", features = ["derive", "env"] }
+
+# Async runtime + logging.
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+# Programmatic clap parsing for tests.
+clap = { version = "4", features = ["derive", "env"] }
+
+# Subprocess integration test against the built binary.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde_json = "1"

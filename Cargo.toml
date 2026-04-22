@@ -6,7 +6,7 @@
 # and is suitable for WASM contexts.
 
 [workspace]
-members = ["crates/core", "crates/service", "crates/server"]
+members = ["crates/core", "crates/service", "crates/server", "crates/cli"]
 resolver = "2"
 
 [workspace.package]
