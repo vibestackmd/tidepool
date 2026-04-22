@@ -93,20 +93,21 @@ export const manifest: readonly MethodEntry[] = [
     method: "getAssetProof",
     namespace: "das",
     heliusSdkPath: "helius.das.getAssetProof",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "LOCAL_INDEX",
+    sinceVersion: "0.6.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das/getassetproof",
     notes:
-      "Deferred. Originally scoped as v0.5.0 but reclassified after research proved it can't be a thin wrapper. Concurrent Merkle Tree accounts only store the current root + a rolling changelog — they have no assetId→leafIndex map or historical leaves, so a correct proof requires a full local cNFT indexer replaying every Bubblegum ix. That violates the 'thin wrapper' invariant; see docs/proxy-strategy.md §6 'Research finding' and 'Deferred: cNFT proof support' for the full reasoning and the shape of a future dedicated milestone.",
+      "Backed by a local Bubblegum indexer that replays every tree-mutating ix (createTree, mintV1, mintToCollectionV1, transfer, burn, delegate). Trees must be registered via the `indexTrees` option or the `surfpoolHeliusIndexTree` runtime method before cNFT ids on them resolve. verifyCreator / updateMetadata variants aren't tracked yet — assets that go through those after mint will return a stale proof until the follow-up milestone adds noop-CPI parsing for authoritative new-state hashes.",
   },
   {
     method: "getAssetProofBatch",
     namespace: "das",
     heliusSdkPath: "helius.das.getAssetProofBatch",
-    compat: "PLANNED",
-    sinceVersion: null,
+    compat: "LOCAL_INDEX",
+    sinceVersion: "0.6.0",
     sourceDoc: "https://www.helius.dev/docs/api-reference/das",
-    notes: "Deferred alongside getAssetProof — same research finding.",
+    notes:
+      "Thin parallel wrapper over getAssetProof. Returns a record keyed by asset id; ids not in the local index map to null. Max 1000 ids per call.",
   },
   {
     method: "getAssetsByOwner",
@@ -566,6 +567,16 @@ export const manifest: readonly MethodEntry[] = [
     sourceDoc: "https://github.com/tylerthebuildor/surfpool-helius",
     notes:
       "Custom method — not part of Helius. Returns this manifest so callers can introspect which methods are supported at what fidelity before they run against the proxy.",
+  },
+  {
+    method: "surfpoolHeliusIndexTree",
+    namespace: "compat",
+    heliusSdkPath: "(surfpool-helius extension)",
+    compat: "EXACT",
+    sinceVersion: "0.6.0",
+    sourceDoc: "https://github.com/tylerthebuildor/surfpool-helius",
+    notes:
+      "Custom method — not part of Helius. Triggers an incremental backfill of a Bubblegum tree's signature history into the local cNFT index. Params: { tree: string, maxSignatures?: number|null, pageSize?: number }. Returns processed/applied/skipped counters and the newest signature applied.",
   },
 ];
 

@@ -28,13 +28,14 @@
 //      indexed row. This is the side effect that makes LOCAL_INDEX
 //      semantics work for the editions[] list.
 
-import { getAddressDecoder } from "@solana/kit";
+import { getAddressDecoder, type Address } from "@solana/kit";
 import type { DasAsset } from "../../decoders/index.js";
 import type { RequestContext } from "../../context.js";
 import { TOKEN_METADATA_PROGRAM_ID } from "../../decoders/token-metadata.js";
 import { getEditionDecoder } from "../../generated/token-metadata/accounts/edition.js";
 import { Key } from "../../generated/token-metadata/types/key.js";
 import { deriveEditionPda, deriveMetadataPda } from "./pdas.js";
+import { leafRecordToDasAsset } from "./cnft-to-das.js";
 
 // SPL Token is the classic 82-byte-mint program. Token-2022 mints can
 // carry TLV extensions past byte 82, so we accept any length ≥ 82 for
@@ -129,6 +130,12 @@ export async function fetchAndCacheAsset(
   ctx: RequestContext,
   address: string,
 ): Promise<DasAsset | null> {
+  // cNFTs come first: Bubblegum assets aren't on-chain as accounts —
+  // they're leaves in a merkle tree we've indexed locally. If the id
+  // matches a known leaf we short-circuit before any upstream read.
+  const leaf = await ctx.cnft.getLeaf(address as Address);
+  if (leaf) return leafRecordToDasAsset(leaf);
+
   let account = await ctx.upstream.getAccount(address);
   if (!account) return null;
 

@@ -1,20 +1,21 @@
-// Crate root. This is the public surface of the surfpool-helius library
-// — everything a consumer can import. Files not re-exported from here
-// are considered crate-internal (Rust: `pub(crate)`), even if TypeScript
-// can't enforce that.
+// Crate root. This is the public surface of surfpool-helius — everything
+// a consumer can import. Files not re-exported from here are considered
+// crate-internal (Rust: `pub(crate)`), even if TypeScript can't enforce it.
 //
-// Public surface:
-//   - createProxy              — the main entry point
-//   - ProxyOptions             — the options shape
-//   - AccountDecoder, DasAsset — for users writing custom decoders
-//   - mplCoreDecoder,          — the default decoders, re-exported so
-//     tokenMetadataDecoder        advanced users can compose them
-//   - Manifest types           — for consumers that want to introspect
-//                                 the compat surface programmatically
+// Two consumption modes:
+//
+//   1. Built-in server — `createProxy(opts)` starts HTTP + WS on a port.
+//      This is what the CLI and most users reach for.
+//
+//   2. Transport-agnostic — `createHeliusContext` + `handleJsonRpcBody`.
+//      Hand the response to any third-party mock library (MSW, Nock,
+//      undici MockAgent, miragejs, …) through its native handler shape.
+//      See the README for integration examples. v1 is HTTP-only; WebSocket
+//      subscriptions are available only through `createProxy`.
 
-import type { AccountDecoder } from "./decoders/index.js";
+import type { HeliusContextOptions } from "./core.js";
 
-export interface ProxyOptions {
+export interface ProxyOptions extends HeliusContextOptions {
   /**
    * HTTP port the proxy listens on. WebSocket server runs on `port + 1`
    * (web3.js auto-derives WS as HTTP + 1 for localhost). Default: 8897,
@@ -22,19 +23,47 @@ export interface ProxyOptions {
    * 8899/8900/8488.
    */
   port?: number;
-  /** Upstream Surfpool RPC URL. Default: http://127.0.0.1:8899. */
-  upstreamUrl?: string;
-  /** Upstream Surfpool WebSocket port. Default: 8900. */
-  upstreamWsPort?: number;
-  /** Timeout for upstream RPC calls in milliseconds. Default: 10000. */
-  rpcTimeoutMs?: number;
-  /** Account decoders. Default: [mplCoreDecoder, tokenMetadataDecoder]. Pass [] to disable DAS entirely. */
-  decoders?: AccountDecoder[];
 }
 
+// Built-in server.
 export { createProxy } from "./server/index.js";
+
+// Transport-agnostic primitives — for plugging surfpool-helius into any
+// third-party mock library.
+export {
+  createHeliusContext,
+  handleJsonRpcBody,
+  dispatch,
+  findHandler,
+  handlers,
+  jsonRpcError,
+  jsonRpcResult,
+} from "./core.js";
+export type { HeliusContextOptions } from "./core.js";
+export { createFixtureUpstream } from "./fixtures.js";
+export type { FixtureUpstreamOptions } from "./fixtures.js";
+
+// Context + JSON-RPC types.
+export type {
+  RequestContext,
+  ResolvedContextOptions,
+  Handler,
+  JsonRpcResponse,
+  JsonRpcSuccess,
+  JsonRpcFailure,
+} from "./context.js";
+
+// Upstream + cache — injectable pieces of the context.
+export type { UpstreamClient, AccountData } from "./upstream.js";
+export { createUpstreamClient } from "./upstream.js";
+export type { CacheStore, EditionRecord, SearchAssetsFilter, SortBy, SortDirection, TokenType } from "./cache/index.js";
+export { createMemoryCache } from "./cache/index.js";
+
+// Decoders.
 export type { AccountDecoder, DasAsset } from "./decoders/index.js";
 export { mplCoreDecoder, tokenMetadataDecoder } from "./decoders/index.js";
+
+// Compat manifest (introspection).
 export type {
   CompatLevel,
   Namespace,

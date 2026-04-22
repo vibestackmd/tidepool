@@ -33,7 +33,7 @@ export function createWsServer(
       if (upstreamWs && upstreamWs.readyState === WebSocket.CONNECTING) return upstreamWs;
 
       try {
-        upstreamWs = new WebSocket(`ws://127.0.0.1:${ctx.opts.upstreamWsPort}`);
+        upstreamWs = new WebSocket(ctx.opts.upstreamWsUrl);
         upstreamWs.on("message", (data) => {
           if (clientWs.readyState === WebSocket.OPEN) {
             clientWs.send(data.toString());

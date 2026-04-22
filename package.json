@@ -32,7 +32,8 @@
     "dev": "tsx src/bin/surfpool-helius.ts",
     "start": "node dist/bin/surfpool-helius.js",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run build"
+    "test": "tsx --test test/**/*.test.ts",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "publishConfig": {
     "access": "public"
@@ -59,7 +60,9 @@
     "url": "https://github.com/TylerTheBuildor/surfpool-helius.git"
   },
   "dependencies": {
+    "@noble/hashes": "^2.2.0",
     "@solana/kit": "^6.8.0",
+    "@solana/program-client-core": "^6.8.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {
@@ -68,8 +71,11 @@
     "@types/node": "^22.10.0",
     "@types/ws": "^8.18.1",
     "codama": "^1.6.0",
+    "msw": "^2.13.4",
+    "nock": "^14.0.13",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "undici": "^8.1.0"
   },
   "engines": {
     "node": ">=20"

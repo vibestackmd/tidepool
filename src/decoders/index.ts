@@ -37,6 +37,22 @@ export interface DasAsset {
   grouping: Array<{ group_key: string; group_value: string }>;
   mutable: boolean;
   burnt: boolean;
+  /**
+   * Compressed-NFT metadata. Only populated when the asset was minted
+   * via Bubblegum; omitted entirely (not `compressed: false`) for
+   * uncompressed MplCore / Token Metadata assets so consumers can
+   * distinguish cNFTs at a glance.
+   */
+  compression?: {
+    eligible: boolean;
+    compressed: boolean;
+    data_hash: string; // base58
+    creator_hash: string; // base58
+    asset_hash: string; // base58 of the leaf hash
+    tree: string; // base58 tree address
+    seq: number;
+    leaf_id: number;
+  };
 }
 
 export interface AccountDecoder {

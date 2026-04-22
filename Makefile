@@ -5,7 +5,9 @@
 
 .PHONY: install up down logs status dev build typecheck clean \
         codegen codegen-mpl-core codegen-token-metadata \
+        codegen-bubblegum codegen-spl-account-compression \
         update-idl update-idl-mpl-core update-idl-token-metadata \
+        update-idl-bubblegum update-idl-spl-account-compression \
         version release-patch release-minor release-major \
         push-release help
 
@@ -62,6 +64,12 @@ codegen-mpl-core: ## Regenerate src/generated/mpl-core from the pinned IDL
 codegen-token-metadata: ## Regenerate src/generated/token-metadata from the pinned IDL
 	pnpm tsx scripts/codama.ts token-metadata
 
+codegen-bubblegum: ## Regenerate src/generated/bubblegum from the pinned IDL
+	pnpm tsx scripts/codama.ts bubblegum
+
+codegen-spl-account-compression: ## Regenerate src/generated/spl-account-compression from the pinned IDL
+	pnpm tsx scripts/codama.ts spl-account-compression
+
 update-idl: update-idl-mpl-core ## Fetch latest mpl-core IDL from main + regenerate (alias)
 
 update-idl-mpl-core: ## Fetch latest mpl-core IDL from main + regenerate
@@ -69,6 +77,15 @@ update-idl-mpl-core: ## Fetch latest mpl-core IDL from main + regenerate
 
 update-idl-token-metadata: ## Fetch latest token-metadata IDL from main + regenerate
 	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-token-metadata IDL=token_metadata TARGET=token-metadata
+
+# Bubblegum and spl-account-compression share a source repo (mpl-bubblegum
+# ships both IDLs), so they refresh as a pair by default. Either can be
+# refreshed alone if needed.
+update-idl-bubblegum: ## Fetch latest Bubblegum IDL from main + regenerate
+	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-bubblegum IDL=bubblegum TARGET=bubblegum
+
+update-idl-spl-account-compression: ## Fetch latest spl-account-compression IDL (from mpl-bubblegum) + regenerate
+	@$(MAKE) _update-idl REPO=metaplex-foundation/mpl-bubblegum IDL=spl_account_compression TARGET=spl-account-compression
 
 # Private helper: parameterized IDL refresh.
 # Required vars: REPO, IDL, TARGET.

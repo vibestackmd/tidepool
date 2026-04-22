@@ -4,6 +4,8 @@
 import type { Handler } from "../../context.js";
 import { getAsset } from "./get-asset.js";
 import { getAssetBatch } from "./get-asset-batch.js";
+import { getAssetProof } from "./get-asset-proof.js";
+import { getAssetProofBatch } from "./get-asset-proof-batch.js";
 import { getAssetsByOwner } from "./get-assets-by-owner.js";
 import { getAssetsByGroup } from "./get-assets-by-group.js";
 import { getAssetsByAuthority } from "./get-assets-by-authority.js";
@@ -14,6 +16,8 @@ import { searchAssets } from "./search-assets.js";
 export const dasHandlers: Record<string, Handler> = {
   getAsset,
   getAssetBatch,
+  getAssetProof,
+  getAssetProofBatch,
   getAssetsByOwner,
   getAssetsByGroup,
   getAssetsByAuthority,

@@ -5,20 +5,24 @@
 
 import type { AccountDecoder } from "./decoders/index.js";
 import type { CacheStore } from "./cache/index.js";
+import type { CnftStore } from "./cnft/index.js";
 import type { UpstreamClient } from "./upstream.js";
 
-export interface ResolvedOptions {
-  port: number;
+// Options that shape the request context itself. These are transport-agnostic
+// — they apply equally whether the context is hosted by the built-in server
+// or by a third-party mock library (MSW, Nock, undici MockAgent, etc).
+export interface ResolvedContextOptions {
   upstreamUrl: string;
-  upstreamWsPort: number;
+  upstreamWsUrl: string;
   rpcTimeoutMs: number;
   decoders: AccountDecoder[];
 }
 
 export interface RequestContext {
-  opts: ResolvedOptions;
+  opts: ResolvedContextOptions;
   upstream: UpstreamClient;
   cache: CacheStore;
+  cnft: CnftStore;
   decoders: AccountDecoder[];
 }
 
@@ -37,29 +41,14 @@ export type JsonRpcFailure = {
 export type JsonRpcResponse = JsonRpcSuccess | JsonRpcFailure;
 
 // Every handler in every namespace has this exact signature. The router
-// looks up the method name, calls the handler, and writes the returned
-// JsonRpcResponse straight to the HTTP response body.
+// looks up the method name, calls the handler, and the caller writes the
+// returned JsonRpcResponse to whatever transport it owns (HTTP server,
+// MSW handler, Nock reply, etc).
 export type Handler = (
   ctx: RequestContext,
   params: unknown,
   id: unknown,
 ) => Promise<JsonRpcResponse>;
-
-export function resolveOptions(opts: {
-  port?: number;
-  upstreamUrl?: string;
-  upstreamWsPort?: number;
-  rpcTimeoutMs?: number;
-  decoders?: AccountDecoder[];
-}, defaultDecoders: AccountDecoder[]): ResolvedOptions {
-  return {
-    port: opts.port ?? 8897,
-    upstreamUrl: opts.upstreamUrl ?? "http://127.0.0.1:8899",
-    upstreamWsPort: opts.upstreamWsPort ?? 8900,
-    rpcTimeoutMs: opts.rpcTimeoutMs ?? 10_000,
-    decoders: opts.decoders ?? defaultDecoders,
-  };
-}
 
 export function jsonRpcError(
   id: unknown,

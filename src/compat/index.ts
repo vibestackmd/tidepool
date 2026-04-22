@@ -9,3 +9,4 @@ export type {
 } from "./manifest.js";
 export { manifest, summarize } from "./manifest.js";
 export { surfpoolHeliusInfo } from "./info.js";
+export { surfpoolHeliusIndexTree } from "./index-tree.js";

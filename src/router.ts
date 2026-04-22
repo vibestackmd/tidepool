@@ -6,11 +6,12 @@
 import type { Handler, JsonRpcResponse, RequestContext } from "./context.js";
 import { jsonRpcError } from "./context.js";
 import { handlers as namespaceHandlers } from "./namespaces/index.js";
-import { surfpoolHeliusInfo } from "./compat/index.js";
+import { surfpoolHeliusInfo, surfpoolHeliusIndexTree } from "./compat/index.js";
 
 const handlers: Record<string, Handler> = {
   ...namespaceHandlers,
   surfpoolHeliusInfo,
+  surfpoolHeliusIndexTree,
 };
 
 export function findHandler(method: string): Handler | null {
