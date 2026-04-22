@@ -1,0 +1,21 @@
+[package]
+name = "tidepool-rpc-example-rust-integration"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "rust-integration"
+path = "src/main.rs"
+
+[dependencies]
+# From a published release, users would write:
+#   tidepool-rpc = "1"
+# Path deps here since this example lives in the workspace and tracks
+# whichever version the workspace is currently developing.
+tidepool-rpc = { path = "../../crates/service" }
+tidepool-rpc-core = { path = "../../crates/core" }
+
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
+bs58 = "0.5"

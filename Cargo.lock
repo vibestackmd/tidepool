@@ -3935,6 +3935,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tidepool-rpc-example-rust-integration"
+version = "0.0.0"
+dependencies = [
+ "bs58",
+ "serde_json",
+ "tidepool-rpc",
+ "tidepool-rpc-core",
+ "tokio",
+]
+
+[[package]]
 name = "tidepool-rpc-node"
 version = "0.1.0"
 dependencies = [

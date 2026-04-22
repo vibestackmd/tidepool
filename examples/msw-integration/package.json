@@ -1,0 +1,17 @@
+{
+  "name": "tidepool-rpc-example-msw-integration",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tidepool + MSW + vitest — mock Helius responses in your test suite.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "tidepool-rpc": "file:../../crates/node"
+  },
+  "devDependencies": {
+    "msw": "^2.7.0",
+    "vitest": "^2.0.0"
+  }
+}

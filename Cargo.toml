@@ -12,6 +12,7 @@ members = [
     "crates/server",
     "crates/cli",
     "crates/node",
+    "examples/rust-integration",
 ]
 resolver = "2"
 
