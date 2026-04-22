@@ -1,0 +1,39 @@
+[package]
+name = "tidepool-rpc-node"
+version = "0.1.0"
+description = "Node.js (napi-rs) bridge for the Tidepool Rust service layer. Consumed as the `tidepool-rpc` npm package."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+
+# Produces a dylib loadable as a Node native addon. napi-rs CLI
+# renames the output `.node` + ships a JS entry that loads it.
+[lib]
+crate-type = ["cdylib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Service layer + core.
+tidepool-rpc = { version = "0.1", path = "../service" }
+tidepool-rpc-server = { version = "0.1", path = "../server" }
+
+# napi-rs runtime. `napi4` pins the Node-API version — 4 gives us
+# access to async/Promise conversion and typed arrays, which is
+# plenty for our surface.
+napi = { version = "3", default-features = false, features = ["napi4", "async", "serde-json"] }
+napi-derive = "3"
+
+# Serde for option-struct / return-shape marshalling.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Tokio for the async functions we expose.
+tokio = { version = "1", features = ["sync"] }
+
+[build-dependencies]
+napi-build = "2"

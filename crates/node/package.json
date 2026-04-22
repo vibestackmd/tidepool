@@ -1,0 +1,42 @@
+{
+  "name": "tidepool-rpc",
+  "version": "0.1.0",
+  "description": "Helius-compatible Solana RPC primitives for test suites. Plug handleJsonRpcBody into MSW, Nock, undici, or any mock-HTTP layer.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "tidepool-rpc",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-rpc-node",
+    "build:debug": "napi build --platform --manifest-path ../../Cargo.toml --package tidepool-rpc-node",
+    "test": "node --test __test__"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "tidepool-rpc.*.node"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TylerTheBuildor/tidepool.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}

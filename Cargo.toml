@@ -6,7 +6,13 @@
 # and is suitable for WASM contexts.
 
 [workspace]
-members = ["crates/core", "crates/service", "crates/server", "crates/cli"]
+members = [
+    "crates/core",
+    "crates/service",
+    "crates/server",
+    "crates/cli",
+    "crates/node",
+]
 resolver = "2"
 
 [workspace.package]
@@ -14,7 +20,7 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/TylerTheBuildor/tidepool"
 authors = ["Tyler Buchea <tyler.buchea@gmail.com>"]
-rust-version = "1.75"
+rust-version = "1.77"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

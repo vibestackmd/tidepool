@@ -1,0 +1,99 @@
+# Multi-platform napi prebuilds for the `tidepool-rpc` npm package.
+#
+# Dormant by design: runs ONLY on manual workflow_dispatch or on a
+# release-tag push (vN.N.N-node). Nothing auto-publishes. `pnpm
+# publish` at the end of the workflow would be the actual publish
+# step; until it's uncommented + an NPM_TOKEN secret is set, this
+# workflow only builds artifacts + uploads them as GH Actions
+# artifacts for inspection.
+#
+# To enable publishing later:
+#   1. Add NPM_TOKEN repository secret.
+#   2. Remove `"private": true` from crates/node/package.json.
+#   3. Uncomment the `npm publish` step in the `publish` job below.
+
+name: node-prebuild
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*-node"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: aarch64-apple-darwin
+          - host: macos-latest
+            target: x86_64-apple-darwin
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            docker: node:22-slim
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.settings.host }}
+    name: Build ${{ matrix.settings.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install
+        working-directory: crates/node
+        run: pnpm install --ignore-scripts
+      - name: Build
+        working-directory: crates/node
+        run: pnpm exec napi build --platform --release --target ${{ matrix.settings.target }} --manifest-path ../../Cargo.toml --package tidepool-rpc-node
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: crates/node/*.node
+
+  publish:
+    name: Assemble + publish
+    needs: build
+    runs-on: ubuntu-latest
+    # Guard so a bare workflow_dispatch doesn't accidentally publish —
+    # we only go past the artifact-gather step on a tag push.
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install
+        working-directory: crates/node
+        run: pnpm install --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          path: crates/node/artifacts
+      - name: Assemble per-platform npm dirs
+        working-directory: crates/node
+        run: pnpm exec napi artifacts --output-dir artifacts
+      - name: Dry-run publish (remove when NPM_TOKEN is configured)
+        working-directory: crates/node
+        run: |
+          echo "PUBLISH IS DORMANT. To enable:"
+          echo "  1. Add NPM_TOKEN to repo secrets."
+          echo "  2. Remove 'private: true' from crates/node/package.json."
+          echo "  3. Replace this step with:"
+          echo "     pnpm publish --access public --no-git-checks"

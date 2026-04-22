@@ -1,0 +1,7 @@
+# napi-rs build artifacts — platform-specific, rebuilt by CI.
+*.node
+node_modules/
+
+# Generated glue — regenerated on every `napi build`.
+index.js
+index.d.ts
