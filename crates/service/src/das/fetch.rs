@@ -88,7 +88,14 @@ where
     for decoder in decoders {
         if decoder.program_id() == owner_str {
             if let Some(mut asset) = decoder.decode(address, &account.data)? {
-                if asset.interface == "V1_NFT" && asset.ownership.owner.is_empty() {
+                // Token Metadata decoders emit assets with an empty
+                // owner because the Metadata account doesn't carry
+                // the holding wallet — only the mint does. Resolve
+                // via getTokenLargestAccounts regardless of which
+                // interface string the decoder produced (V1_NFT,
+                // ProgrammableNFT, FungibleAsset, FungibleToken all
+                // share this constraint).
+                if asset.ownership.owner.is_empty() {
                     if let Some(owner) = resolve_token_metadata_owner(upstream, &account).await {
                         asset.ownership.owner = owner;
                     }
@@ -97,7 +104,10 @@ where
                 // Token Metadata side-effect: index the mint's Edition
                 // PDA (if any) so `getNftEditions` can serve it later.
                 // Best-effort; failures don't break the primary fetch.
-                if asset.interface == "V1_NFT" {
+                if matches!(
+                    asset.interface.as_str(),
+                    "V1_NFT" | "ProgrammableNFT" | "LegacyNFT"
+                ) {
                     index_edition_pda(upstream, cache, address).await;
                 }
                 return Ok(Some(asset));
