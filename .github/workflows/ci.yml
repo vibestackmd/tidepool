@@ -1,12 +1,16 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# surfpool-helius CI — typecheck + build on every push and PR.
+# Tidepool — continuous integration.
 #
-# Publishing to npm lives in the separate `release.yml` workflow, which is
-# currently STAGED and not yet active (guarded by `vars.ENABLED == 'true'`
-# and requires an NPM_TOKEN secret). Do not add `npm publish`, `pnpm publish`,
-# or any other package-registry step to THIS workflow. Publishing only ever
-# happens through `release.yml`, and only when the owner explicitly enables
-# it. Future Claude sessions: ask first before touching either file.
+# Every push + PR runs fmt, clippy (-D warnings), the full test suite, and
+# the offline contract-test rig. This workflow is the *gate* — nothing
+# merges to main with red status checks. Publishing is a separate workflow
+# (release.yml) that only runs on signed tag pushes.
+#
+# Keep this workflow tight: no third-party actions beyond the minimum
+# required, pinned by major version, no `pull_request_target` (it grants
+# secrets to PRs and is the #1 source of GitHub Actions supply-chain
+# incidents). No secrets referenced here at all — CI uses public fixtures
+# committed to the repo.
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -16,21 +20,84 @@ on:
     branches: [main]
   pull_request:
 
+# Cancel superseded runs on the same ref — a new push to a branch
+# voids the prior CI run immediately.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
 jobs:
-  build:
+  lint:
+    name: fmt + clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
+  test:
+    name: tests (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --locked
+
+  contracts:
+    name: offline contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --locked -p tidepool-rpc --test contracts
+
+  release-gate:
+    name: release preflight (no-network parts)
+    runs-on: ubuntu-latest
+    needs: [lint, test, contracts]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify version sync (workspace ↔ npm)
+        run: bash scripts/verify-version-sync.sh
+      - name: Verify CHANGELOG has entry under [Unreleased]
+        run: bash scripts/verify-changelog.sh --expected unreleased
+      - name: cargo xtask check-drift
+        run: cargo xtask check-drift
+
+  node-build:
+    name: napi build (smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
-
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
+          node-version: 22
+      - name: Install napi build deps
+        working-directory: crates/node
+        run: pnpm install --ignore-scripts
+      - name: Build addon
+        working-directory: crates/node
+        run: pnpm exec napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-rpc-node
+      - name: Run JS smoke tests against built addon
+        working-directory: crates/node
+        run: node --test __test__

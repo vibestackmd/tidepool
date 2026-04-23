@@ -105,7 +105,7 @@ await helius.enhanced.getTransactions([signature]);
 await helius.ws.signatureNotifications(signature);
 ```
 
-The `restUrl` + `url` split above assumes a small PR landing in [`helius-xyz/helius-sdk`](https://github.com/helius-xyz/helius-sdk) (WIP) to make the REST base URL configurable. Until it merges, the JSON-RPC + WS paths work today; REST needs the SDK's internal base URL overridden via whatever escape hatch your SDK version provides (older versions allow a patched `fetch` wrapper).
+The `restUrl` + `url` split above assumes a small PR landing in [`helius-labs/helius-sdk`](https://github.com/helius-labs/helius-sdk) (WIP) to make the REST base URL configurable. Until it merges, the JSON-RPC + WS paths work today; REST needs the SDK's internal base URL overridden via whatever escape hatch your SDK version provides (older versions allow a patched `fetch` wrapper).
 
 ## Architecture
 

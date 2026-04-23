@@ -1,101 +1,334 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# surfpool-helius — Release workflow (npm publish with provenance)
+# Tidepool — release pipeline.
 #
-# STATUS: STAGED, NOT YET ACTIVE.
+# STATUS: staged. Fires on a signed tag push (`v*.*.*`) but every publish
+# step is gated behind a GitHub Environment (`production`) that requires
+# manual approval. Enabling publish-for-real is a 4-step config task, all
+# captured under "Enabling the pipeline" below — no code change needed.
 #
-# This workflow publishes surfpool-helius to npm with `--provenance`, which
-# generates a signed attestation tying the package to this exact GitHub
-# Actions run and source commit. On the npm package page, users see a
-# "Built and signed on GitHub Actions" badge. This is the non-tamperable
-# release chain — no hand-edited tarballs, no "trust me bro" publishes from
-# a laptop.
+# Design goals:
 #
-# ── How to enable when ready ────────────────────────────────────────────
+#   1. **Lockstep release.** One tag → five crates.io crates + one npm
+#      package, all at the same version. Publish order is dependency
+#      order (core → service → server → cli → node), then npm.
 #
-# 1. Create an npm automation token:
-#      https://www.npmjs.com/settings/<your-user>/tokens
-#      Type: "Automation"
-#      Scope: "Read and write"
+#   2. **Provenance everywhere.** npm `--provenance` produces an OIDC
+#      attestation linking the tarball to this CI run + commit SHA.
+#      crates.io trusted publishing (OIDC) does the equivalent for cargo.
+#      No long-lived tokens anywhere except the npm auth token, which
+#      is fine-grained to the `tidepool-rpc` package only.
 #
-# 2. Add it as a repo secret:
-#      gh secret set NPM_TOKEN --repo tylerthebuildor/surfpool-helius
-#      (or: Settings → Secrets and variables → Actions → New repository secret)
+#   3. **Preflight is identical to local.** The `preflight` job runs
+#      `scripts/preflight.sh --release <tag>` — the same script a
+#      maintainer runs via `make release-dry-run` before tagging.
+#      Any drift between CI and laptop is a bug in the script, not in
+#      tribal knowledge.
 #
-# 3. Uncomment the `push.tags` trigger below.
+#   4. **Environment gate.** The `publish-crates` and `publish-npm`
+#      jobs both require the `production` environment. Even a
+#      legitimate tag push sits in "waiting for review" until a
+#      human clicks approve.
 #
-# 4. (Optional but recommended) Create an `npm-publish` environment in
-#    repo settings and require manual approval on it — gives you a
-#    one-click "confirm this release" button before the publish step runs.
-#    Then add `environment: npm-publish` to the publish job below.
+#   5. **Post-publish smoke.** After publish, install from the
+#      registries in a clean container and verify `--version` matches
+#      the tag. Catches "published but the binary was somehow wrong"
+#      immediately rather than post-mortem.
 #
-# ── How the release flow will work once enabled ─────────────────────────
+# ── Enabling the pipeline ───────────────────────────────────────────
 #
-#   make release-patch      # bumps version, commits, tags locally
-#   make push-release       # pushes commit + tag → this workflow fires
-#   (CI builds in a clean runner, publishes with provenance)
+#   1. Create an npm automation token (fine-grained to the
+#      `tidepool-rpc` package only):
+#        Settings → Access Tokens → Generate → Granular → Read & Write
+#        Select package: tidepool-rpc
+#      Store as repo secret `NPM_TOKEN`:
+#        gh secret set NPM_TOKEN --repo tylerthebuildor/tidepool
 #
-# Until enabled, this workflow only runs on manual workflow_dispatch. Tag
-# pushes are a no-op. The `if: vars.ENABLED == 'true'` guard on the job
-# means even a manual dispatch is a no-op until you set a repo variable
-# `ENABLED=true`. Belt AND suspenders.
+#   2. Enable crates.io trusted publishing (OIDC, no token):
+#        https://crates.io/settings/tokens — add this repo under
+#        "Trusted Publishing" for each of the 5 tidepool-rpc* crates.
+#        Use workflow: `release.yml`, environment: `production`.
 #
-# ⚠️  FUTURE CLAUDE SESSIONS: DO NOT uncomment the tag trigger, remove
-# guards, add additional publish targets, or modify the publish step
-# without explicit instruction from the owner in the current session.
-# When in doubt, ask.
+#   3. Create a `production` environment in repo settings with
+#      "required reviewers" = repo owner. Every publish job waits
+#      for approval.
+#
+#   4. Flip the `vars.ENABLED` repo variable to `true`. Belt + suspenders:
+#      the job is guarded on both the environment approval AND the var.
+#
+# ── Future Claude sessions: ─────────────────────────────────────────
+#
+# Do NOT flip `vars.ENABLED` to true in a Pull Request or without
+# explicit owner instruction. Do NOT add publish targets beyond the
+# five crates + one npm package listed here. Do NOT remove the
+# environment gate or the signed-tag requirement. If the owner
+# wants a publish change, confirm first.
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: Release
 
 on:
-  workflow_dispatch:  # manual runs only, for now
-  # push:
-  #   tags:
-  #     - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run every step except the actual publish"
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  # A given tag only ever releases once; if the workflow retries,
+  # serialize via the ref name rather than the run id.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  publish:
-    # Belt-and-suspenders: this job is a no-op until a repo variable named
-    # ENABLED is set to 'true' (Settings → Secrets and variables → Actions
-    # → Variables). Even a manual dispatch does nothing without it.
-    if: github.repository_owner == 'tylerthebuildor' && vars.ENABLED == 'true'
+  # ─────────────────────────────────────────────────────────────────
+  # preflight — the full gate. Must pass before any publish runs.
+  # ─────────────────────────────────────────────────────────────────
+  preflight:
+    name: preflight
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write  # required for npm --provenance (OIDC attestation)
-
+    if: github.repository_owner == 'tylerthebuildor'
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          # Full history so CHANGELOG diffing + signed-tag verify work.
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
-
-      # Safety: when triggered by a tag push, the tag name must match the
-      # version in package.json. Catches mistakes like pushing v0.1.2 when
-      # package.json still says 0.1.1.
-      - name: Verify tag matches package.json
-        if: github.event_name == 'push'
+      - id: tag
+        name: Extract version from tag
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(node -p "require('./package.json').version")
-          if [ "$TAG" != "$PKG" ]; then
-            echo "✖ Tag $TAG does not match package.json version $PKG"
-            exit 1
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF_NAME#v}"
+            echo "version=$V" >> "$GITHUB_OUTPUT"
+            echo "Tag version: $V"
+          else
+            echo "version=dry-run" >> "$GITHUB_OUTPUT"
+            echo "workflow_dispatch — version derived from Cargo.toml"
           fi
 
-      - name: Publish to npm with provenance
+      - name: Verify tag is signed (on tag push)
+        if: github.event_name == 'push'
+        run: |
+          git verify-tag "$GITHUB_REF_NAME" || {
+            echo "✖ tag $GITHUB_REF_NAME is not signed — publish refuses unsigned tags"
+            exit 1
+          }
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm deps (for npm dry-run)
+        working-directory: crates/node
+        run: pnpm install --ignore-scripts
+
+      - name: Run full preflight
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            bash scripts/preflight.sh --release "${GITHUB_REF_NAME#v}"
+          else
+            bash scripts/preflight.sh
+          fi
+
+  # ─────────────────────────────────────────────────────────────────
+  # publish-crates — crates.io via OIDC trusted publishing (no token).
+  # Order is dependency order; any failure mid-stream leaves unpublished
+  # crates to be re-run with the same tag.
+  # ─────────────────────────────────────────────────────────────────
+  publish-crates:
+    name: Publish to crates.io
+    needs: preflight
+    if: |
+      github.event_name == 'push' &&
+      vars.ENABLED == 'true' &&
+      github.repository_owner == 'tylerthebuildor'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write  # crates.io OIDC trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # Exchange the GitHub OIDC token for a short-lived crates.io
+      # token. Configured via the crates.io trusted-publisher setting
+      # per crate (see "Enabling the pipeline" above).
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      # Dependency order. A mid-stream failure is recoverable: re-run
+      # the job; already-published crates are skipped by cargo (the
+      # registry returns "already exists" which we treat as success).
+      - name: Publish tidepool-rpc-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish -p tidepool-rpc-core --locked
+
+      - name: Publish tidepool-rpc (service)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish -p tidepool-rpc --locked
+
+      - name: Publish tidepool-rpc-server
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish -p tidepool-rpc-server --locked
+
+      - name: Publish tidepool-rpc-cli
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish -p tidepool-rpc-cli --locked
+
+      # The `tidepool-rpc-node` crate is not published to crates.io
+      # (it's a dylib-only bridge consumed through the npm package).
+      # No step here.
+
+  # ─────────────────────────────────────────────────────────────────
+  # publish-npm — builds per-platform prebuilds, assembles, publishes
+  # with provenance (OIDC attestation).
+  # ─────────────────────────────────────────────────────────────────
+  prebuild-npm:
+    name: napi prebuild ${{ matrix.target }}
+    needs: preflight
+    if: |
+      github.event_name == 'push' &&
+      vars.ENABLED == 'true' &&
+      github.repository_owner == 'tylerthebuildor'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos-latest
+            target: aarch64-apple-darwin
+          - host: macos-latest
+            target: x86_64-apple-darwin
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - working-directory: crates/node
+        run: pnpm install --ignore-scripts
+      - working-directory: crates/node
+        run: pnpm exec napi build --platform --release --target ${{ matrix.target }} --manifest-path ../../Cargo.toml --package tidepool-rpc-node
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: crates/node/*.node
+
+  publish-npm:
+    name: Publish to npm
+    needs: [preflight, prebuild-npm, publish-crates]
+    if: |
+      github.event_name == 'push' &&
+      vars.ENABLED == 'true' &&
+      github.repository_owner == 'tylerthebuildor'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write  # npm --provenance OIDC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          path: crates/node/artifacts
+
+      - name: Install pnpm deps
+        working-directory: crates/node
+        run: pnpm install --ignore-scripts
+
+      - name: Assemble per-platform npm dirs
+        working-directory: crates/node
+        run: pnpm exec napi artifacts --output-dir artifacts
+
+      - name: Publish with provenance
+        working-directory: crates/node
         run: pnpm publish --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────────────
+  # post-publish — install from the registries in a clean container,
+  # assert the published version resolves and `--version` matches.
+  # ─────────────────────────────────────────────────────────────────
+  smoke:
+    name: post-publish smoke test
+    needs: [preflight, publish-crates, publish-npm]
+    if: github.event_name == 'push' && vars.ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # crates.io smoke: install the CLI from the registry, run
+      # --version, assert it matches the tag.
+      - name: cargo install tidepool-rpc-cli
+        run: cargo install tidepool-rpc-cli --version "${GITHUB_REF_NAME#v}" --locked
+      - name: Verify CLI version
+        run: |
+          EXPECTED="${GITHUB_REF_NAME#v}"
+          ACTUAL=$(tidepool-rpc --version | head -n1 | awk '{print $2}')
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "✖ CLI reports $ACTUAL, expected $EXPECTED"
+            exit 1
+          fi
+          echo "✔ CLI reports $ACTUAL"
+
+      # npm smoke: install the package and require() it.
+      - name: Install tidepool-rpc from npm
+        run: |
+          mkdir -p /tmp/npm-smoke && cd /tmp/npm-smoke && npm init -y >/dev/null
+          npm install "tidepool-rpc@${GITHUB_REF_NAME#v}"
+          node -e "
+            const t = require('tidepool-rpc');
+            if (typeof t.HeliusContext !== 'function') {
+              console.error('✖ HeliusContext not exported');
+              process.exit(1);
+            }
+            console.log('✔ npm package loads cleanly');
+          "

@@ -32,7 +32,7 @@ surfpool = { version = "any", url = "https://github.com/txtx/surfpool", note = "
 # helius-sdk is the JS consumer we care most about interop with.
 # When we bump, we verify that the current helius-sdk release resolves
 # against our wire shapes via the drift fixtures.
-"helius-sdk" = { version = "^1.6", url = "https://github.com/helius-xyz/helius-sdk", note = "REST base-URL override lands in a PR we assume merges" }
+"helius-sdk" = { version = "^1.6", url = "https://github.com/helius-labs/helius-sdk", note = "REST base-URL override lands in a PR we assume merges" }
 
 # Solana client version we test our passthrough against. Not a hard
 # constraint — passthrough is transport-level — but a useful stamp

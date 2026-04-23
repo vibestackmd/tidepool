@@ -8,7 +8,7 @@
         dev run \
         node-build node-test \
         example-rust example-msw \
-        version release-patch release-minor release-major push-release \
+        version bump preflight release-dry-run tag-release push-release _require-clean \
         clean help
 
 # ── Setup ────────────────────────────────────────────────
@@ -78,22 +78,30 @@ example-msw: node-build ## Run the MSW + vitest integration example
 	cd examples/msw-integration && pnpm install --ignore-scripts && pnpm test
 
 # ── Release ──────────────────────────────────────────────
-# Local targets bump, commit, and tag — they never publish.
-# Publishing is deliberately a manual GitHub Actions dispatch;
-# see .github/workflows/node-prebuild.yml (dormant until a
-# maintainer enables it).
+# Local targets bump + preflight; publishing is done by CI after a
+# signed tag push. See docs/release.md for the full pipeline.
 
-version: ## Print current workspace version
-	@grep -m1 '^version' crates/cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/'
+version: ## Print the single-source workspace version
+	@bash scripts/lib.sh; \
+	python3 -c "import tomllib; print(tomllib.load(open('Cargo.toml','rb'))['workspace']['package']['version'])"
 
-release-patch: _require-clean ## Bump patch version across the workspace + tag
-	@$(MAKE) _bump BUMP=patch
+bump: _require-clean ## Bump version across workspace + npm (make bump V=1.0.0)
+	@if [ -z "$(V)" ]; then echo "usage: make bump V=1.2.3"; exit 2; fi
+	@bash scripts/bump-version.sh "$(V)"
 
-release-minor: _require-clean ## Bump minor version across the workspace + tag
-	@$(MAKE) _bump BUMP=minor
+preflight: ## Run the full release preflight (no release pinning)
+	@bash scripts/preflight.sh
 
-release-major: _require-clean ## Bump major version across the workspace + tag
-	@$(MAKE) _bump BUMP=major
+release-dry-run: _require-clean ## Run preflight for a target version (make release-dry-run V=1.0.0)
+	@if [ -z "$(V)" ]; then echo "usage: make release-dry-run V=1.2.3"; exit 2; fi
+	@bash scripts/preflight.sh --release "$(V)"
+
+tag-release: _require-clean ## Create a signed tag for the current workspace version
+	@V=$$( $(MAKE) -s version ); \
+	if [ -z "$$V" ]; then echo "✖ workspace version unreadable"; exit 1; fi; \
+	echo "Creating signed tag v$$V (requires GPG/SSH signing config)"; \
+	git tag -s "v$$V" -m "Release v$$V"; \
+	echo "Push with: git push origin v$$V"
 
 _require-clean:
 	@if [ -n "$$(git status --porcelain)" ]; then \
@@ -101,21 +109,12 @@ _require-clean:
 		exit 1; \
 	fi
 
-_bump:
-	@echo "Bumping ${BUMP} across crates/*/Cargo.toml + crates/node/package.json"
-	@# Delegate to cargo-release if available, else fall back to a manual bump
-	@if command -v cargo-release >/dev/null; then \
-		cargo release $(BUMP) --workspace --no-publish --no-push --execute; \
-	else \
-		echo "cargo-release not installed. Install via: cargo install cargo-release"; \
-		exit 1; \
-	fi
-
-push-release: ## Push release commit + tags → CI can then publish
+push-release: ## Push main + tags → CI release workflow fires on the tag
 	git push origin HEAD
 	git push origin --tags
 	@echo ""
-	@echo "  Pushed. Publishing is gated on manual workflow_dispatch."
+	@echo "  Tag pushed. Release workflow queued — confirm the"
+	@echo "  'production' environment approval to actually publish."
 
 # ── Cleanup ──────────────────────────────────────────────
 
