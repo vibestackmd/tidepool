@@ -33,6 +33,7 @@
 //! the fields we can reliably produce.
 
 pub mod classify;
+pub mod enrich;
 pub mod events;
 pub mod fetch;
 pub mod parse;
@@ -40,11 +41,12 @@ pub mod transfers;
 pub mod types;
 
 pub use classify::{classify, EnhancedClass};
+pub use enrich::enrich_token_standards;
 pub use events::derive_nft_event;
 pub use fetch::{get_transactions, get_transactions_by_address, TransactionsByAddressOptions};
 pub use parse::{parse_enhanced_tx, signatures_matching};
 pub use transfers::{extract_native_transfers, extract_token_transfers};
 pub use types::{
-    EnhancedEvents, EnhancedInstruction, EnhancedNativeTransfer, EnhancedTokenTransfer,
-    EnhancedTransaction, NftEvent, NftEventMint,
+    AccountData, EnhancedEvents, EnhancedInstruction, EnhancedNativeTransfer,
+    EnhancedTokenTransfer, EnhancedTransaction, NftEvent, NftEventMint,
 };

@@ -20,7 +20,8 @@ use tidepool_rpc::das::{
     get_nft_editions, get_token_accounts, search_assets, AccountDecoder, TokenAccountsFilter,
 };
 use tidepool_rpc::enhanced::{
-    get_transactions, get_transactions_by_address, TransactionsByAddressOptions,
+    enrich_token_standards, get_transactions, get_transactions_by_address,
+    TransactionsByAddressOptions,
 };
 use tidepool_rpc::priority_fee::{compute_levels, percentile_at, PriorityLevel};
 use tidepool_rpc::upstream::UpstreamClient;
@@ -719,7 +720,11 @@ where
             "getTransactions requires a non-empty `signatures` array",
         );
     }
-    let out = get_transactions(&*ctx.upstream, &sigs).await;
+    let mut out = get_transactions(&*ctx.upstream, &sigs).await;
+    // Opportunistic enrichment: if a transfer's mint is already in
+    // the DAS cache, we know its tokenStandard without another
+    // upstream hop. Misses stay None (skip-on-serialize).
+    enrich_token_standards(&*ctx.cache, &mut out).await;
     ok(&req.id, serde_json::to_value(out).unwrap_or(Value::Null))
 }
 
@@ -775,7 +780,8 @@ where
             })
             .unwrap_or_default(),
     };
-    let out = get_transactions_by_address(&*ctx.upstream, &address, &options).await;
+    let mut out = get_transactions_by_address(&*ctx.upstream, &address, &options).await;
+    enrich_token_standards(&*ctx.cache, &mut out).await;
     ok(&req.id, serde_json::to_value(out).unwrap_or(Value::Null))
 }
 
