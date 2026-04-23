@@ -4,6 +4,7 @@
 
 use std::sync::Arc;
 
+use tidepool_core::Creator;
 use tidepool_rpc::cache::{CacheStore, MemoryCache};
 use tidepool_rpc::cnft::{
     apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata,
@@ -15,7 +16,6 @@ use tidepool_rpc::das::{
 };
 use tidepool_rpc::upstream::FixtureUpstream;
 use tidepool_rpc::verify_proof;
-use tidepool_core::Creator;
 
 const TREE: [u8; 32] = [0x11; 32];
 

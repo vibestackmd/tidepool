@@ -658,12 +658,12 @@ async fn tidepool_tree_snapshot_export_and_load_round_trip() {
     // getSignaturesForAddress + getTransaction fixtures — heavier than
     // we need here). Then dump via RPC, load into a fresh instance,
     // confirm state survived.
+    use tidepool_core::Creator;
     use tidepool_rpc::cnft::snapshot::dump_tree;
     use tidepool_rpc::cnft::SnapshotBlob;
     use tidepool_rpc::cnft::{
         apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata,
     };
-    use tidepool_core::Creator;
 
     let tree: [u8; 32] = [0x33; 32];
     let src = MemoryCnftStore::new();
@@ -781,11 +781,11 @@ async fn snapshot_flag_preloads_tree_before_serving() {
     // tidepool with --snapshot pointing at it. After boot, getAssetProof
     // should resolve against the preloaded tree without us ever calling
     // tidepool_loadTreeSnapshot.
+    use tidepool_core::Creator;
     use tidepool_rpc::cnft::snapshot::dump_tree;
     use tidepool_rpc::cnft::{
         apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata, SnapshotBlob,
     };
-    use tidepool_core::Creator;
     use tidepool_server::{run, ServerConfig};
 
     let tree: [u8; 32] = [0x55; 32];

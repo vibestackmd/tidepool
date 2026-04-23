@@ -11,11 +11,11 @@
 //! cargo run -p tidepool-example-rust-integration
 //! ```
 
+use tidepool_core::Creator;
 use tidepool_rpc::cnft::{
     apply::derive_asset_id, apply_event, CnftEvent, CnftStore, MemoryCnftStore, MintMetadata,
 };
 use tidepool_rpc::das::{get_asset, get_asset_proof};
-use tidepool_core::Creator;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
