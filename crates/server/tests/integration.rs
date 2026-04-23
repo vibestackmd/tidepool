@@ -82,7 +82,7 @@ async fn spawn_tidepool(upstream_url: String) -> String {
 }
 
 async fn spawn_tidepool_with_state(upstream_url: String, db: Option<std::path::PathBuf>) -> String {
-    use tidepool_rpc_server::{run, ServerConfig};
+    use tidepool_server::{run, ServerConfig};
     // Pick two free ports atomically. Production derives ws as
     // port+1; tests can't rely on that because parallel runs pick
     // adjacent HTTP ports and collide on each other's WS. So the
@@ -156,7 +156,7 @@ async fn tidepool_info_native_dispatch() {
         .unwrap();
 
     assert_eq!(resp["id"], 1);
-    assert_eq!(resp["result"]["name"], "tidepool-rpc");
+    assert_eq!(resp["result"]["name"], "tidepool");
     let methods = resp["result"]["methods"].as_array().expect("methods array");
     assert!(methods.iter().any(|m| m["method"] == "getAsset"));
     assert!(methods.iter().any(|m| m["method"] == "tidepool_indexTree"));
@@ -663,7 +663,7 @@ async fn tidepool_tree_snapshot_export_and_load_round_trip() {
     use tidepool_rpc::cnft::{
         apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata,
     };
-    use tidepool_rpc_core::Creator;
+    use tidepool_core::Creator;
 
     let tree: [u8; 32] = [0x33; 32];
     let src = MemoryCnftStore::new();
@@ -785,8 +785,8 @@ async fn snapshot_flag_preloads_tree_before_serving() {
     use tidepool_rpc::cnft::{
         apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata, SnapshotBlob,
     };
-    use tidepool_rpc_core::Creator;
-    use tidepool_rpc_server::{run, ServerConfig};
+    use tidepool_core::Creator;
+    use tidepool_server::{run, ServerConfig};
 
     let tree: [u8; 32] = [0x55; 32];
     let seed = MemoryCnftStore::new();

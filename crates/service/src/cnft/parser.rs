@@ -28,7 +28,7 @@ use mpl_bubblegum::instructions::{
 };
 use mpl_bubblegum::types::{MetadataArgs, MetadataArgsV2, UpdateArgs};
 use thiserror::Error;
-use tidepool_rpc_core::Creator;
+use tidepool_core::Creator;
 
 use super::leaf_event::LeafSchemaEventDecoded;
 use super::types::{CnftEvent, MintMetadata, NoopOverride};

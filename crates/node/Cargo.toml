@@ -1,7 +1,7 @@
 [package]
-name = "tidepool-rpc-node"
+name = "tidepool-node"
 version.workspace = true
-description = "Node.js (napi-rs) bridge for the Tidepool Rust service layer. Consumed as the `tidepool-rpc` npm package."
+description = "Node.js (napi-rs) bridge for the Tidepool Rust service layer. Consumed as the `@tidepool/rpc` npm package."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -20,7 +20,7 @@ workspace = true
 [dependencies]
 # Service layer + core.
 tidepool-rpc = { version = "0.1", path = "../service" }
-tidepool-rpc-server = { version = "0.1", path = "../server" }
+tidepool-server = { version = "0.1", path = "../server" }
 
 # napi-rs runtime. `napi4` pins the Node-API version — 4 gives us
 # access to async/Promise conversion and typed arrays, which is

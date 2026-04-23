@@ -15,7 +15,7 @@ cd examples/msw-integration && pnpm install && pnpm test
 Rust consumer composing the service layer directly — seed a Bubblegum tree, mint two cNFTs, pull a DAS proof. No HTTP, no CLI, just `use tidepool_rpc::...` async fns.
 
 ```bash
-cargo run -p tidepool-rpc-example-rust-integration
+cargo run -p tidepool-example-rust-integration
 ```
 
 ## 3. Standalone CLI proxy
@@ -27,7 +27,7 @@ Not a separate example — just the CLI itself:
 surfpool start
 
 # Terminal 2: start Tidepool pointing at it
-cargo run -p tidepool-rpc-cli -- start \
+cargo run -p tidepool-cli -- start \
   --port 8897 \
   --upstream http://127.0.0.1:8899 \
   --index-tree <your-bubblegum-tree>
@@ -38,7 +38,7 @@ curl -X POST http://localhost:8897 \
   -d '{"jsonrpc":"2.0","id":1,"method":"surfpoolHeliusInfo","params":{}}'
 ```
 
-Post-1.0, this becomes `npx tidepool-rpc start ...` via the published CLI binary.
+Post-1.0, this becomes `cargo install tidepool-cli` then `tidepool start ...` via the published CLI binary.
 
 ## 4. Compose with `surfpool-sdk-node`
 
@@ -46,7 +46,7 @@ Pattern for in-process integration tests that embed Surfpool:
 
 ```ts
 import { Surfnet } from "surfpool-sdk";
-import { HeliusContext, handleJsonRpcBody } from "tidepool-rpc";
+import { HeliusContext, handleJsonRpcBody } from "@tidepool/rpc";
 
 const surfnet = Surfnet.start();
 const ctx = new HeliusContext({ upstreamUrl: surfnet.rpcUrl });

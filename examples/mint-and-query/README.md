@@ -20,7 +20,7 @@ You need Surfpool and tidepool running. From the repo root:
 surfpool start
 
 # In another terminal, start the proxy
-tidepool-rpc start --upstream http://127.0.0.1:8899
+tidepool start --upstream http://127.0.0.1:8899
 ```
 
 Then run the example:

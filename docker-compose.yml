@@ -1,6 +1,6 @@
 # tidepool — runs Surfpool in Docker for local Solana development.
 #
-# The proxy itself runs on the host (via `tidepool-rpc start`) and talks
+# The proxy itself runs on the host (via `tidepool start`) and talks
 # to this Surfpool container on localhost. That setup keeps iteration
 # fast — no rebuild loop inside Docker when you edit proxy code.
 #

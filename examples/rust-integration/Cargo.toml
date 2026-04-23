@@ -1,5 +1,5 @@
 [package]
-name = "tidepool-rpc-example-rust-integration"
+name = "tidepool-example-rust-integration"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -14,7 +14,7 @@ path = "src/main.rs"
 # Path deps here since this example lives in the workspace and tracks
 # whichever version the workspace is currently developing.
 tidepool-rpc = { path = "../../crates/service" }
-tidepool-rpc-core = { path = "../../crates/core" }
+tidepool-core = { path = "../../crates/core" }
 
 tokio = { version = "1", features = ["full"] }
 serde_json = "1"

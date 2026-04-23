@@ -1,9 +1,9 @@
-//! `tidepool-rpc` binary. Thin wrapper around `tidepool_rpc_server::run`.
+//! `tidepool` binary. Thin wrapper around `tidepool_server::run`.
 //!
 //! Usage:
 //!
 //! ```text
-//! tidepool-rpc start \
+//! tidepool start \
 //!   --port 8897 \
 //!   --upstream http://127.0.0.1:8899 \
 //!   --upstream-ws ws://127.0.0.1:8900 \
@@ -21,7 +21,7 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use tidepool_rpc::compatibility::compatibility;
-use tidepool_rpc_server::{run, ServerConfig};
+use tidepool_server::{run, ServerConfig};
 use tracing_subscriber::EnvFilter;
 
 /// Build the `--version` / `-V` output. Combines `CARGO_PKG_VERSION`
@@ -47,7 +47,7 @@ fn long_version() -> &'static str {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "tidepool-rpc",
+    name = "tidepool",
     version = env!("CARGO_PKG_VERSION"),
     long_version = long_version(),
     about = "Tidepool — Helius-compatible local dev environment, built on Surfpool",
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn cli_parses_start_with_defaults() {
-        let cli = Cli::try_parse_from(["tidepool-rpc", "start"]).expect("parse");
+        let cli = Cli::try_parse_from(["tidepool", "start"]).expect("parse");
         let Command::Start(args) = cli.command;
         assert_eq!(args.port, 8897);
         assert_eq!(args.upstream, "http://127.0.0.1:8899");
@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn cli_parses_repeated_index_tree_flags() {
         let cli = Cli::try_parse_from([
-            "tidepool-rpc",
+            "tidepool",
             "start",
             "--index-tree",
             "AAA",
@@ -208,7 +208,7 @@ mod tests {
     #[test]
     fn cli_parses_all_long_flags() {
         let cli = Cli::try_parse_from([
-            "tidepool-rpc",
+            "tidepool",
             "start",
             "--port",
             "9000",

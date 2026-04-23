@@ -1,5 +1,5 @@
 [package]
-name = "tidepool-rpc-core"
+name = "tidepool-core"
 version.workspace = true
 description = "Pure primitives for Tidepool: keccak merkle math, LeafSchemaV1 hashing, compressed-NFT proof computation. Zero Solana or I/O dependencies."
 edition.workspace = true

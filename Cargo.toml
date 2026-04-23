@@ -18,8 +18,8 @@ members = [
 resolver = "2"
 
 [workspace.package]
-# Single source of truth for every tidepool-rpc* crate + the
-# tidepool-rpc npm package. Every publishable unit inherits this via
+# Single source of truth for every tidepool-* crate + the
+# @tidepool/rpc npm package. Every publishable unit inherits this via
 # `version.workspace = true`. The preflight script
 # (`scripts/verify-version-sync.sh`) asserts that the npm package's
 # version matches this value; `make bump` updates everything in one

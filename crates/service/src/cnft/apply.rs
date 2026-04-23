@@ -13,7 +13,7 @@
 use mpl_bubblegum::ID as BUBBLEGUM_PROGRAM_PUBKEY;
 use solana_program::pubkey::Pubkey;
 use thiserror::Error;
-use tidepool_rpc_core::{hash_creators, hash_leaf_v1, hash_metadata_args_bytes, LeafSchemaV1};
+use tidepool_core::{hash_creators, hash_leaf_v1, hash_metadata_args_bytes, LeafSchemaV1};
 
 use super::store::{CnftStore, StoreError};
 use super::types::{CnftEvent, LeafRecord, MintMetadata, NoopOverride, TreeInfo};

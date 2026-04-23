@@ -81,7 +81,7 @@ async fn spawn_ws(upstream_url: String) -> u16 {
     let port = probe.local_addr().unwrap().port();
     drop(probe);
     tokio::spawn(async move {
-        tidepool_rpc_server::run_ws(port, upstream_url, Duration::from_secs(5))
+        tidepool_server::run_ws(port, upstream_url, Duration::from_secs(5))
             .await
             .unwrap();
     });

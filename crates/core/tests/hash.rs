@@ -3,7 +3,7 @@
 //! so a broken keccak impl surfaces immediately. Everything else
 //! checks internal consistency + field sensitivity.
 
-use tidepool_rpc_core::{
+use tidepool_core::{
     empty_node, hash_creators, hash_leaf_v1, hash_pair, keccak256, Creator, LeafSchemaV1,
 };
 

@@ -97,7 +97,7 @@ jobs:
         run: pnpm install --ignore-scripts
       - name: Build addon
         working-directory: crates/node
-        run: pnpm exec napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-rpc-node
+        run: pnpm exec napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-node
       - name: Run JS smoke tests against built addon
         working-directory: crates/node
         run: node --test __test__

@@ -293,7 +293,7 @@ fn hex_of(bytes: &[u8; 32]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tidepool_rpc_core::Creator;
+    use tidepool_core::Creator;
 
     fn backend() -> SqliteBackend {
         SqliteBackend::open_in_memory().unwrap()

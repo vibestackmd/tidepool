@@ -1181,7 +1181,7 @@ where
     ok(
         &req.id,
         json!({
-            "name": "tidepool-rpc",
+            "name": "tidepool",
             "version": env!("CARGO_PKG_VERSION"),
             "methods": methods,
             "summary": summary,

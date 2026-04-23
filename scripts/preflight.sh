@@ -110,7 +110,7 @@ step "cargo publish --dry-run (dep order)"
 # Dep order: core → service → server → cli → node. Every crate must
 # pass `--dry-run` individually — catches missing README/license/keyword
 # errors that only surface at publish time otherwise.
-for crate in tidepool-rpc-core tidepool-rpc tidepool-rpc-server tidepool-rpc-cli tidepool-rpc-node; do
+for crate in tidepool-core tidepool-rpc tidepool-server tidepool-cli tidepool-node; do
   printf "  %s…\n" "$crate"
   cargo publish -p "$crate" --dry-run --allow-dirty 2>&1 | tail -3
 done

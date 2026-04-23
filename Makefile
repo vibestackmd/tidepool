@@ -55,7 +55,7 @@ fmt: ## rustfmt everything
 check: lint test ## Lint + test (local pre-push gate)
 
 dev: ## Run the CLI against a local Surfpool
-	cargo run -p tidepool-rpc-cli -- start \
+	cargo run -p tidepool-cli -- start \
 		--port 8897 \
 		--upstream http://127.0.0.1:8899
 
@@ -72,7 +72,7 @@ node-test: node-build ## Run the JS smoke tests against the built addon
 # ── Examples ─────────────────────────────────────────────
 
 example-rust: ## Run the Rust library integration example
-	cargo run -p tidepool-rpc-example-rust-integration
+	cargo run -p tidepool-example-rust-integration
 
 example-msw: node-build ## Run the MSW + vitest integration example
 	cd examples/msw-integration && pnpm install --ignore-scripts && pnpm test

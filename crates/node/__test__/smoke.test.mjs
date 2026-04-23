@@ -37,7 +37,7 @@ test("handleJsonRpcBody dispatches tidepool_info and returns JSON", async () => 
   assert.ok(response, "should return a response string");
   const parsed = JSON.parse(response);
   assert.equal(parsed.id, 1);
-  assert.equal(parsed.result.name, "tidepool-rpc");
+  assert.equal(parsed.result.name, "tidepool");
   assert.ok(Array.isArray(parsed.result.methods));
 });
 

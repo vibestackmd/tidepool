@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use thiserror::Error;
-use tidepool_rpc_core::{compute_proof, ProofError, TreeState};
+use tidepool_core::{compute_proof, ProofError, TreeState};
 
 use crate::cache::{CacheError, CacheStore, SearchFilter};
 use crate::cnft::{CnftStore, LeafRecord};

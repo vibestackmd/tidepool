@@ -11,7 +11,7 @@ Useful when you're writing:
 ## Run
 
 ```bash
-cargo run -p tidepool-rpc-example-rust-integration
+cargo run -p tidepool-example-rust-integration
 ```
 
 Expected output:
@@ -46,4 +46,4 @@ use tidepool_rpc::cnft::{
 use tidepool_rpc::das::{get_asset, get_asset_proof};
 ```
 
-That's the headline crate surface. Drop in a real `UpstreamClient` (we ship `HttpUpstream` in `tidepool-rpc-server`, or bring your own) to populate the store from a live RPC; drop in a custom `CnftStore` impl to back it with SQLite or whatever you want.
+That's the headline crate surface. Drop in a real `UpstreamClient` (we ship `HttpUpstream` in `tidepool-server`, or bring your own) to populate the store from a live RPC; drop in a custom `CnftStore` impl to back it with SQLite or whatever you want.

@@ -179,27 +179,27 @@ jobs:
       # Dependency order. A mid-stream failure is recoverable: re-run
       # the job; already-published crates are skipped by cargo (the
       # registry returns "already exists" which we treat as success).
-      - name: Publish tidepool-rpc-core
+      - name: Publish tidepool-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo publish -p tidepool-rpc-core --locked
+        run: cargo publish -p tidepool-core --locked
 
       - name: Publish tidepool-rpc (service)
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish -p tidepool-rpc --locked
 
-      - name: Publish tidepool-rpc-server
+      - name: Publish tidepool-server
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo publish -p tidepool-rpc-server --locked
+        run: cargo publish -p tidepool-server --locked
 
-      - name: Publish tidepool-rpc-cli
+      - name: Publish tidepool-cli
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo publish -p tidepool-rpc-cli --locked
+        run: cargo publish -p tidepool-cli --locked
 
-      # The `tidepool-rpc-node` crate is not published to crates.io
+      # The `tidepool-node` crate is not published to crates.io
       # (it's a dylib-only bridge consumed through the npm package).
       # No step here.
 
@@ -244,7 +244,7 @@ jobs:
       - working-directory: crates/node
         run: pnpm install --ignore-scripts
       - working-directory: crates/node
-        run: pnpm exec napi build --platform --release --target ${{ matrix.target }} --manifest-path ../../Cargo.toml --package tidepool-rpc-node
+        run: pnpm exec napi build --platform --release --target ${{ matrix.target }} --manifest-path ../../Cargo.toml --package tidepool-node
       - uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.target }}
@@ -307,8 +307,8 @@ jobs:
 
       # crates.io smoke: install the CLI from the registry, run
       # --version, assert it matches the tag.
-      - name: cargo install tidepool-rpc-cli
-        run: cargo install tidepool-rpc-cli --version "${GITHUB_REF_NAME#v}" --locked
+      - name: cargo install tidepool-cli
+        run: cargo install tidepool-cli --version "${GITHUB_REF_NAME#v}" --locked
       - name: Verify CLI version
         run: |
           EXPECTED="${GITHUB_REF_NAME#v}"

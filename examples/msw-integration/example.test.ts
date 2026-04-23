@@ -42,7 +42,7 @@ describe("Tidepool + MSW", () => {
     };
 
     expect(response.id).toBe(1);
-    expect(response.result.name).toBe("tidepool-rpc");
+    expect(response.result.name).toBe("tidepool");
     expect(response.result.methods.length).toBeGreaterThan(5);
     expect(response.result.methods.some((m) => m.method === "getAssetProof")).toBe(true);
   });

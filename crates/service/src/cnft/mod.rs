@@ -1,7 +1,7 @@
 //! Compressed-NFT service: event-sourced Bubblegum tree replay,
 //! pluggable state store, merkle proof responses.
 //!
-//! Pure merkle math lives in `tidepool-rpc-core`; this module owns the
+//! Pure merkle math lives in `tidepool-core`; this module owns the
 //! Bubblegum-specific state machine, the event types, and the
 //! persistence contracts.
 

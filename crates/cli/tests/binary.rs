@@ -8,8 +8,8 @@ use std::time::Duration;
 
 fn binary_path() -> std::path::PathBuf {
     // Cargo sets CARGO_BIN_EXE_<bin_name> for every binary in the
-    // crate under test. `tidepool-rpc` → CARGO_BIN_EXE_tidepool-rpc.
-    env!("CARGO_BIN_EXE_tidepool-rpc").into()
+    // crate under test. `tidepool` → CARGO_BIN_EXE_tidepool.
+    env!("CARGO_BIN_EXE_tidepool").into()
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn version_runs() {
         .expect("spawn");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("tidepool-rpc"));
+    assert!(stdout.contains("tidepool"));
 }
 
 #[tokio::test]
@@ -105,5 +105,5 @@ async fn start_binary_serves_tidepool_info() {
     let _ = child.wait();
 
     assert_eq!(resp["id"], 1);
-    assert_eq!(resp["result"]["name"], "tidepool-rpc");
+    assert_eq!(resp["result"]["name"], "tidepool");
 }

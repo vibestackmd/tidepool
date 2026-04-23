@@ -5,8 +5,8 @@ All notable changes to Tidepool are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Every release covers all five `tidepool-rpc*` crates on crates.io and
-the `tidepool-rpc` npm package simultaneously — lockstep versioning so
+Every release covers all five `tidepool-*` crates on crates.io and
+the `@tidepool/rpc` npm package simultaneously — lockstep versioning so
 there's no "which version is compatible with which?" drift. Upstream
 pins for each release are in `compatibility.toml`.
 
@@ -17,7 +17,7 @@ refuses to publish a version that doesn't have an entry here.
 
 ### Added
 - Single-source versioning across the workspace — `[workspace.package].version`
-  is inherited by every `tidepool-rpc*` crate.
+  is inherited by every `tidepool-*` crate.
 - `compatibility.toml` documents the exact Surfpool / helius-sdk / Solana /
   Rust / Node versions this release was tested against. Surfaced via
   `tidepool_info.result.compatibility` and inline in the CLI's `--version`

@@ -8,7 +8,7 @@ use tidepool_rpc::cnft::{
     NoopOverride,
 };
 use tidepool_rpc::{compute_proof, verify_proof, TreeState};
-use tidepool_rpc_core::Creator;
+use tidepool_core::Creator;
 
 const TREE: [u8; 32] = [0x11; 32];
 

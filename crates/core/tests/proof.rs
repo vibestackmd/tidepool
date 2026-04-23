@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use tidepool_rpc_core::{
+use tidepool_core::{
     compute_proof, empty_node, hash_pair, verify_proof, MerkleProof, ProofError, TreeState,
 };
 

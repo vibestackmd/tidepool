@@ -1,5 +1,5 @@
 [package]
-name = "tidepool-rpc-server"
+name = "tidepool-server"
 version.workspace = true
 description = "Tidepool HTTP + WebSocket JSON-RPC server. Wraps the service layer (cNFT indexing, DAS handlers, passthrough proxy) in an axum front-end."
 edition.workspace = true
@@ -17,7 +17,7 @@ workspace = true
 [dependencies]
 # Service layer + core primitives.
 tidepool-rpc = { version = "0.1", path = "../service" }
-tidepool-rpc-core = { version = "0.1", path = "../core" }
+tidepool-core = { version = "0.1", path = "../core" }
 
 # Web server.
 axum = { version = "0.8", features = ["ws"] }

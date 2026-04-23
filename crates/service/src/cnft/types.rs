@@ -14,7 +14,7 @@
 //! constructed without one.
 
 use serde::{Deserialize, Serialize};
-use tidepool_rpc_core::Creator;
+use tidepool_core::Creator;
 
 /// Authoritative leaf state from a LeafSchemaEvent. Whenever present,
 /// `apply_event` uses these values directly instead of reconstructing

@@ -6,7 +6,7 @@
 #   - crates/node/package.json
 #   - crates/node/npm/*/package.json if they exist (napi per-platform)
 #
-# Then runs `cargo update -p <name>` on every tidepool-rpc* crate so
+# Then runs `cargo update -p <name>` on every tidepool-* crate so
 # Cargo.lock reflects the new version, preventing CI from re-resolving
 # on the first post-bump build.
 #
@@ -67,11 +67,11 @@ const p = 'crates/node/package.json';
 const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
 pkg.version = '$new';
 // napi-rs's per-platform packages use the 'optionalDependencies'
-// map keyed by package name. Rewrite every pinned 'tidepool-rpc-*'
+// map keyed by package name. Rewrite every pinned scoped `@tidepool/*` or unscoped tidepool-*
 // entry to the new version so the per-platform addons resolve.
 if (pkg.optionalDependencies) {
   for (const name of Object.keys(pkg.optionalDependencies)) {
-    if (name.startsWith('tidepool-rpc')) {
+    if (name.startsWith('@tidepool/') || name.startsWith('tidepool-')) {
       pkg.optionalDependencies[name] = '$new';
     }
   }

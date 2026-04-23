@@ -7,7 +7,7 @@
 #   1. [workspace.package].version in Cargo.toml
 #   2. crates/node/package.json version
 #
-# Every tidepool-rpc* crate inherits (1) via `version.workspace = true`,
+# Every tidepool-* crate inherits (1) via `version.workspace = true`,
 # so the only real mismatch risk is between (1) and (2). This script
 # enforces they match before any publish runs.
 #

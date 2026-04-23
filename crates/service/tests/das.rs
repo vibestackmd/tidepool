@@ -15,7 +15,7 @@ use tidepool_rpc::das::{
 };
 use tidepool_rpc::upstream::FixtureUpstream;
 use tidepool_rpc::verify_proof;
-use tidepool_rpc_core::Creator;
+use tidepool_core::Creator;
 
 const TREE: [u8; 32] = [0x11; 32];
 

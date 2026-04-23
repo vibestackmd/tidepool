@@ -25,7 +25,7 @@ Three things you'll notice in the first five minutes.
 
 **⚡ &nbsp; `confirmTransaction()` actually works on Surfpool.** &nbsp; Surfpool's native WebSocket doesn't implement `signatureSubscribe`, so `@solana/web3.js`'s `confirmTransaction()` hangs. Tidepool polyfills it. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works.
 
-**🧪 &nbsp; Plugs into MSW / Nock / undici for tests.** &nbsp; Import `tidepool-rpc` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team uses. Your test suite gets deterministic Helius responses without standing up a validator.
+**🧪 &nbsp; Plugs into MSW / Nock / undici for tests.** &nbsp; Import `@tidepool/rpc` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team uses. Your test suite gets deterministic Helius responses without standing up a validator.
 
 ---
 
@@ -40,8 +40,8 @@ Three ways to consume it. Pick one.
 surfpool start
 
 # Terminal 2
-cargo install tidepool-rpc-cli   # or `npx tidepool-rpc start` post-1.0
-tidepool-rpc start \
+cargo install tidepool-cli
+tidepool start \
   --port 8897 \
   --upstream http://127.0.0.1:8899 \
   --index-tree <your-cNFT-merkle-tree>
@@ -71,11 +71,11 @@ Full example in [`examples/rust-integration/`](examples/rust-integration/).
 ### As a Node / JS test integration
 
 ```bash
-npm install tidepool-rpc msw vitest
+npm install @tidepool/rpc msw vitest
 ```
 
 ```ts
-import { HeliusContext, handleJsonRpcBody } from "tidepool-rpc";
+import { HeliusContext, handleJsonRpcBody } from "@tidepool/rpc";
 import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 
@@ -170,7 +170,7 @@ Register a tree:
 
 ```bash
 # At startup
-tidepool-rpc start --index-tree <merkle-tree>
+tidepool start --index-tree <merkle-tree>
 
 # Or at runtime (in a vitest setup file, CI script, etc.)
 curl -X POST http://localhost:8897 \
@@ -188,10 +188,10 @@ Default is **in-memory** — state is lost on restart. Two flags turn that off, 
 
 ```bash
 # Single SQLite file holds cNFT index + DAS cache + webhook registry
-tidepool-rpc start --db ./tidepool.sqlite
+tidepool start --db ./tidepool.sqlite
 
 # Preload snapshot(s) at boot; repeatable
-tidepool-rpc start --snapshot ./trees/foo.json --snapshot ./trees/bar.json
+tidepool start --snapshot ./trees/foo.json --snapshot ./trees/bar.json
 ```
 
 `tidepool_exportTreeSnapshot` dumps a tree's indexed state at runtime; commit it to your repo and every fresh boot can `--snapshot` that file to skip re-paging tx history.
@@ -208,13 +208,13 @@ tidepool-rpc start --snapshot ./trees/foo.json --snapshot ./trees/bar.json
 
 | Crate | Purpose |
 |---|---|
-| `tidepool-rpc-core` | Pure primitives: keccak, merkle math, LeafSchemaV1 hashing, proof compute/verify. Zero Solana deps — WASM-ready. |
+| `tidepool-core` | Pure primitives: keccak, merkle math, LeafSchemaV1 hashing, proof compute/verify. Zero Solana deps — WASM-ready. |
 | `tidepool-rpc` | Service layer: cNFT state machine, DAS handlers, cache, decoders, upstream trait. |
-| `tidepool-rpc-server` | axum HTTP + WS front-end. Method-enum dispatch. `HttpUpstream` via reqwest. |
-| `tidepool-rpc-cli` | `tidepool-rpc` binary. clap-derive args + env-var overlay. |
-| `tidepool-rpc-node` | napi-rs bridge → the `tidepool-rpc` npm package. |
+| `tidepool-server` | axum HTTP + WS front-end. Method-enum dispatch. `HttpUpstream` via reqwest. |
+| `tidepool-cli` | `tidepool` binary. clap-derive args + env-var overlay. |
+| `tidepool-node` | napi-rs bridge → the `@tidepool/rpc` npm package. |
 
-Library consumers pull `tidepool-rpc`. Binary users `cargo install tidepool-rpc-cli`. JS users `npm install tidepool-rpc`. Server builders compose `tidepool-rpc` + `tidepool-rpc-server::HttpUpstream` themselves.
+Library consumers pull `tidepool-rpc`. Binary users `cargo install tidepool-cli`. JS users `npm install @tidepool/rpc`. Server builders compose `tidepool-rpc` + `tidepool-server::HttpUpstream` themselves.
 
 ---
 
@@ -253,7 +253,7 @@ You'd burn rate limits, pollute prod monitoring, require internet on CI, and can
 <details>
 <summary><b>Why Rust?</b></summary>
 
-The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewrite earned: drop-in official `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum` crates (no Codama pipeline), exhaustive-match method dispatch (compile-time safety for adding new handlers), type-level noop-required-vs-optional enforcement on cNFT events, binary distribution via `cargo install`. The napi-rs bridge means JS consumers still get the test-integration story via `npm install tidepool-rpc` — one Rust core, two consumption ecosystems.
+The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewrite earned: drop-in official `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum` crates (no Codama pipeline), exhaustive-match method dispatch (compile-time safety for adding new handlers), type-level noop-required-vs-optional enforcement on cNFT events, binary distribution via `cargo install`. The napi-rs bridge means JS consumers still get the test-integration story via `npm install @tidepool/rpc` — one Rust core, two consumption ecosystems.
 </details>
 
 <details>

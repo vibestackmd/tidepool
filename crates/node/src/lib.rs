@@ -33,8 +33,8 @@ use tidepool_rpc::cnft::{CnftStore, MemoryCnftStore};
 use tidepool_rpc::das::{AccountDecoder, MplCoreDecoder, TokenMetadataDecoder};
 use tidepool_rpc::upstream::UpstreamClient;
 use tidepool_rpc::webhooks::PostClient;
-use tidepool_rpc_server::webhook_runtime::{ReqwestPostClient, WebhookRuntime};
-use tidepool_rpc_server::HttpUpstream;
+use tidepool_server::webhook_runtime::{ReqwestPostClient, WebhookRuntime};
+use tidepool_server::HttpUpstream;
 
 /// Crate version — handy for sanity checks in JS tests.
 #[napi]
@@ -125,18 +125,18 @@ pub async fn handle_json_rpc_body(
     ctx: &HeliusContext,
     body: String,
 ) -> napi::Result<Option<String>> {
-    let req: tidepool_rpc_server::json_rpc::JsonRpcRequest = match serde_json::from_str(&body) {
+    let req: tidepool_server::json_rpc::JsonRpcRequest = match serde_json::from_str(&body) {
         Ok(r) => r,
         Err(_) => return Ok(None),
     };
-    let server_ctx = tidepool_rpc_server::dispatcher::Ctx {
+    let server_ctx = tidepool_server::dispatcher::Ctx {
         cnft: Arc::clone(&ctx.cnft),
         cache: Arc::clone(&ctx.cache),
         upstream: Arc::clone(&ctx.upstream),
         decoders: Arc::clone(&ctx.decoders),
         webhooks: Arc::clone(&ctx.webhooks),
     };
-    let Some(response) = tidepool_rpc_server::dispatcher::dispatch(&server_ctx, &req).await else {
+    let Some(response) = tidepool_server::dispatcher::dispatch(&server_ctx, &req).await else {
         return Ok(None);
     };
     serde_json::to_string(&response)

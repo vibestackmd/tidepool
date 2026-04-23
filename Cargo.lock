@@ -4201,6 +4201,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "tidepool-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "reqwest",
+ "serde_json",
+ "tidepool-rpc",
+ "tidepool-server",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "tidepool-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "sha3",
+]
+
+[[package]]
+name = "tidepool-example-rust-integration"
+version = "0.0.0"
+dependencies = [
+ "bs58",
+ "serde_json",
+ "tidepool-core",
+ "tidepool-rpc",
+ "tokio",
+]
+
+[[package]]
+name = "tidepool-node"
+version = "0.1.0"
+dependencies = [
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "serde",
+ "serde_json",
+ "tidepool-rpc",
+ "tidepool-server",
+ "tokio",
+]
+
+[[package]]
 name = "tidepool-rpc"
 version = "0.1.0"
 dependencies = [
@@ -4218,61 +4265,14 @@ dependencies = [
  "solana-program 3.0.0",
  "tempfile",
  "thiserror 1.0.69",
- "tidepool-rpc-core",
+ "tidepool-core",
  "tokio",
  "toml 0.8.23",
  "tracing",
 ]
 
 [[package]]
-name = "tidepool-rpc-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "reqwest",
- "serde_json",
- "tidepool-rpc",
- "tidepool-rpc-server",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tidepool-rpc-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "sha3",
-]
-
-[[package]]
-name = "tidepool-rpc-example-rust-integration"
-version = "0.0.0"
-dependencies = [
- "bs58",
- "serde_json",
- "tidepool-rpc",
- "tidepool-rpc-core",
- "tokio",
-]
-
-[[package]]
-name = "tidepool-rpc-node"
-version = "0.1.0"
-dependencies = [
- "napi",
- "napi-build",
- "napi-derive",
- "serde",
- "serde_json",
- "tidepool-rpc",
- "tidepool-rpc-server",
- "tokio",
-]
-
-[[package]]
-name = "tidepool-rpc-server"
+name = "tidepool-server"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -4284,8 +4284,8 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",
+ "tidepool-core",
  "tidepool-rpc",
- "tidepool-rpc-core",
  "tokio",
  "tokio-tungstenite 0.24.0",
  "tower",

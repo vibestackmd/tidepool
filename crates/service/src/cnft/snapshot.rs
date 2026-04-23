@@ -152,7 +152,7 @@ mod tests {
     use super::*;
     use crate::cnft::store::MemoryCnftStore;
     use crate::cnft::types::MintMetadata;
-    use tidepool_rpc_core::Creator;
+    use tidepool_core::Creator;
 
     const TREE: [u8; 32] = [0x11; 32];
 
