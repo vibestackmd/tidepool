@@ -310,6 +310,30 @@ fn get_balances_response_round_trips() {
 }
 
 #[test]
+fn get_transactions_post_response_round_trips() {
+    // REST fixture: `POST /v0/transactions` with
+    // `{ transactions: [sig] }`. Response is the same
+    // EnhancedTransaction array shape as getTransactionsByAddress —
+    // so the same round-trip invariant applies.
+    use tidepool_rpc::enhanced::types::EnhancedTransaction;
+
+    let response = load_fixture_response("getTransactions", "getTransactions_single_sig");
+    let items = response.as_array().expect("REST returns a bare array");
+    assert_eq!(items.len(), 1, "requested one sig, expect one item");
+    for (i, raw) in items.iter().enumerate() {
+        let parsed: EnhancedTransaction = serde_json::from_value(raw.clone()).unwrap_or_else(|e| {
+            panic!("item {i}: EnhancedTransaction rejected real Helius response: {e}\nvalue: {raw}")
+        });
+        let reserialized = serde_json::to_value(&parsed).expect("serialize EnhancedTransaction");
+        let dropped = missing_keys(raw, &reserialized, "");
+        assert!(
+            dropped.is_empty(),
+            "item {i} drops fields on round-trip: {dropped:#?}"
+        );
+    }
+}
+
+#[test]
 fn get_transactions_by_address_response_round_trips() {
     // REST fixture: `GET /v0/addresses/<addr>/transactions?limit=3`.
     // Response is a bare array of enhanced-tx records, no envelope.

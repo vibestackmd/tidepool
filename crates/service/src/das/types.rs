@@ -296,6 +296,12 @@ pub struct DasTokenAccounts {
 /// One token position for `getBalances`. `amount` is the raw on-chain
 /// u64; `decimals` comes from the jsonParsed tokenAmount envelope.
 /// Field names mirror Helius's REST shape exactly (camelCase).
+///
+/// `priceInUSD` and `totalPrice` are paid-tier enrichments Helius may
+/// return alongside the raw balance. We never populate them (no local
+/// price feed) but accept + round-trip them so clients reading real-
+/// Helius fixtures and Tidepool outputs get the same key set. They're
+/// skipped on serialize when absent to keep our output shape tight.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DasTokenBalance {
@@ -303,6 +309,10 @@ pub struct DasTokenBalance {
     pub mint: String,
     pub amount: u64,
     pub decimals: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none", rename = "priceInUSD")]
+    pub price_in_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_price: Option<f64>,
 }
 
 /// `getBalances` response shape. Matches Helius's REST wire format:

@@ -649,6 +649,8 @@ fn parse_token_balance_list(raw: &[u8]) -> Vec<DasTokenBalance> {
             mint: mint.to_string(),
             amount,
             decimals,
+            price_in_usd: None,
+            total_price: None,
         });
     }
     out

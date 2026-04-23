@@ -129,6 +129,16 @@ method = "getTransactionsByAddress"
 transport = "rest"
 rest = { verb = "GET", path = "/v0/addresses/86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY/transactions?limit=3" }
 
+# ─── Enhanced: getTransactions (REST POST) ─────────────────────────
+# `POST /v0/transactions` with `{ transactions: [sig, ...] }`. The sig
+# is copied from the getTransactionsByAddress fixture so we know it
+# resolves under Helius's small-wallet lookback horizon.
+[[case]]
+name = "getTransactions_single_sig"
+method = "getTransactions"
+transport = "rest"
+rest = { verb = "POST", path = "/v0/transactions", body = { transactions = ["4iW69A1qjbCTCLozAhLymqocfxrsbvwe7R34Xm4pBzsXQzifMRghbC1iTtAZH8PvWR2DxGehH3GFpJREjf5JF88p"] } }
+
 # ─── Intentional errors ────────────────────────────────────────────
 # Capture Helius's error envelope shape so our own error handlers
 # can match. `code: -32602` is invalid-params.
