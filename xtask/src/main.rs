@@ -5,16 +5,18 @@
 //!
 //! - `record-helius` (phase 1): read `contracts/cases.toml`, hit real
 //!   Helius, write raw responses to `contracts/fixtures/`.
-//! - `derive-schemas` (phase 2, planned): infer JSON Schema from each
+//! - `derive-schemas` (phase 2): infer JSON Schema from each
 //!   recorded fixture, commit alongside.
-//! - `check-drift` (phase 3, planned): re-record, diff schemas, emit
-//!   a structured report for the maintenance PR.
+//! - `check-drift` (phase 3): compare working-tree fixtures + schemas
+//!   against the committed versions and emit a structured summary.
+//!   Used by the weekly workflow to decide whether to open a PR.
 //!
 //! All outputs are committed to the repo — the fixtures + schemas are
 //! the source of truth for "what Helius returned last time we asked."
 
 use clap::{Parser, Subcommand};
 
+mod check_drift;
 mod record;
 mod schemas;
 
@@ -35,6 +37,10 @@ enum Command {
     /// contracts/schemas/<method>/<case>.schema.json. Offline — no
     /// network, no API key needed.
     DeriveSchemas(schemas::Args),
+    /// Diff working-tree fixtures + schemas against the committed
+    /// ones. Exits non-zero when drift exists so CI can gate on it;
+    /// prints a structured summary of added/removed/changed files.
+    CheckDrift(check_drift::Args),
 }
 
 #[tokio::main]
@@ -56,5 +62,6 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::RecordHelius(args) => record::run(args).await,
         Command::DeriveSchemas(args) => schemas::run(args).await,
+        Command::CheckDrift(args) => check_drift::run(args).await,
     }
 }

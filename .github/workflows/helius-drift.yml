@@ -41,13 +41,18 @@ jobs:
       - name: Offline contract tests
         run: cargo test -p tidepool-rpc --test contracts
 
-      - name: Detect changes
+      - name: Detect drift
         id: diff
         run: |
-          if [ -n "$(git status --porcelain contracts/)" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          # `check-drift` exits non-zero when fixtures + schemas drift;
+          # capture the condition without failing the job so we can
+          # still open a PR with the fresh fixtures.
+          if cargo xtask check-drift --no-fail 2>&1 | tee /tmp/drift.log; then
+            grep -q "drift detected" /tmp/drift.log \
+              && echo "changed=true"  >> "$GITHUB_OUTPUT" \
+              || echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Open drift PR
