@@ -81,6 +81,11 @@ pub struct Args {
     /// when iterating on a single fixture.
     #[arg(long)]
     only: Option<String>,
+    /// Only record cases for a specific transport. Accepts `json_rpc`
+    /// or `rest`. Lets CI refresh REST fixtures without re-hitting
+    /// the JSON-RPC cases (or vice versa) during targeted drift runs.
+    #[arg(long)]
+    transport: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -174,6 +179,12 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
         }
 
         let transport = case.transport.as_deref().unwrap_or("json_rpc");
+        if let Some(wanted) = &args.transport {
+            if wanted != transport {
+                skipped += 1;
+                continue;
+            }
+        }
         let result = match transport {
             "json_rpc" => record_json_rpc(&client, &rpc_url, &rpc_host, case).await,
             "rest" => record_rest(&client, &rest_base, &rest_host, api_key, case).await,

@@ -29,12 +29,18 @@ pub struct Args {
     /// Where to write inferred schemas.
     #[arg(long, default_value = "contracts/schemas")]
     out: PathBuf,
+    /// Only derive schemas for cases whose filename contains this
+    /// substring. Useful for CI jobs that re-record a single case
+    /// and want to regenerate just its schema.
+    #[arg(long)]
+    only: Option<String>,
 }
 
 pub async fn run(args: Args) -> anyhow::Result<()> {
     tokio::fs::create_dir_all(&args.out).await?;
 
     let mut count = 0;
+    let mut skipped = 0;
     let mut method_dirs = tokio::fs::read_dir(&args.fixtures).await?;
     while let Some(method_entry) = method_dirs.next_entry().await? {
         let method_path = method_entry.path();
@@ -48,6 +54,16 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
             let case_path = case_entry.path();
             if case_path.extension().and_then(|s| s.to_str()) != Some("json") {
                 continue;
+            }
+            if let Some(only) = &args.only {
+                let stem = case_path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
+                if !stem.contains(only.as_str()) {
+                    skipped += 1;
+                    continue;
+                }
             }
             let fixture: Fixture = {
                 let bytes = tokio::fs::read(&case_path).await?;
@@ -83,7 +99,7 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
         }
     }
 
-    info!(schemas = count, out = %args.out.display(), "done");
+    info!(schemas = count, skipped, out = %args.out.display(), "done");
     Ok(())
 }
 
