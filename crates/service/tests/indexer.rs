@@ -523,6 +523,7 @@ async fn empty_chain_is_a_noop() {
 }
 
 #[tokio::test]
+#[allow(clippy::too_many_lines)] // end-to-end scenario; splitting obscures the flow
 async fn noop_event_pairing_covers_verify_creator_flow() {
     // Build a tx that contains outer create_tree, then a second tx
     // that contains: outer mint_v1 — which our parser routes to Mint.

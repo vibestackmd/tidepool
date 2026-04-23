@@ -108,12 +108,12 @@ pub async fn run(config: ServerConfig) -> Result<(), Box<dyn std::error::Error +
                                 "loaded snapshot"
                             ),
                             Err(e) => {
-                                warn!(path = %snap_path.display(), err = %e, "snapshot apply failed")
+                                warn!(path = %snap_path.display(), err = %e, "snapshot apply failed");
                             }
                         }
                     }
                     Err(e) => {
-                        warn!(path = %snap_path.display(), err = %e, "snapshot decode failed")
+                        warn!(path = %snap_path.display(), err = %e, "snapshot decode failed");
                     }
                 },
                 Err(e) => warn!(path = %snap_path.display(), err = %e, "snapshot parse failed"),
