@@ -1,0 +1,9 @@
+{
+  "case": "getAllWebhooks_empty_project",
+  "method": "getAllWebhooks",
+  "source_fixture": "contracts/fixtures/getAllWebhooks/getAllWebhooks_empty_project.json",
+  "schema": {
+    "type": "array",
+    "items": {}
+  }
+}

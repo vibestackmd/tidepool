@@ -320,6 +320,23 @@ fn get_transactions_by_address_response_round_trips() {
 }
 
 #[test]
+fn get_all_webhooks_list_is_array() {
+    // REST fixture: `GET /v0/webhooks`. Recorded against a project
+    // with zero webhooks; the shape contract is that Helius returns
+    // a JSON array (possibly empty) — not `{ webhooks: [] }` or an
+    // error envelope. Our REST handler produces the same shape from
+    // an empty SqliteWebhookRegistry.
+    let response = load_fixture_response(
+        "getAllWebhooks",
+        "getAllWebhooks_empty_project",
+    );
+    assert!(
+        response.is_array(),
+        "getAllWebhooks must return a bare JSON array, got {response}"
+    );
+}
+
+#[test]
 fn get_asset_cnft_round_trips() {
     // Compressed asset — exercises the cNFT serving shape end-to-end
     // against a real Helius response. Notable shape: `compressed =

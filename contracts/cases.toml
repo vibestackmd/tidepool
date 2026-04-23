@@ -138,6 +138,18 @@ method = "getTransactionsByAddress"
 transport = "rest"
 rest = { verb = "GET", path = "/v0/addresses/86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY/transactions?limit=3" }
 
+# ─── Webhooks: GET /v0/webhooks (REST) ─────────────────────────────
+# Read-only endpoint — safe to record against any project, even one
+# with zero webhooks. Gives us a shape contract for the list envelope
+# (Helius returns [] on empty). CRUD cases deferred: create/delete
+# mutate state, and Helius's response shape is the same as list's
+# element shape, which this case already pins.
+[[case]]
+name = "getAllWebhooks_empty_project"
+method = "getAllWebhooks"
+transport = "rest"
+rest = { verb = "GET", path = "/v0/webhooks" }
+
 # ─── Enhanced: getTransactions (REST POST) ─────────────────────────
 # `POST /v0/transactions` with `{ transactions: [sig, ...] }`. The sig
 # is copied from the getTransactionsByAddress fixture so we know it
