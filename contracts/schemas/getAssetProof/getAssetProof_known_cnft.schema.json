@@ -1,0 +1,57 @@
+{
+  "case": "getAssetProof_known_cnft",
+  "method": "getAssetProof",
+  "source_fixture": "contracts/fixtures/getAssetProof/getAssetProof_known_cnft.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "last_indexed_slot": {
+            "type": "integer"
+          },
+          "root": {
+            "type": "string"
+          },
+          "proof": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "node_index": {
+            "type": "integer"
+          },
+          "leaf": {
+            "type": "string"
+          },
+          "tree_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "last_indexed_slot",
+          "leaf",
+          "node_index",
+          "proof",
+          "root",
+          "tree_id"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -109,8 +109,17 @@ params = { groupKey = "collection", groupValue = "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4
 [[case]]
 name = "getAssetProof_known_cnft"
 method = "getAssetProof"
-params = { id = "ERLawM8svnLqWd3WCBJHRiJmwLmBpRQm8srudF6h68oE" }
-skip = "needs-curated-cnft-asset-id"
+params = { id = "JCfTS6dmJZY4NXhjMwHqayGGHUwxp59pzcYhZrYqMBce" }
+
+# ─── getAsset on a cNFT ────────────────────────────────────────────
+# Same asset id as the proof case — exercises the compressed-asset
+# serving path end-to-end against Helius truth. The id came from
+# getAssetsByOwner_small_wallet, so it's stable-ish (the wallet has
+# to still own it when we re-record).
+[[case]]
+name = "getAsset_known_cnft"
+method = "getAsset"
+params = { id = "JCfTS6dmJZY4NXhjMwHqayGGHUwxp59pzcYhZrYqMBce" }
 
 # ─── Wallet: getBalances (REST) ────────────────────────────────────
 # Helius serves this as a REST endpoint on api.helius.xyz. Tidepool

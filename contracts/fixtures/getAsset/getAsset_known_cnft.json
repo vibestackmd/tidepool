@@ -1,0 +1,116 @@
+{
+  "case": "getAsset_known_cnft",
+  "method": "getAsset",
+  "transport": "json_rpc",
+  "recorded_at": "epoch-1776921810",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAsset",
+    "params": {
+      "id": "JCfTS6dmJZY4NXhjMwHqayGGHUwxp59pzcYhZrYqMBce"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415063607,
+      "interface": "V1_NFT",
+      "id": "JCfTS6dmJZY4NXhjMwHqayGGHUwxp59pzcYhZrYqMBce",
+      "content": {
+        "$schema": "https://schema.metaplex.com/nft1.0.json",
+        "json_uri": "https://www.hi-hi.vip/json/5000wif.json",
+        "files": [
+          {
+            "uri": "https://img.hi-hi.vip/json/img/5000wif.png",
+            "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://img.hi-hi.vip/json/img/5000wif.png",
+            "mime": "image/png"
+          }
+        ],
+        "metadata": {
+          "attributes": [
+            {
+              "value": "https://5000wif.com",
+              "trait_type": "Website"
+            },
+            {
+              "value": "True",
+              "trait_type": "Verified"
+            },
+            {
+              "value": "5,000+ WIF",
+              "trait_type": "Amount"
+            },
+            {
+              "value": "55 minutes!",
+              "trait_type": "Time Left"
+            }
+          ],
+          "description": "Random Drop event!Visit the domain shown in the picture and claim your exclusive voucher https://5000wif.com",
+          "name": "Claim your 5000WIF",
+          "symbol": "5000WIF",
+          "token_standard": "NonFungible"
+        },
+        "links": {
+          "image": "https://img.hi-hi.vip/json/img/5000wif.png",
+          "external_url": "https://5000wif.com"
+        }
+      },
+      "authorities": [
+        {
+          "address": "2iVwwSHr7hGR6wxNuQM8ArQYnX6Mzy2yeFnhBGgQetRw",
+          "scopes": [
+            "full"
+          ]
+        }
+      ],
+      "compression": {
+        "eligible": false,
+        "compressed": true,
+        "data_hash": "7zquDVS1VKu9HDh4WS4ray5ozLThiK6xrnFNhJtusj65",
+        "creator_hash": "6v7GeYRiVML5mG1kJqi6eujN9sPB3ziCZJF4Vartj1qd",
+        "asset_hash": "8gQZkgZ1L91qkNPtsiRGkRzpNcEfhBABEQr1D3wquB8H",
+        "tree": "BZNn9zX1MysbSvqyGZ33Seb8bvimaiE9fxmLKwX2Euae",
+        "seq": 251133,
+        "leaf_id": 250758
+      },
+      "grouping": [
+        {
+          "group_key": "collection",
+          "group_value": "723Vxwr6aYZHNqc8dVQVwchDHUR3cEwZA8zkejdYWKaS"
+        }
+      ],
+      "royalty": {
+        "royalty_model": "creators",
+        "target": null,
+        "percent": 0.0,
+        "basis_points": 0,
+        "primary_sale_happened": false,
+        "locked": false
+      },
+      "creators": [
+        {
+          "address": "GVKwqsEC5YQZX4hG7Fdy6m7cJUi4DA3ezYx1CC9wkj34",
+          "share": 100,
+          "verified": true
+        }
+      ],
+      "ownership": {
+        "frozen": false,
+        "delegated": true,
+        "delegate": "GVKwqsEC5YQZX4hG7Fdy6m7cJUi4DA3ezYx1CC9wkj34",
+        "ownership_model": "single",
+        "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY"
+      },
+      "supply": {
+        "print_max_supply": 0,
+        "print_current_supply": 0,
+        "edition_nonce": 0
+      },
+      "mutable": true,
+      "burnt": false
+    },
+    "id": 1
+  }
+}

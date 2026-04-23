@@ -199,6 +199,10 @@ pub async fn get_asset_proof<S: CnftStore + ?Sized>(
         node_index: proof.node_index,
         leaf: bs58::encode(proof.leaf).into_string(),
         tree_id: bs58::encode(leaf.tree).into_string(),
+        // We don't track an indexing slot locally — our Bubblegum
+        // replay is cursor-driven, not slot-driven. Emit 0 so the
+        // key is always present.
+        last_indexed_slot: 0,
     }))
 }
 
@@ -259,6 +263,7 @@ pub async fn get_asset_proof_batch<S: CnftStore + ?Sized>(
             node_index: proof.node_index,
             leaf: bs58::encode(proof.leaf).into_string(),
             tree_id: bs58::encode(leaf.tree).into_string(),
+            last_indexed_slot: 0,
         }));
         // Discard the unused value from asset_ids iteration — kept
         // for index alignment with `results` + `leaves`.

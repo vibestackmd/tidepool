@@ -44,6 +44,13 @@ pub struct DasAsset {
     /// always return it for every item.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token_info: Option<DasTokenInfo>,
+    /// Slot at which Helius last indexed this asset. Only populated
+    /// for cNFTs — the indexer stamps it when replaying Bubblegum
+    /// state. Uncompressed assets don't have an index layer so the
+    /// field is absent. Skip-on-None keeps our uncompressed output
+    /// tight.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_indexed_slot: Option<u64>,
 }
 
 /// Subset of the SPL Token `Mint` account surfaced by Helius under
@@ -232,6 +239,13 @@ pub struct DasAssetProof {
     pub node_index: u64,
     pub leaf: String,
     pub tree_id: String,
+    /// Slot at which Helius last indexed the proof's tree state.
+    /// Stamped by the cNFT indexer; our local Bubblegum replay
+    /// doesn't track a distinct indexing slot, so we emit 0 when
+    /// serving from the index and accept whatever Helius sends on
+    /// parse.
+    #[serde(default)]
+    pub last_indexed_slot: u64,
 }
 
 // ─── Editions (getNftEditions) ──────────────────────────────────────

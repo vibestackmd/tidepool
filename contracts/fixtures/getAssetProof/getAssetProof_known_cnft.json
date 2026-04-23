@@ -1,0 +1,48 @@
+{
+  "case": "getAssetProof_known_cnft",
+  "method": "getAssetProof",
+  "transport": "json_rpc",
+  "recorded_at": "epoch-1776921810",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAssetProof",
+    "params": {
+      "id": "JCfTS6dmJZY4NXhjMwHqayGGHUwxp59pzcYhZrYqMBce"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415063605,
+      "root": "3oWp5r2e2JjAwwnNkZVBF3vzcVqJoaCTzq5WN32mGo64",
+      "proof": [
+        "7ErpXwrLjPxkcvFb2iNR4LJrVApd3NosXoRmoCChnsBs",
+        "CNxcDTsomrRSPnFM4x6F1Ar6PFjmeePPgjXuLrDb3kgr",
+        "EEid2g2QQ3udJ8kQaV557LoubqmqxkRgYiXWmRB6dNAE",
+        "869ThkiLSAbLYRpqj8EB8YGt1stxh7jLaFZm4kHYZeFJ",
+        "D7eMqcvXdYEbHpRf2svRdsNATc1LWJCmFiFifcDBC4i",
+        "J3WDJktyewhyuKRRbHyEYVeA1TrGwhLQi4jrMsGm9i7X",
+        "5oZCftTFM19APSgYxsZyaArk8y9dvLPLRafTFwnDxPdM",
+        "7dYPqPNqF82QGFtPCUnwwFewCQVa2H8DHhmyXSrDufzn",
+        "BtaQ18AyiqjBDBEyd9UuCCYcNkZaZpCoHqoonnPiXBrq",
+        "9ZASPxLVtq4ftG2P3nDkiyQd8vRSDRuwiuNabGQWaknP",
+        "B1cqGaiats84hDSbTfzj8mnB5Xyfx1WHJV3fa9z1gPV6",
+        "HTym6e8eCafbA7rzyXSebftWiSXpPzF6nhwJk44C4LmG",
+        "HNtDctr1KJU47nbMXyqwGcg7hYNexpmoxyQRKgkYTX5J",
+        "563VE1MnUB9iRhkQNoUk366VYkAZSTLTVqbkt4GWK3a2",
+        "8FtJKtsDw7oCMsrvq8ZPJPDGNaGrztjGie2z8r7KLA75",
+        "JDtw5yuqc49VZpaarHWDpQJ9SuJi7CSAZPmAGkfJMukg",
+        "3A8S1hqNyRnQaiNf6ZFtRUy2iYcjJvpsxeUzf7EEyzp8",
+        "C9B9NUC2tgHsuZzGXwUYXwzb1FppW7dVr2naXPM17Zzy",
+        "5WQNPW5nynGnYfZgcKXQtAXLn78JK8FnMzBo5qTmouzu",
+        "Fn1U3iYaptgWMSWRBgUy44RGFB2aCfpkeEatYcQWmjjQ"
+      ],
+      "node_index": 1299334,
+      "leaf": "8gQZkgZ1L91qkNPtsiRGkRzpNcEfhBABEQr1D3wquB8H",
+      "tree_id": "BZNn9zX1MysbSvqyGZ33Seb8bvimaiE9fxmLKwX2Euae"
+    },
+    "id": 1
+  }
+}

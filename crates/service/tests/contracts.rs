@@ -320,6 +320,52 @@ fn get_transactions_by_address_response_round_trips() {
 }
 
 #[test]
+fn get_asset_cnft_round_trips() {
+    // Compressed asset — exercises the cNFT serving shape end-to-end
+    // against a real Helius response. Notable shape: `compressed =
+    // true`, `compression.tree` populated, `content.files` present.
+    use tidepool_rpc::das::DasAsset;
+
+    let response = load_fixture_response("getAsset", "getAsset_known_cnft");
+    let raw = response.pointer("/result").cloned().expect("result");
+    let parsed: DasAsset = serde_json::from_value(raw.clone())
+        .expect("DasAsset should accept real Helius cNFT response");
+    assert!(
+        parsed
+            .compression
+            .as_ref()
+            .is_some_and(|c| c.compressed && !c.tree.is_empty()),
+        "cNFT should have compression.compressed = true + a tree"
+    );
+    let reserialized = serde_json::to_value(&parsed).expect("serialize DasAsset");
+    let dropped = missing_keys(&raw, &reserialized, "");
+    assert!(
+        dropped.is_empty(),
+        "cNFT DasAsset drops fields on round-trip: {dropped:#?}"
+    );
+}
+
+#[test]
+fn get_asset_proof_cnft_parses() {
+    // Proof envelope: `{ root, proof[], node_index, leaf, tree_id }`.
+    // Round-trip through DasAssetProof.
+    use tidepool_rpc::das::DasAssetProof;
+
+    let response = load_fixture_response("getAssetProof", "getAssetProof_known_cnft");
+    let raw = response.pointer("/result").cloned().expect("result");
+    let parsed: DasAssetProof = serde_json::from_value(raw.clone())
+        .expect("DasAssetProof should accept real Helius proof response");
+    assert!(!parsed.proof.is_empty(), "proof should be a non-empty array");
+    assert!(!parsed.root.is_empty(), "root should be populated");
+    let reserialized = serde_json::to_value(&parsed).expect("serialize DasAssetProof");
+    let dropped = missing_keys(&raw, &reserialized, "");
+    assert!(
+        dropped.is_empty(),
+        "DasAssetProof drops fields on round-trip: {dropped:#?}"
+    );
+}
+
+#[test]
 fn get_priority_fee_estimate_levels_round_trip() {
     use tidepool_rpc::priority_fee::PriorityFeeLevels;
 
