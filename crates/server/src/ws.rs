@@ -9,8 +9,9 @@
 //!   when the tx reaches the requested commitment).
 //! - `accountSubscribe` → `getAccountInfo` (long-lived; emits a
 //!   notification every time the account's observed state changes).
+//! - `logsSubscribe({mentions: [pubkey]})` → `getSignaturesForAddress` + `getTransaction` fan-out. Each new sig that mentions the given pubkey emits a `logsNotification` with the extracted log array. `all` / `allWithVotes` filters aren't polyfilled (no efficient polling shim) — clients asking for those get a typed error.
 //!
-//! Other subscription methods (`logsSubscribe`, `programSubscribe`,
+//! Other subscription methods (`programSubscribe`, `slotSubscribe`,
 //! etc.) are not yet polyfilled.
 //!
 //! Per-connection state lives for the lifetime of the WS upgrade —
@@ -208,7 +209,65 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
                 subs.lock().await.insert(sub_id, handle);
             }
 
-            "signatureUnsubscribe" | "accountUnsubscribe" => {
+            "logsSubscribe" => {
+                let sub_id = NEXT_SUB_ID.fetch_add(1, Ordering::Relaxed);
+                let params = req.get("params").and_then(Value::as_array);
+                let filter = params.and_then(|a| a.first()).cloned().unwrap_or(Value::Null);
+                // Supported filter shapes: `{ mentions: [pubkey] }`.
+                // Reject `"all"` / `"allWithVotes"` with a typed error —
+                // there's no cheap polling shim for them.
+                let mention = match &filter {
+                    Value::Object(map) => map
+                        .get("mentions")
+                        .and_then(Value::as_array)
+                        .and_then(|a| a.first())
+                        .and_then(Value::as_str)
+                        .map(String::from),
+                    Value::String(s) if s == "all" || s == "allWithVotes" => {
+                        send(
+                            &tx,
+                            &error_msg(
+                                &id,
+                                -32601,
+                                "logsSubscribe with filter 'all' / 'allWithVotes' is not \
+                                 polyfilled by the tidepool WS shim; use { mentions: [pubkey] }",
+                            ),
+                        );
+                        continue;
+                    }
+                    _ => None,
+                };
+                let Some(mention) = mention else {
+                    send(
+                        &tx,
+                        &error_msg(
+                            &id,
+                            -32602,
+                            "logsSubscribe requires `{ mentions: [pubkey] }` filter",
+                        ),
+                    );
+                    continue;
+                };
+                let commitment = params
+                    .and_then(|a| a.get(1))
+                    .and_then(|v| v.get("commitment"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("finalized")
+                    .to_string();
+
+                send(&tx, &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }));
+
+                let poll_tx = tx.clone();
+                let state_clone = state.clone();
+                let subs_clone = Arc::clone(&subs);
+                let handle = tokio::spawn(async move {
+                    poll_logs(sub_id, mention, commitment, state_clone, poll_tx).await;
+                    subs_clone.lock().await.remove(&sub_id);
+                });
+                subs.lock().await.insert(sub_id, handle);
+            }
+
+            "signatureUnsubscribe" | "accountUnsubscribe" | "logsUnsubscribe" => {
                 let Some(sub_id) = req
                     .get("params")
                     .and_then(Value::as_array)
@@ -397,6 +456,137 @@ async fn poll_account(
         });
         send(&tx, &notif);
     }
+}
+
+// ─── logs polling (mentions filter) ─────────────────────────────────
+
+/// Poll `getSignaturesForAddress(mention)` at `POLL_INTERVAL` and fan
+/// out to `getTransaction` for each new sig. Emits one
+/// `logsNotification` per new tx with the `logMessages` array extracted
+/// from meta. Runs until aborted.
+///
+/// Dedup strategy: remember the last-seen signature and page fresh
+/// results ahead of it. The first poll sets the baseline without
+/// emitting — matches Solana's "only notify on state change after
+/// subscribe" semantics for the other subscriptions.
+async fn poll_logs(
+    sub_id: u64,
+    mention: String,
+    commitment: String,
+    state: WsState,
+    tx: mpsc::UnboundedSender<Message>,
+) {
+    let client = match reqwest::Client::builder()
+        .timeout(state.rpc_timeout)
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            warn!(err = %e, "failed to build reqwest client for logs polling");
+            return;
+        }
+    };
+    let mut last_seen: Option<String> = None;
+    loop {
+        tokio::time::sleep(POLL_INTERVAL).await;
+        let sigs_body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getSignaturesForAddress",
+            "params": [mention, { "commitment": commitment, "limit": 25 }]
+        });
+        let Ok(resp) = client.post(&state.upstream_url).json(&sigs_body).send().await else {
+            continue;
+        };
+        let Ok(json): Result<Value, _> = resp.json().await else {
+            continue;
+        };
+        let Some(entries) = json.get("result").and_then(Value::as_array) else {
+            continue;
+        };
+
+        // Collect new sigs in chronological order (upstream returns
+        // newest-first, so iterate reversed, stopping at the last-seen
+        // boundary).
+        let mut new_sigs: Vec<String> = Vec::new();
+        for entry in entries.iter().rev() {
+            let Some(sig) = entry.get("signature").and_then(Value::as_str) else {
+                continue;
+            };
+            if last_seen.as_deref() == Some(sig) {
+                new_sigs.clear();
+                continue;
+            }
+            new_sigs.push(sig.to_string());
+        }
+        // If we had no baseline, just set it and skip emitting — the
+        // subscription model emits on *future* events, not on the
+        // already-landed tx list.
+        if last_seen.is_none() {
+            if let Some(sig) = entries
+                .first()
+                .and_then(|e| e.get("signature"))
+                .and_then(Value::as_str)
+            {
+                last_seen = Some(sig.to_string());
+            }
+            continue;
+        }
+
+        for sig in &new_sigs {
+            if let Some(notif) = fetch_logs_notification(&client, &state, &commitment, sub_id, sig).await {
+                send(&tx, &notif);
+            }
+        }
+        if let Some(last) = new_sigs.last() {
+            last_seen = Some(last.clone());
+        }
+    }
+}
+
+/// One-shot `getTransaction` → `logsNotification` payload build. None
+/// on transient upstream error — caller continues polling.
+async fn fetch_logs_notification(
+    client: &reqwest::Client,
+    state: &WsState,
+    commitment: &str,
+    sub_id: u64,
+    signature: &str,
+) -> Option<Value> {
+    let body = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getTransaction",
+        "params": [
+            signature,
+            { "commitment": commitment, "encoding": "json", "maxSupportedTransactionVersion": 0 }
+        ]
+    });
+    let resp = client.post(&state.upstream_url).json(&body).send().await.ok()?;
+    let json: Value = resp.json().await.ok()?;
+    let result = json.get("result")?;
+    let slot = result.get("slot").and_then(Value::as_u64).unwrap_or(0);
+    let meta = result.get("meta").cloned().unwrap_or(Value::Null);
+    let err = meta.get("err").cloned().unwrap_or(Value::Null);
+    let logs = meta
+        .get("logMessages")
+        .cloned()
+        .unwrap_or(Value::Array(Vec::new()));
+    Some(json!({
+        "jsonrpc": "2.0",
+        "method": "logsNotification",
+        "params": {
+            "result": {
+                "context": { "slot": slot },
+                "value": {
+                    "signature": signature,
+                    "err": err,
+                    "logs": logs
+                }
+            },
+            "subscription": sub_id
+        }
+    }))
 }
 
 fn commitment_matches(requested: &str, actual: &str) -> bool {

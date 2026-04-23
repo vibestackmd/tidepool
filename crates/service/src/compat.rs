@@ -466,6 +466,26 @@ const MANIFEST: &[MethodEntry] = &[
         source_doc: "https://www.helius.dev/docs/api-reference/rpc/websocket-methods",
         notes: Some("WebSocket. Polls getAccountInfo every 500ms and emits accountNotification on change. Long-lived until accountUnsubscribe."),
     },
+    MethodEntry {
+        method: "logsSubscribe",
+        namespace: Namespace::Ws,
+        helius_sdk_path: "helius.ws.logsNotifications",
+        compat: CompatLevel::Shim,
+        transport: Transport::Ws,
+        since_version: Some("1.0.0"),
+        source_doc: "https://www.helius.dev/docs/api-reference/rpc/websocket-methods",
+        notes: Some("WebSocket. Polls getSignaturesForAddress + getTransaction to emit logsNotification. `{ mentions: [pubkey] }` filter only — `all`/`allWithVotes` return -32601 since no efficient polling shim exists."),
+    },
+    MethodEntry {
+        method: "logsUnsubscribe",
+        namespace: Namespace::Ws,
+        helius_sdk_path: "helius.ws.close",
+        compat: CompatLevel::Shim,
+        transport: Transport::Ws,
+        since_version: Some("1.0.0"),
+        source_doc: "https://www.helius.dev/docs/api-reference/rpc/websocket-methods",
+        notes: None,
+    },
     // ─── wallet (beta) ────────────────────────────────────────────────
     MethodEntry {
         method: "getBalances",

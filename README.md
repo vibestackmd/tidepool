@@ -123,13 +123,12 @@ Full live truth: `POST {"method":"tidepool_info"}` returns the complete manifest
 | `getAssetsByOwner` / `Authority` / `Creator` / `Group` | ✅ LOCAL_INDEX | Cache-backed secondary indexes |
 | `searchAssets` | ✅ LOCAL_INDEX | Multi-filter AND, smallest-index-first narrowing |
 | `getNftEditions` | ✅ LOCAL_INDEX | Lazy edition-PDA indexing; master + print editions |
-| `signatureSubscribe` / `accountSubscribe` (+ `Unsubscribe`) | ✅ SHIM | HTTP polling polyfills on the WS port |
+| `signatureSubscribe` / `accountSubscribe` / `logsSubscribe` (+ `Unsubscribe`) | ✅ SHIM | HTTP polling polyfills on the WS port. `logsSubscribe` supports `{ mentions: [pubkey] }`; `all` / `allWithVotes` intentionally unsupported. |
 | `getPriorityFeeEstimate` | ✅ BEST_EFFORT | Local percentile ladder over `getRecentPrioritizationFees` |
 | `helius-sdk` composed methods | ✅ SDK_WRAPPER | Send / broadcast / confirm / staking — all work transparently |
 | `getBalances` (REST) | ✅ SHIM | `GET /v0/addresses/{addr}/balances` — matches Helius REST path |
 | `getTransactions` / `getTransactionsByAddress` (REST) | ✅ SHIM | Enhanced Transactions parsers on `/v0/transactions` and `/v0/addresses/{addr}/transactions` |
 | `createWebhook` family (REST) | ✅ SHIM | Polling-simulator on `/v0/webhooks` + `/v0/webhooks/{id}` — full CRUD |
-| `logsSubscribe` | ⏳ PLANNED | WS polyfill — remaining subscribe method |
 | Everything else | ✅ Passthrough | Forwarded to the upstream unchanged |
 
 ### Transports

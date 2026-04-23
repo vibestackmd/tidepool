@@ -170,8 +170,8 @@ async fn signature_unsubscribe_acks_and_cancels() {
 
 #[tokio::test]
 async fn unsupported_method_returns_method_not_found() {
-    // `logsSubscribe` is representative of the WS methods we haven't
-    // polyfilled yet — expect a clean -32601 response.
+    // `programSubscribe` is representative of the WS methods we
+    // haven't polyfilled yet — expect a clean -32601 response.
     let upstream = spawn_upstream(0).await;
     let port = spawn_ws(upstream).await;
     let url = format!("ws://127.0.0.1:{port}/");
@@ -182,7 +182,7 @@ async fn unsupported_method_returns_method_not_found() {
             json!({
                 "jsonrpc": "2.0",
                 "id": 99,
-                "method": "logsSubscribe",
+                "method": "programSubscribe",
                 "params": []
             })
             .to_string()
@@ -193,6 +193,145 @@ async fn unsupported_method_returns_method_not_found() {
     let err: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
     assert_eq!(err["id"], 99);
     assert_eq!(err["error"]["code"], -32601);
+}
+
+#[tokio::test]
+async fn logs_subscribe_rejects_all_filter() {
+    // Polling-based polyfill can't fan out "all" traffic efficiently.
+    // Clients asking for `"all"` / `"allWithVotes"` get a typed error
+    // instead of silent acceptance.
+    let upstream = spawn_upstream(0).await;
+    let port = spawn_ws(upstream).await;
+    let url = format!("ws://127.0.0.1:{port}/");
+
+    let (mut socket, _) = connect_async(url).await.unwrap();
+    socket
+        .send(Message::Text(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 77,
+                "method": "logsSubscribe",
+                "params": ["all"]
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+    let err: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    assert_eq!(err["id"], 77);
+    assert_eq!(err["error"]["code"], -32601);
+    assert!(err["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("mentions"));
+}
+
+/// Upstream that serves `getSignaturesForAddress` + `getTransaction`
+/// for the logsSubscribe polyfill. First sig response is a baseline
+/// (no emit); on the 2nd call we inject a new signature so the
+/// polyfill fans out to getTransaction and emits a logsNotification.
+async fn spawn_logs_upstream(mention: &'static str) -> String {
+    let state: Arc<tokio::sync::Mutex<u32>> = Arc::new(tokio::sync::Mutex::new(0));
+    let state_clone = Arc::clone(&state);
+
+    let app = Router::new().route(
+        "/",
+        post(
+            move |State(state): State<Arc<tokio::sync::Mutex<u32>>>, Json(body): Json<Value>| {
+                let state = Arc::clone(&state);
+                async move {
+                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                    let id = body.get("id").cloned().unwrap_or(Value::Null);
+                    match method {
+                        "getSignaturesForAddress" => {
+                            // Confirm the filter pubkey matches the subscribed mention.
+                            assert_eq!(
+                                body["params"][0].as_str().unwrap_or(""),
+                                mention,
+                                "upstream saw wrong mention filter"
+                            );
+                            let mut calls = state.lock().await;
+                            *calls += 1;
+                            let sigs = if *calls == 1 {
+                                json!([{ "signature": "BASELINE_SIG", "slot": 100 }])
+                            } else {
+                                json!([
+                                    { "signature": "NEW_SIG_1", "slot": 101 },
+                                    { "signature": "BASELINE_SIG", "slot": 100 }
+                                ])
+                            };
+                            Json(json!({ "jsonrpc": "2.0", "id": id, "result": sigs }))
+                        }
+                        "getTransaction" => Json(json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "slot": 101,
+                                "meta": {
+                                    "err": null,
+                                    "logMessages": [
+                                        "Program log: hello",
+                                        "Program log: world"
+                                    ]
+                                }
+                            }
+                        })),
+                        _ => Json(json!({ "jsonrpc": "2.0", "id": id, "result": null })),
+                    }
+                }
+            },
+        ),
+    )
+    .with_state(state_clone);
+
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+    format!("http://{addr}")
+}
+
+#[tokio::test]
+async fn logs_subscribe_emits_notification_for_mention() {
+    const PUBKEY: &str = "Mentions111111111111111111111111111111111111";
+    let upstream = spawn_logs_upstream(PUBKEY).await;
+    let port = spawn_ws(upstream).await;
+    let url = format!("ws://127.0.0.1:{port}/");
+
+    let (mut socket, _) = connect_async(url).await.unwrap();
+    socket
+        .send(Message::Text(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 42,
+                "method": "logsSubscribe",
+                "params": [
+                    { "mentions": [PUBKEY] },
+                    { "commitment": "finalized" }
+                ]
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+
+    let ack: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    assert_eq!(ack["id"], 42);
+    let sub_id = ack["result"].as_u64().expect("numeric sub id");
+
+    // Next message is the logsNotification for NEW_SIG_1.
+    let notif: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    assert_eq!(notif["method"], "logsNotification");
+    assert_eq!(notif["params"]["subscription"], sub_id);
+    let value = &notif["params"]["result"]["value"];
+    assert_eq!(value["signature"], "NEW_SIG_1");
+    assert!(value["err"].is_null());
+    let logs = value["logs"].as_array().expect("logs array");
+    assert_eq!(logs.len(), 2);
+    assert_eq!(logs[0], "Program log: hello");
 }
 
 /// Mock upstream that varies `getAccountInfo` responses across polls
