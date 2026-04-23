@@ -14,6 +14,7 @@ use tracing::warn;
 use tidepool_rpc::cache::{CacheStore, SearchFilter};
 use tidepool_rpc::cnft::{index_tree, CnftStore, IndexTreeOptions};
 use tidepool_rpc::compat::{manifest, summarize};
+use tidepool_rpc::compatibility::compatibility;
 use tidepool_rpc::das::{
     get_asset_full, get_asset_proof, get_asset_proof_batch, get_assets_by_authority,
     get_assets_by_creator, get_assets_by_group, get_assets_by_owner, get_balances,
@@ -1148,6 +1149,10 @@ where
             "version": env!("CARGO_PKG_VERSION"),
             "methods": methods,
             "summary": summary,
+            // Upstream pins this release was tested against. Parsed
+            // at compile time from `compatibility.toml` — see
+            // `crates/service/src/compatibility.rs`.
+            "compatibility": compatibility(),
         }),
     )
 }

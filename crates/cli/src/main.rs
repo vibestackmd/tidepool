@@ -16,16 +16,40 @@
 //! `TIDEPOOL_INDEX_TREES` (comma-separated), `TIDEPOOL_RPC_TIMEOUT_MS`.
 //! `RUST_LOG` controls tracing verbosity (e.g. `RUST_LOG=tidepool=debug`).
 
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
+use tidepool_rpc::compatibility::compatibility;
 use tidepool_rpc_server::{run, ServerConfig};
 use tracing_subscriber::EnvFilter;
+
+/// Build the `--version` / `-V` output. Combines `CARGO_PKG_VERSION`
+/// with the `tested-against` pins from `compatibility.toml` so users
+/// see "this release vs. these upstream versions" without running
+/// the server. Cached in a OnceLock — we only format it once even
+/// though clap may ask repeatedly.
+fn long_version() -> &'static str {
+    static CACHE: OnceLock<String> = OnceLock::new();
+    CACHE.get_or_init(|| {
+        // clap prepends "{bin} " before `long_version`, so start
+        // with the version number + the tested-against stanza.
+        use std::fmt::Write as _;
+        let base = env!("CARGO_PKG_VERSION");
+        let c = compatibility();
+        let mut out = format!("{base}\n\ntested against:");
+        for (name, pin) in &c.tested_against {
+            let _ = write!(out, "\n  {name:<14} {}", pin.version);
+        }
+        out
+    })
+}
 
 #[derive(Parser, Debug)]
 #[command(
     name = "tidepool-rpc",
-    version,
+    version = env!("CARGO_PKG_VERSION"),
+    long_version = long_version(),
     about = "Tidepool — Helius-compatible local dev environment, built on Surfpool",
     long_about = None,
 )]

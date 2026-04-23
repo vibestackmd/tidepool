@@ -1,6 +1,6 @@
 [package]
 name = "tidepool-rpc-cli"
-version = "0.1.0"
+version.workspace = true
 description = "Tidepool CLI — local Helius-compatible RPC server. Ships as the `tidepool-rpc` binary."
 edition.workspace = true
 license.workspace = true
@@ -20,6 +20,7 @@ workspace = true
 
 [dependencies]
 tidepool-rpc-server = { version = "0.1", path = "../server" }
+tidepool-rpc = { version = "0.1", path = "../service" }
 
 # Arg parsing.
 clap = { version = "4", features = ["derive", "env"] }

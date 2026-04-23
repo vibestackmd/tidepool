@@ -1,6 +1,6 @@
 [package]
 name = "tidepool-rpc-node"
-version = "0.1.0"
+version.workspace = true
 description = "Node.js (napi-rs) bridge for the Tidepool Rust service layer. Consumed as the `tidepool-rpc` npm package."
 edition.workspace = true
 license.workspace = true

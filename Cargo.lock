@@ -4220,6 +4220,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tidepool-rpc-core",
  "tokio",
+ "toml 0.8.23",
  "tracing",
 ]
 
@@ -4230,6 +4231,7 @@ dependencies = [
  "clap",
  "reqwest",
  "serde_json",
+ "tidepool-rpc",
  "tidepool-rpc-server",
  "tokio",
  "tracing",

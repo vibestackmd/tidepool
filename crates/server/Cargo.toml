@@ -1,6 +1,6 @@
 [package]
 name = "tidepool-rpc-server"
-version = "0.1.0"
+version.workspace = true
 description = "Tidepool HTTP + WebSocket JSON-RPC server. Wraps the service layer (cNFT indexing, DAS handlers, passthrough proxy) in an axum front-end."
 edition.workspace = true
 license.workspace = true

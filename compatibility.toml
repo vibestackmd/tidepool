@@ -1,0 +1,51 @@
+# Tidepool compatibility pins.
+#
+# This file is the one source of truth for "which upstream versions
+# has this release of Tidepool been tested against?" It is:
+#
+#   1. Parsed at compile time (via `include_str!`) and surfaced through
+#      `tidepool_info`'s response under `result.compatibility`. Clients
+#      asking the running server what it speaks get the pins live.
+#   2. Shown in the CLI `--version` output so users see it without
+#      ever calling the server.
+#   3. Validated in release preflight — a version bump that doesn't
+#      touch this file (either confirming tested ranges or updating
+#      them) hard-fails CI. Forces a "yes, we re-tested" decision
+#      before every release.
+#
+# Versions here are SemVer ranges, interpreted in npm/Cargo style:
+#   - "^1.6"        → compatible with 1.6.0 through <2.0.0
+#   - ">=1.6, <2"   → the same, explicit
+#   - "=0.12.3"     → locked to exact
+#   - "any"         → no constraint; useful during rapid upstream churn
+#
+# Never leave a field blank. Use "any" + a `note` explaining why if
+# you genuinely can't pin something today.
+
+[tested-against]
+
+# Surfpool is Tidepool's intended upstream. Users *can* run against
+# `solana-test-validator` or any mainnet RPC, but we only verify
+# against Surfpool in release preflight.
+surfpool = { version = "any", url = "https://github.com/txtx/surfpool", note = "pin once Surfpool reaches 1.0" }
+
+# helius-sdk is the JS consumer we care most about interop with.
+# When we bump, we verify that the current helius-sdk release resolves
+# against our wire shapes via the drift fixtures.
+"helius-sdk" = { version = "^1.6", url = "https://github.com/helius-xyz/helius-sdk", note = "REST base-URL override lands in a PR we assume merges" }
+
+# Solana client version we test our passthrough against. Not a hard
+# constraint — passthrough is transport-level — but a useful stamp
+# for "what network features did this release target?"
+solana = { version = ">=1.18, <2.1", url = "https://github.com/anza-xyz/agave" }
+
+# Rust MSRV. Enforced by `rust-version` in the workspace manifest,
+# duplicated here for `tidepool_info` surfacing.
+rust = { version = ">=1.77" }
+
+[runtime]
+
+# Minimum Node version the `tidepool-rpc` npm package supports. Set
+# by `engines.node` in crates/node/package.json — mirrored here for
+# the same cross-surface visibility.
+node = { version = ">=18" }

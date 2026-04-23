@@ -18,6 +18,7 @@
 pub mod cache;
 pub mod cnft;
 pub mod compat;
+pub mod compatibility;
 pub mod das;
 pub mod enhanced;
 pub mod priority_fee;

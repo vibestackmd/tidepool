@@ -1,6 +1,6 @@
 [package]
 name = "tidepool-rpc"
-version = "0.1.0"
+version.workspace = true
 description = "Tidepool — Helius-compatible local RPC service: cNFT indexing, DAS responses, upstream-agnostic. The headline Rust crate."
 edition.workspace = true
 license.workspace = true
@@ -71,6 +71,13 @@ base64 = "0.22"
 # so we don't inherit a system-lib dependency; the binary gets ~2 MB
 # bigger in exchange for a fully self-contained build.
 rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Upstream-compatibility manifest parsing. The repo-root
+# `compatibility.toml` is embedded at build time (see
+# `crates/service/src/compatibility.rs`) and surfaced via
+# `tidepool_info` so clients can see the tested-against pins at
+# runtime.
+toml = "0.8"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
