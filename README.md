@@ -104,7 +104,7 @@ Full runnable vitest setup in [`examples/msw-integration/`](examples/msw-integra
 
 Uncompressed `getAsset` fetches the account from the upstream, runs it through a pluggable decoder (`mpl-core` or `mpl-token-metadata`), and returns a DAS-shaped response. The cache populates as a side effect so `searchAssets`, `getAssetsByOwner`, and the other secondary-index queries work.
 
-Compressed `getAsset` / `getAssetProof` resolve from a local Bubblegum indexer: `getSignaturesForAddress` walks the tree, `getTransaction` pulls each candidate tx, inner Bubblegum + noop CPIs are parsed for authoritative leaf state. Trees are registered via `--index-tree` at startup or `surfpoolHeliusIndexTree` at runtime.
+Compressed `getAsset` / `getAssetProof` resolve from a local Bubblegum indexer: `getSignaturesForAddress` walks the tree, `getTransaction` pulls each candidate tx, inner Bubblegum + noop CPIs are parsed for authoritative leaf state. Trees are registered via `--index-tree` at startup or `tidepool_indexTree` at runtime.
 
 ## Why Surfpool?
 
@@ -114,7 +114,7 @@ The `signatureSubscribe` polyfill specifically exists because Surfpool doesn't i
 
 ## Supported methods
 
-Full live truth: `POST {"method":"surfpoolHeliusInfo"}` returns the complete manifest + summary. Every entry is classified `EXACT`, `LOCAL_INDEX`, `BEST_EFFORT`, `SHIM`, `SDK_WRAPPER`, `PLANNED`, or `SKIPPED`. The table below is a snapshot.
+Full live truth: `POST {"method":"tidepool_info"}` returns the complete manifest + summary. Every entry is classified `EXACT`, `LOCAL_INDEX`, `BEST_EFFORT`, `SHIM`, `SDK_WRAPPER`, `PLANNED`, or `SKIPPED`. The table below is a snapshot.
 
 | Method | Status | Notes |
 |---|---|---|
@@ -122,14 +122,26 @@ Full live truth: `POST {"method":"surfpoolHeliusInfo"}` returns the complete man
 | `getAssetProof` / `getAssetProofBatch` | ✅ LOCAL_INDEX | Requires tree registered via `--index-tree` or runtime method |
 | `getAssetsByOwner` / `Authority` / `Creator` / `Group` | ✅ LOCAL_INDEX | Cache-backed secondary indexes |
 | `searchAssets` | ✅ LOCAL_INDEX | Multi-filter AND, smallest-index-first narrowing |
-| `signatureSubscribe` / `Unsubscribe` | ✅ SHIM | HTTP polling polyfill |
+| `getNftEditions` | ✅ LOCAL_INDEX | Lazy edition-PDA indexing; master + print editions |
+| `signatureSubscribe` / `accountSubscribe` (+ `Unsubscribe`) | ✅ SHIM | HTTP polling polyfills on the WS port |
+| `getPriorityFeeEstimate` | ✅ BEST_EFFORT | Local percentile ladder over `getRecentPrioritizationFees` |
 | `helius-sdk` composed methods | ✅ SDK_WRAPPER | Send / broadcast / confirm / staking — all work transparently |
-| `getNftEditions` | ⏳ PLANNED | Needs edition-PDA indexing |
-| `getTransactions` / `getTransactionsByAddress` | ⏳ PLANNED | Enhanced Transactions parsers |
-| `getPriorityFeeEstimate` | ⏳ PLANNED | Local percentiles |
-| `createWebhook` family | ⏳ PLANNED | Polling-simulator shim |
-| `accountSubscribe` / `logsSubscribe` | ⏳ PLANNED | WS polyfills beyond signature |
+| `getBalances` (REST) | ✅ SHIM | `GET /v0/addresses/{addr}/balances` — matches Helius REST path |
+| `getTransactions` / `getTransactionsByAddress` (REST) | ✅ SHIM | Enhanced Transactions parsers on `/v0/transactions` and `/v0/addresses/{addr}/transactions` |
+| `createWebhook` family (REST) | ✅ SHIM | Polling-simulator on `/v0/webhooks` + `/v0/webhooks/{id}` — full CRUD |
+| `logsSubscribe` | ⏳ PLANNED | WS polyfill — remaining subscribe method |
 | Everything else | ✅ Passthrough | Forwarded to the upstream unchanged |
+
+### Transports
+
+Tidepool matches Helius's transport split exactly — a method lives where Helius puts it, and nowhere else. That way you can't write local-dev code that'd break against production.
+
+- **JSON-RPC** (`POST /`): DAS (`getAsset*`), Bubblegum tree control (`tidepool_*`), standard RPC passthrough.
+- **REST** (`/v0/…`): Wallet (`getBalances`), Enhanced Transactions, Webhooks CRUD. Same paths as `api.helius.xyz/v0/...`.
+- **WebSocket** (`ws://host:port+1`): `signatureSubscribe`, `accountSubscribe`, `signatureUnsubscribe`.
+- **SDK Wrapper**: `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation`, stake/unstake — composed methods from `helius-sdk`, no wire method of their own.
+
+`tidepool_info` returns a `transport` field per method so tooling can introspect without guessing.
 
 ## Compressed NFTs (cNFTs)
 
@@ -144,12 +156,28 @@ tidepool-rpc start --index-tree <merkle-tree>
 # At runtime (in a vitest setup file, CI script, etc.):
 curl -X POST http://localhost:8897 \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"surfpoolHeliusIndexTree","params":{"tree":"<merkle-tree>"}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tidepool_indexTree","params":{"tree":"<merkle-tree>"}}'
 ```
 
-**Tracked:** `createTree`, `mintV1`, `mintToCollectionV1`, `transfer`, `burn`, `delegate`, `verifyCreator`, `unverifyCreator`, `verifyCollection`, `unverifyCollection`, `setAndVerifyCollection`, `updateMetadata`. For hash-dependent ixs, authoritative state comes from the noop `LeafSchemaEvent` CPI — proofs stay correct through multi-step flows.
+**Tracked:** `createTree`, `mintV1` / `mintV2`, `mintToCollectionV1`, `transfer` / `transferV2`, `burn` / `burnV2`, `delegate` / `delegateV2`, `verifyCreator` / `verifyCreatorV2`, `unverifyCreator`, `verifyCollection`, `unverifyCollection`, `setAndVerifyCollection` / `setCollectionV2`, `updateMetadata` / `updateMetadataV2`. For hash-dependent ixs, authoritative state comes from the noop `LeafSchemaEvent` CPI — proofs stay correct through multi-step flows. Covers both SPL-NOOP (V1) and MPL-NOOP (V2) noop programs.
 
-**Not yet tracked:** the V2 ix family (`mintV2`, `transferV2`, `burnV2`). On the roadmap.
+## Persistence
+
+Default behavior is **in-memory** — state is lost on restart. Two flags turn that off, shaped after [Surfpool's own persistence UX](https://github.com/txtx/surfpool) so the two tools feel familiar:
+
+```bash
+# Single SQLite file holds cNFT index + DAS cache + webhook registry.
+tidepool-rpc start --db ./tidepool.sqlite
+
+# Explicit ephemeral SQLite (rarely useful — same as omitting the flag).
+tidepool-rpc start --db :memory:
+
+# Preload snapshot(s) at boot. Repeatable. File format is the envelope
+# returned by tidepool_exportTreeSnapshot.
+tidepool-rpc start --snapshot ./trees/foo.json --snapshot ./trees/bar.json
+```
+
+`tidepool_exportTreeSnapshot` dumps a tree's indexed state at runtime; write it to a file, commit to your repo, and every fresh boot can `--snapshot` that file to skip re-paging tx history. Shape parallels Surfpool's `surfnet_exportSnapshot` but scoped to cNFT trees (different data model).
 
 ## Examples
 

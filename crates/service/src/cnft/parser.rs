@@ -21,11 +21,12 @@ use borsh::BorshDeserialize;
 // flow — all the new state comes from the paired LeafSchemaEvent, and
 // positional accounts give us the creator / collection pubkey.
 use mpl_bubblegum::instructions::{
-    BurnInstructionArgs, CreateTreeConfigInstructionArgs, DelegateInstructionArgs,
-    MintToCollectionV1InstructionArgs, MintV1InstructionArgs, TransferInstructionArgs,
-    UpdateMetadataInstructionArgs,
+    BurnInstructionArgs, CreateTreeConfigInstructionArgs, CreateTreeConfigV2InstructionArgs,
+    DelegateInstructionArgs, MintToCollectionV1InstructionArgs, MintV1InstructionArgs,
+    MintV2InstructionArgs, TransferInstructionArgs, UpdateMetadataInstructionArgs,
+    UpdateMetadataV2InstructionArgs,
 };
-use mpl_bubblegum::types::{MetadataArgs, UpdateArgs};
+use mpl_bubblegum::types::{MetadataArgs, MetadataArgsV2, UpdateArgs};
 use thiserror::Error;
 use tidepool_rpc_core::Creator;
 
@@ -53,6 +54,22 @@ pub const VERIFY_COLLECTION_DISC: [u8; 8] = [56, 113, 101, 253, 79, 55, 122, 169
 pub const UNVERIFY_COLLECTION_DISC: [u8; 8] = [250, 251, 42, 106, 41, 137, 186, 168];
 pub const SET_AND_VERIFY_COLLECTION_DISC: [u8; 8] = [235, 242, 121, 216, 158, 234, 180, 234];
 pub const UPDATE_METADATA_DISC: [u8; 8] = [170, 182, 43, 239, 97, 78, 225, 186];
+
+// ─── V2 discriminators ──────────────────────────────────────────────
+// V2 ixs live alongside V1 under the same Bubblegum program. Their
+// paired noop uses MPL_NOOP instead of SPL_NOOP and emits
+// LeafSchema::V2 payloads — we treat the V2 leaf hash in the noop as
+// authoritative and don't reconstruct V2-specific hash components.
+
+pub const CREATE_TREE_CONFIG_V2_DISC: [u8; 8] = [55, 99, 95, 215, 142, 203, 227, 205];
+pub const MINT_V2_DISC: [u8; 8] = [120, 121, 23, 146, 173, 110, 199, 205];
+pub const TRANSFER_V2_DISC: [u8; 8] = [119, 40, 6, 235, 234, 221, 248, 49];
+pub const BURN_V2_DISC: [u8; 8] = [115, 210, 34, 240, 232, 143, 183, 16];
+pub const DELEGATE_V2_DISC: [u8; 8] = [95, 87, 125, 140, 181, 131, 128, 227];
+pub const VERIFY_CREATOR_V2_DISC: [u8; 8] = [85, 138, 140, 42, 22, 241, 118, 102];
+pub const UNVERIFY_CREATOR_V2_DISC: [u8; 8] = [174, 112, 29, 142, 230, 100, 239, 7];
+pub const UPDATE_METADATA_V2_DISC: [u8; 8] = [43, 103, 89, 42, 121, 242, 62, 72];
+pub const SET_COLLECTION_V2_DISC: [u8; 8] = [229, 35, 61, 91, 15, 14, 99, 160];
 
 // ─── account position tables ──────────────────────────────────────
 // Positions are from the Anchor-generated builder in mpl-bubblegum 3:
@@ -130,6 +147,85 @@ mod pos {
         pub const MERKLE_TREE: usize = 8;
         pub const MIN: usize = 13;
     }
+
+    // ─── V2 position tables ─────────────────────────────────────────
+    // V2 ixs use Anchor's optional-account convention: when an optional
+    // account is None the slot is filled with the Bubblegum program ID
+    // (`MPL_BUBBLEGUM_ID`), so positions are fixed regardless of which
+    // options the caller chose. Callers reading leaf_delegate/etc should
+    // fall back to `leaf_owner` when the slot equals the Bubblegum
+    // program ID (i.e. the ix was built with `None`).
+
+    // create_tree_config_v2: [treeConfig, merkleTree, payer,
+    //   treeCreator, logWrapper, compressionProgram, systemProgram]
+    pub mod create_tree_v2 {
+        pub const MERKLE_TREE: usize = 1;
+        pub const MIN: usize = 7;
+    }
+    // mint_v2 — 13 accounts (2 non-optional, 5 optional, 6 tail):
+    // 0 treeConfig, 1 payer, 2 treeCreatorOrDelegate?, 3 collectionAuthority?,
+    // 4 leafOwner, 5 leafDelegate?, 6 merkleTree, 7 coreCollection?,
+    // 8 mplCoreCpiSigner?, 9 logWrapper, 10 compressionProgram,
+    // 11 mplCoreProgram, 12 systemProgram.
+    pub mod mint_v2 {
+        pub const LEAF_OWNER: usize = 4;
+        pub const LEAF_DELEGATE: usize = 5;
+        pub const MERKLE_TREE: usize = 6;
+        pub const CORE_COLLECTION: usize = 7;
+        pub const MIN: usize = 13;
+    }
+    // transfer_v2 — 11 accounts:
+    // 0 treeConfig, 1 payer, 2 authority?, 3 leafOwner, 4 leafDelegate?,
+    // 5 newLeafOwner, 6 merkleTree, 7 coreCollection?, 8 logWrapper,
+    // 9 compressionProgram, 10 systemProgram.
+    pub mod transfer_v2 {
+        pub const NEW_LEAF_OWNER: usize = 5;
+        pub const MERKLE_TREE: usize = 6;
+        pub const MIN: usize = 11;
+    }
+    // burn_v2 — 12 accounts:
+    // 0 treeConfig, 1 payer, 2 authority?, 3 leafOwner, 4 leafDelegate?,
+    // 5 merkleTree, 6 coreCollection?, 7 mplCoreCpiSigner?, 8 logWrapper,
+    // 9 compressionProgram, 10 mplCoreProgram, 11 systemProgram.
+    pub mod burn_v2 {
+        pub const MERKLE_TREE: usize = 5;
+        pub const MIN: usize = 12;
+    }
+    // delegate_v2 — 9 accounts:
+    // 0 treeConfig, 1 payer, 2 leafOwner?, 3 previousLeafDelegate?,
+    // 4 newLeafDelegate, 5 merkleTree, 6 logWrapper, 7 compressionProgram,
+    // 8 systemProgram.
+    pub mod delegate_v2 {
+        pub const NEW_LEAF_DELEGATE: usize = 4;
+        pub const MERKLE_TREE: usize = 5;
+        pub const MIN: usize = 9;
+    }
+    // verify_creator_v2 / unverify_creator_v2 — 9 accounts:
+    // 0 treeConfig, 1 payer, 2 creator?, 3 leafOwner, 4 leafDelegate?,
+    // 5 merkleTree, 6 logWrapper, 7 compressionProgram, 8 systemProgram.
+    pub mod verify_creator_v2 {
+        pub const CREATOR: usize = 2;
+        pub const MERKLE_TREE: usize = 5;
+        pub const MIN: usize = 9;
+    }
+    // update_metadata_v2 — 10 accounts:
+    // 0 treeConfig, 1 payer, 2 authority?, 3 leafOwner, 4 leafDelegate?,
+    // 5 merkleTree, 6 coreCollection?, 7 logWrapper, 8 compressionProgram,
+    // 9 systemProgram.
+    pub mod update_metadata_v2 {
+        pub const MERKLE_TREE: usize = 5;
+        pub const MIN: usize = 10;
+    }
+    // set_collection_v2 — 14 accounts:
+    // 0 treeConfig, 1 payer, 2 authority?, 3 newCollectionAuthority?,
+    // 4 leafOwner, 5 leafDelegate?, 6 merkleTree, 7 coreCollection?,
+    // 8 newCoreCollection?, 9 mplCoreCpiSigner, 10 logWrapper,
+    // 11 compressionProgram, 12 mplCoreProgram, 13 systemProgram.
+    pub mod set_collection_v2 {
+        pub const MERKLE_TREE: usize = 6;
+        pub const NEW_CORE_COLLECTION: usize = 8;
+        pub const MIN: usize = 14;
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -183,6 +279,18 @@ pub fn parse_bubblegum_instruction(
             parse_set_and_verify_collection(accounts, noop_event).map(Some)
         }
         UPDATE_METADATA_DISC => parse_update_metadata(body, accounts, noop_event).map(Some),
+
+        // ─── V2 family ─────────────────────────────────────────────
+        CREATE_TREE_CONFIG_V2_DISC => parse_create_tree_v2(body, accounts).map(Some),
+        MINT_V2_DISC => parse_mint_v2(body, accounts, noop_event).map(Some),
+        TRANSFER_V2_DISC => parse_transfer_v2(accounts, noop_event).map(Some),
+        BURN_V2_DISC => parse_burn_v2(accounts, noop_event).map(Some),
+        DELEGATE_V2_DISC => parse_delegate_v2(accounts, noop_event).map(Some),
+        VERIFY_CREATOR_V2_DISC => parse_verify_creator_v2(accounts, noop_event).map(Some),
+        UNVERIFY_CREATOR_V2_DISC => parse_unverify_creator_v2(accounts, noop_event).map(Some),
+        UPDATE_METADATA_V2_DISC => parse_update_metadata_v2(body, accounts, noop_event).map(Some),
+        SET_COLLECTION_V2_DISC => parse_set_collection_v2(accounts, noop_event).map(Some),
+
         _ => Err(ParseError::UnknownDiscriminator { discriminator: disc }),
     }
 }
@@ -387,7 +495,228 @@ fn parse_update_metadata(
     })
 }
 
+// ─── V2 per-ix parsers ──────────────────────────────────────────────
+// All V2 parsers require a paired LeafSchemaEvent: the V2 leaf hash
+// includes collection_hash / asset_data_hash / flags we don't track
+// locally, so we treat the noop's emitted leaf_hash as the only source
+// of truth. This mirrors the pre-existing policy for verify/update
+// ixs — just applied universally to V2.
+
+fn parse_create_tree_v2(body: &[u8], accounts: &[[u8; 32]]) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::create_tree_v2::MIN)?;
+    let args = CreateTreeConfigV2InstructionArgs::try_from_slice(body)
+        .map_err(|e| ParseError::DecoderError(e.to_string()))?;
+    Ok(CnftEvent::CreateTree {
+        tree: accounts[pos::create_tree_v2::MERKLE_TREE],
+        depth: u8::try_from(args.max_depth).unwrap_or(u8::MAX),
+        max_buffer_size: args.max_buffer_size,
+    })
+}
+
+fn parse_mint_v2(
+    body: &[u8],
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::mint_v2::MIN)?;
+    // V2 mint requires a noop — authoritative nonce/id come from it.
+    let noop = require_noop(noop_event, "mintV2")?;
+    let args = MintV2InstructionArgs::try_from_slice(body)
+        .map_err(|e| ParseError::DecoderError(e.to_string()))?;
+
+    let leaf_owner = accounts[pos::mint_v2::LEAF_OWNER];
+    let leaf_delegate_slot = accounts[pos::mint_v2::LEAF_DELEGATE];
+    // Optional-account convention: absent leaf_delegate → Bubblegum
+    // program ID; default that to the leaf_owner like the V2 ix does.
+    let leaf_delegate = if is_bubblegum_placeholder(&leaf_delegate_slot) {
+        leaf_owner
+    } else {
+        leaf_delegate_slot
+    };
+    // core_collection (optional) drives the verified-collection bit in
+    // V2. If it's a real account, the ix verifies the collection.
+    let core_collection_slot = accounts[pos::mint_v2::CORE_COLLECTION];
+    let verify_collection = if is_bubblegum_placeholder(&core_collection_slot) {
+        None
+    } else {
+        Some(core_collection_slot)
+    };
+
+    let metadata = v2_metadata_to_mint_metadata(&args.metadata, body);
+
+    Ok(CnftEvent::Mint {
+        tree: accounts[pos::mint_v2::MERKLE_TREE],
+        owner: leaf_owner,
+        delegate: leaf_delegate,
+        metadata,
+        verify_collection,
+        noop: Some(noop),
+    })
+}
+
+fn parse_transfer_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::transfer_v2::MIN)?;
+    let noop = require_noop(noop_event, "transferV2")?;
+    let new_owner = accounts[pos::transfer_v2::NEW_LEAF_OWNER];
+    Ok(CnftEvent::Transfer {
+        tree: accounts[pos::transfer_v2::MERKLE_TREE],
+        leaf_index: noop.leaf_index,
+        nonce: noop.nonce,
+        new_owner,
+        new_delegate: new_owner,
+        data_hash: noop.data_hash,
+        creator_hash: noop.creator_hash,
+        noop: Some(noop),
+    })
+}
+
+fn parse_burn_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::burn_v2::MIN)?;
+    let noop = require_noop(noop_event, "burnV2")?;
+    Ok(CnftEvent::Burn {
+        tree: accounts[pos::burn_v2::MERKLE_TREE],
+        leaf_index: noop.leaf_index,
+        nonce: noop.nonce,
+        noop: Some(noop),
+    })
+}
+
+fn parse_delegate_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::delegate_v2::MIN)?;
+    let noop = require_noop(noop_event, "delegateV2")?;
+    Ok(CnftEvent::Delegate {
+        tree: accounts[pos::delegate_v2::MERKLE_TREE],
+        leaf_index: noop.leaf_index,
+        nonce: noop.nonce,
+        new_delegate: accounts[pos::delegate_v2::NEW_LEAF_DELEGATE],
+        data_hash: noop.data_hash,
+        creator_hash: noop.creator_hash,
+        noop: Some(noop),
+    })
+}
+
+fn parse_verify_creator_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::verify_creator_v2::MIN)?;
+    let noop = require_noop(noop_event, "verifyCreatorV2")?;
+    Ok(CnftEvent::VerifyCreator {
+        tree: accounts[pos::verify_creator_v2::MERKLE_TREE],
+        creator: accounts[pos::verify_creator_v2::CREATOR],
+        noop,
+    })
+}
+
+fn parse_unverify_creator_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::verify_creator_v2::MIN)?;
+    let noop = require_noop(noop_event, "unverifyCreatorV2")?;
+    Ok(CnftEvent::UnverifyCreator {
+        tree: accounts[pos::verify_creator_v2::MERKLE_TREE],
+        creator: accounts[pos::verify_creator_v2::CREATOR],
+        noop,
+    })
+}
+
+fn parse_update_metadata_v2(
+    body: &[u8],
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::update_metadata_v2::MIN)?;
+    let noop = require_noop(noop_event, "updateMetadataV2")?;
+    let args = UpdateMetadataV2InstructionArgs::try_from_slice(body)
+        .map_err(|e| ParseError::DecoderError(e.to_string()))?;
+    let new_metadata = update_args_to_mint_metadata(&args.update_args, body);
+    Ok(CnftEvent::UpdateMetadata {
+        tree: accounts[pos::update_metadata_v2::MERKLE_TREE],
+        new_metadata,
+        noop,
+    })
+}
+
+fn parse_set_collection_v2(
+    accounts: &[[u8; 32]],
+    noop_event: Option<&LeafSchemaEventDecoded>,
+) -> Result<CnftEvent, ParseError> {
+    require_accounts(accounts.len(), pos::set_collection_v2::MIN)?;
+    let noop = require_noop(noop_event, "setCollectionV2")?;
+    // Target collection comes from the new_core_collection slot; when
+    // absent (None) there's no collection change worth tracking.
+    let new_collection = accounts[pos::set_collection_v2::NEW_CORE_COLLECTION];
+    if is_bubblegum_placeholder(&new_collection) {
+        // Treat as a no-op collection update: emit an UnverifyCollection
+        // path with the *existing* collection key would require reading
+        // the prior state. Instead surface this as unsupported so the
+        // indexer logs and moves on.
+        return Err(ParseError::Unsupported(
+            "setCollectionV2 without a new core_collection slot isn't supported".into(),
+        ));
+    }
+    Ok(CnftEvent::SetAndVerifyCollection {
+        tree: accounts[pos::set_collection_v2::MERKLE_TREE],
+        collection: new_collection,
+        noop,
+    })
+}
+
 // ─── helpers ────────────────────────────────────────────────────────
+
+/// Anchor's optional-account convention: a `None` slot is filled with
+/// the containing program's own ID. For Bubblegum V2 that's
+/// `BUBBLEGUM_PROGRAM_ID` — match against the raw 32-byte pubkey so
+/// callers don't have to re-decode.
+fn is_bubblegum_placeholder(pk: &[u8; 32]) -> bool {
+    static PLACEHOLDER: std::sync::OnceLock<[u8; 32]> = std::sync::OnceLock::new();
+    let placeholder = PLACEHOLDER.get_or_init(|| {
+        let p: solana_program::pubkey::Pubkey = BUBBLEGUM_PROGRAM_ID.parse().expect(
+            "BUBBLEGUM_PROGRAM_ID is a valid base58 pubkey",
+        );
+        p.to_bytes()
+    });
+    pk == placeholder
+}
+
+fn v2_metadata_to_mint_metadata(m: &MetadataArgsV2, ix_body_after_disc: &[u8]) -> MintMetadata {
+    let creators = m
+        .creators
+        .iter()
+        .map(|c| Creator {
+            address: c.address.to_bytes(),
+            verified: c.verified,
+            share: c.share,
+        })
+        .collect();
+    // V2 always considers `collection` verified when set.
+    let collection = m.collection.as_ref().map(|key| (key.to_bytes(), true));
+
+    MintMetadata {
+        name: m.name.clone(),
+        symbol: m.symbol.clone(),
+        uri: m.uri.clone(),
+        seller_fee_basis_points: m.seller_fee_basis_points,
+        primary_sale_happened: m.primary_sale_happened,
+        is_mutable: m.is_mutable,
+        creators,
+        collection,
+        // V2 data hashing is schema-dependent and authoritative state
+        // always arrives via the paired noop — no need to preserve a
+        // preimage for re-hashing.
+        data_hash_input: ix_body_after_disc.to_vec(),
+    }
+}
 
 fn require_accounts(actual: usize, expected: usize) -> Result<(), ParseError> {
     if actual < expected {
@@ -405,15 +734,11 @@ fn require_noop(
             "{ix_name} requires a paired noop LeafSchemaEvent to resolve new state; none found"
         ))
     })?;
-    event.as_v1_override().ok_or_else(|| {
-        ParseError::Unsupported(format!(
-            "{ix_name}: LeafSchema V2 events aren't supported in this release"
-        ))
-    })
+    Ok(event.as_override())
 }
 
 fn noop_to_override(noop_event: Option<&LeafSchemaEventDecoded>) -> Option<NoopOverride> {
-    noop_event.and_then(LeafSchemaEventDecoded::as_v1_override)
+    noop_event.map(LeafSchemaEventDecoded::as_override)
 }
 
 /// Convert mpl-bubblegum's `MetadataArgs` into our `MintMetadata`,

@@ -1,0 +1,748 @@
+{
+  "case": "searchAssets_by_collection",
+  "method": "searchAssets",
+  "source_fixture": "contracts/fixtures/searchAssets/searchAssets_by_collection.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "last_indexed_slot": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "interface": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "object",
+                      "properties": {
+                        "$schema": {
+                          "type": "string"
+                        },
+                        "json_uri": {
+                          "type": "string"
+                        },
+                        "files": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "uri": {
+                                "type": "string"
+                              },
+                              "cdn_uri": {
+                                "type": "string"
+                              },
+                              "mime": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "cdn_uri",
+                              "mime",
+                              "uri"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "properties": {
+                            "attributes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "string"
+                                  },
+                                  "trait_type": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "trait_type",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "symbol": {
+                              "type": "string"
+                            },
+                            "token_standard": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "attributes",
+                            "description",
+                            "name",
+                            "symbol",
+                            "token_standard"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "links": {
+                          "type": "object",
+                          "properties": {
+                            "image": {
+                              "type": "string"
+                            },
+                            "external_url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "external_url",
+                            "image"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "category": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "$schema",
+                        "category",
+                        "files",
+                        "json_uri",
+                        "links",
+                        "metadata"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "authorities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "address",
+                          "scopes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "compression": {
+                      "type": "object",
+                      "properties": {
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "compressed": {
+                          "type": "boolean"
+                        },
+                        "data_hash": {
+                          "type": "string"
+                        },
+                        "creator_hash": {
+                          "type": "string"
+                        },
+                        "asset_hash": {
+                          "type": "string"
+                        },
+                        "tree": {
+                          "type": "string"
+                        },
+                        "seq": {
+                          "type": "integer"
+                        },
+                        "leaf_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "asset_hash",
+                        "compressed",
+                        "creator_hash",
+                        "data_hash",
+                        "eligible",
+                        "leaf_id",
+                        "seq",
+                        "tree"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "grouping": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "group_key": {
+                            "type": "string"
+                          },
+                          "group_value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "group_key",
+                          "group_value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "royalty": {
+                      "type": "object",
+                      "properties": {
+                        "royalty_model": {
+                          "type": "string"
+                        },
+                        "target": {
+                          "type": "null"
+                        },
+                        "percent": {
+                          "type": "number"
+                        },
+                        "basis_points": {
+                          "type": "integer"
+                        },
+                        "primary_sale_happened": {
+                          "type": "boolean"
+                        },
+                        "locked": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "basis_points",
+                        "locked",
+                        "percent",
+                        "primary_sale_happened",
+                        "royalty_model",
+                        "target"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "creators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "share": {
+                            "type": "integer"
+                          },
+                          "verified": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "address",
+                          "share",
+                          "verified"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "ownership": {
+                      "type": "object",
+                      "properties": {
+                        "frozen": {
+                          "type": "boolean"
+                        },
+                        "delegated": {
+                          "type": "boolean"
+                        },
+                        "delegate": {
+                          "type": "string"
+                        },
+                        "ownership_model": {
+                          "type": "string"
+                        },
+                        "owner": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "delegate",
+                        "delegated",
+                        "frozen",
+                        "owner",
+                        "ownership_model"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "supply": {
+                      "type": "object",
+                      "properties": {
+                        "print_max_supply": {
+                          "type": "integer"
+                        },
+                        "print_current_supply": {
+                          "type": "integer"
+                        },
+                        "edition_nonce": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "edition_nonce",
+                        "print_current_supply",
+                        "print_max_supply"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "mutable": {
+                      "type": "boolean"
+                    },
+                    "burnt": {
+                      "type": "boolean"
+                    },
+                    "token_info": {
+                      "type": "object",
+                      "properties": {
+                        "supply": {
+                          "type": "integer"
+                        },
+                        "decimals": {
+                          "type": "integer"
+                        },
+                        "token_program": {
+                          "type": "string"
+                        },
+                        "associated_token_address": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "associated_token_address",
+                        "decimals",
+                        "supply",
+                        "token_program"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "authorities",
+                    "burnt",
+                    "compression",
+                    "content",
+                    "creators",
+                    "grouping",
+                    "id",
+                    "interface",
+                    "mutable",
+                    "ownership",
+                    "royalty",
+                    "supply",
+                    "token_info"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "interface": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "object",
+                      "properties": {
+                        "$schema": {
+                          "type": "string"
+                        },
+                        "json_uri": {
+                          "type": "string"
+                        },
+                        "files": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "uri": {
+                                "type": "string"
+                              },
+                              "cdn_uri": {
+                                "type": "string"
+                              },
+                              "mime": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "cdn_uri",
+                              "mime",
+                              "uri"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "properties": {
+                            "attributes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "string"
+                                  },
+                                  "trait_type": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "trait_type",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "symbol": {
+                              "type": "string"
+                            },
+                            "token_standard": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "attributes",
+                            "description",
+                            "name",
+                            "symbol",
+                            "token_standard"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "links": {
+                          "type": "object",
+                          "properties": {
+                            "image": {
+                              "type": "string"
+                            },
+                            "external_url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "external_url",
+                            "image"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "category": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "$schema",
+                        "category",
+                        "files",
+                        "json_uri",
+                        "links",
+                        "metadata"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "authorities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "address",
+                          "scopes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "compression": {
+                      "type": "object",
+                      "properties": {
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "compressed": {
+                          "type": "boolean"
+                        },
+                        "data_hash": {
+                          "type": "string"
+                        },
+                        "creator_hash": {
+                          "type": "string"
+                        },
+                        "asset_hash": {
+                          "type": "string"
+                        },
+                        "tree": {
+                          "type": "string"
+                        },
+                        "seq": {
+                          "type": "integer"
+                        },
+                        "leaf_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "asset_hash",
+                        "compressed",
+                        "creator_hash",
+                        "data_hash",
+                        "eligible",
+                        "leaf_id",
+                        "seq",
+                        "tree"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "grouping": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "group_key": {
+                            "type": "string"
+                          },
+                          "group_value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "group_key",
+                          "group_value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "royalty": {
+                      "type": "object",
+                      "properties": {
+                        "royalty_model": {
+                          "type": "string"
+                        },
+                        "target": {
+                          "type": "null"
+                        },
+                        "percent": {
+                          "type": "number"
+                        },
+                        "basis_points": {
+                          "type": "integer"
+                        },
+                        "primary_sale_happened": {
+                          "type": "boolean"
+                        },
+                        "locked": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "basis_points",
+                        "locked",
+                        "percent",
+                        "primary_sale_happened",
+                        "royalty_model",
+                        "target"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "creators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "share": {
+                            "type": "integer"
+                          },
+                          "verified": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "address",
+                          "share",
+                          "verified"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "ownership": {
+                      "type": "object",
+                      "properties": {
+                        "frozen": {
+                          "type": "boolean"
+                        },
+                        "delegated": {
+                          "type": "boolean"
+                        },
+                        "delegate": {
+                          "type": "null"
+                        },
+                        "ownership_model": {
+                          "type": "string"
+                        },
+                        "owner": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "delegate",
+                        "delegated",
+                        "frozen",
+                        "owner",
+                        "ownership_model"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "supply": {
+                      "type": "object",
+                      "properties": {
+                        "print_max_supply": {
+                          "type": "integer"
+                        },
+                        "print_current_supply": {
+                          "type": "integer"
+                        },
+                        "edition_nonce": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "edition_nonce",
+                        "print_current_supply",
+                        "print_max_supply"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "mutable": {
+                      "type": "boolean"
+                    },
+                    "burnt": {
+                      "type": "boolean"
+                    },
+                    "token_info": {
+                      "type": "object",
+                      "properties": {
+                        "supply": {
+                          "type": "integer"
+                        },
+                        "decimals": {
+                          "type": "integer"
+                        },
+                        "token_program": {
+                          "type": "string"
+                        },
+                        "associated_token_address": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "associated_token_address",
+                        "decimals",
+                        "supply",
+                        "token_program"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "authorities",
+                    "burnt",
+                    "compression",
+                    "content",
+                    "creators",
+                    "grouping",
+                    "id",
+                    "interface",
+                    "mutable",
+                    "ownership",
+                    "royalty",
+                    "supply",
+                    "token_info"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "items",
+          "last_indexed_slot",
+          "limit",
+          "page",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -34,6 +34,7 @@ pub type ApplyResult<T> = Result<T, ApplyError>;
 /// re-applying an event produces the same end state — but **not**
 /// commutative: order matters, callers must apply in signature-
 /// chronological order.
+#[allow(clippy::too_many_lines)]
 pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> ApplyResult<()> {
     match event {
         CnftEvent::CreateTree { tree, depth, max_buffer_size } => {
@@ -80,12 +81,34 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
                 return Ok(());
             }
 
-            let (owner, delegate, data_hash, creator_hash) = match noop.as_ref() {
-                Some(ov) => (ov.owner, ov.delegate, ov.data_hash, ov.creator_hash),
-                None => (new_owner, new_delegate, existing.data_hash, existing.creator_hash),
-            };
-            put_updated_leaf(store, existing, owner, delegate, data_hash, creator_hash, None)
-                .await?;
+            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) =
+                match noop.as_ref() {
+                    Some(ov) => (
+                        ov.owner,
+                        ov.delegate,
+                        ov.data_hash,
+                        ov.creator_hash,
+                        Some(ov.leaf_hash),
+                    ),
+                    None => (
+                        new_owner,
+                        new_delegate,
+                        existing.data_hash,
+                        existing.creator_hash,
+                        None,
+                    ),
+                };
+            put_updated_leaf(
+                store,
+                existing,
+                owner,
+                delegate,
+                data_hash,
+                creator_hash,
+                None,
+                leaf_hash_override,
+            )
+            .await?;
         }
 
         CnftEvent::Delegate {
@@ -101,12 +124,34 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
             if noop.is_none() && (existing.data_hash != data_hash || existing.creator_hash != creator_hash) {
                 return Ok(());
             }
-            let (owner, delegate, data_hash, creator_hash) = match noop.as_ref() {
-                Some(ov) => (ov.owner, ov.delegate, ov.data_hash, ov.creator_hash),
-                None => (existing.owner, new_delegate, existing.data_hash, existing.creator_hash),
-            };
-            put_updated_leaf(store, existing, owner, delegate, data_hash, creator_hash, None)
-                .await?;
+            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) =
+                match noop.as_ref() {
+                    Some(ov) => (
+                        ov.owner,
+                        ov.delegate,
+                        ov.data_hash,
+                        ov.creator_hash,
+                        Some(ov.leaf_hash),
+                    ),
+                    None => (
+                        existing.owner,
+                        new_delegate,
+                        existing.data_hash,
+                        existing.creator_hash,
+                        None,
+                    ),
+                };
+            put_updated_leaf(
+                store,
+                existing,
+                owner,
+                delegate,
+                data_hash,
+                creator_hash,
+                None,
+                leaf_hash_override,
+            )
+            .await?;
         }
 
         CnftEvent::Burn { tree, leaf_index, nonce: _, noop: _ } => {
@@ -169,27 +214,34 @@ async fn apply_mint<S: CnftStore + ?Sized>(
         store.alloc_leaf_index(&tree).await?
     };
     let nonce = leaf_index;
-    let asset_id = derive_asset_id(&tree, nonce);
 
-    // Hashes: prefer noop-authoritative; otherwise reconstruct.
-    let (owner, delegate, data_hash, creator_hash) = match noop {
-        Some(ov) => (ov.owner, ov.delegate, ov.data_hash, ov.creator_hash),
-        None => (
+    // Hashes: prefer noop-authoritative; otherwise reconstruct. For
+    // asset_id, V2 mints emit their own id in the noop so we use that
+    // directly (happens to match `derive_asset_id` for the current
+    // Bubblegum derivation, but staying authoritative future-proofs us).
+    let (asset_id, owner, delegate, data_hash, creator_hash, leaf_hash) = if let Some(ov) = noop {
+        (
+            ov.id,
+            ov.owner,
+            ov.delegate,
+            ov.data_hash,
+            ov.creator_hash,
+            ov.leaf_hash,
+        )
+    } else {
+        let asset_id = derive_asset_id(&tree, nonce);
+        let data_hash = hash_metadata_args_bytes(&metadata.data_hash_input);
+        let creator_hash = hash_creators(&metadata.creators);
+        let leaf_hash = hash_leaf_v1(&LeafSchemaV1 {
+            id: asset_id,
             owner,
             delegate,
-            hash_metadata_args_bytes(&metadata.data_hash_input),
-            hash_creators(&metadata.creators),
-        ),
+            nonce,
+            data_hash,
+            creator_hash,
+        });
+        (asset_id, owner, delegate, data_hash, creator_hash, leaf_hash)
     };
-
-    let leaf_hash = hash_leaf_v1(&LeafSchemaV1 {
-        id: asset_id,
-        owner,
-        delegate,
-        nonce,
-        data_hash,
-        creator_hash,
-    });
 
     store
         .put_leaf(LeafRecord {
@@ -237,6 +289,7 @@ async fn apply_creator_flip<S: CnftStore + ?Sized>(
         noop.data_hash,
         noop.creator_hash,
         Some(new_metadata),
+        Some(noop.leaf_hash),
     )
     .await
 }
@@ -259,6 +312,7 @@ async fn apply_collection_flip<S: CnftStore + ?Sized>(
         noop.data_hash,
         noop.creator_hash,
         Some(new_metadata),
+        Some(noop.leaf_hash),
     )
     .await
 }
@@ -301,6 +355,7 @@ async fn apply_update_metadata<S: CnftStore + ?Sized>(
         noop.data_hash,
         noop.creator_hash,
         Some(merged),
+        Some(noop.leaf_hash),
     )
     .await
 }
@@ -318,6 +373,7 @@ async fn require_leaf<S: CnftStore + ?Sized>(
         .ok_or(ApplyError::MissingLeaf { leaf_index })
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn put_updated_leaf<S: CnftStore + ?Sized>(
     store: &S,
     existing: LeafRecord,
@@ -326,14 +382,21 @@ async fn put_updated_leaf<S: CnftStore + ?Sized>(
     data_hash: [u8; 32],
     creator_hash: [u8; 32],
     new_metadata: Option<MintMetadata>,
+    leaf_hash_override: Option<[u8; 32]>,
 ) -> ApplyResult<()> {
-    let leaf_hash = hash_leaf_v1(&LeafSchemaV1 {
-        id: existing.asset_id,
-        owner,
-        delegate,
-        nonce: existing.nonce,
-        data_hash,
-        creator_hash,
+    // For V2 leaves (or whenever we have an authoritative noop emit),
+    // the leaf_hash from the event folds in schema-specific fields
+    // we don't track (collection_hash, asset_data_hash, flags). When
+    // no override is given, fall back to V1 reconstruction.
+    let leaf_hash = leaf_hash_override.unwrap_or_else(|| {
+        hash_leaf_v1(&LeafSchemaV1 {
+            id: existing.asset_id,
+            owner,
+            delegate,
+            nonce: existing.nonce,
+            data_hash,
+            creator_hash,
+        })
     });
     let next = LeafRecord {
         mint_metadata: new_metadata.unwrap_or_else(|| existing.mint_metadata.clone()),

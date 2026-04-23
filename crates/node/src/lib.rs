@@ -32,6 +32,8 @@ use tidepool_rpc::cache::{CacheStore, MemoryCache};
 use tidepool_rpc::cnft::{CnftStore, MemoryCnftStore};
 use tidepool_rpc::das::{AccountDecoder, MplCoreDecoder, TokenMetadataDecoder};
 use tidepool_rpc::upstream::UpstreamClient;
+use tidepool_rpc::webhooks::PostClient;
+use tidepool_rpc_server::webhook_runtime::{ReqwestPostClient, WebhookRuntime};
 use tidepool_rpc_server::HttpUpstream;
 
 /// Crate version — handy for sanity checks in JS tests.
@@ -61,6 +63,7 @@ pub struct HeliusContext {
     cache: Arc<dyn CacheStore>,
     upstream: Arc<dyn UpstreamClient>,
     decoders: Arc<[Arc<dyn AccountDecoder>]>,
+    webhooks: Arc<WebhookRuntime<dyn UpstreamClient, dyn PostClient>>,
 }
 
 #[napi]
@@ -81,14 +84,23 @@ impl HeliusContext {
         let upstream = HttpUpstream::new(upstream_url, Duration::from_millis(u64::from(rpc_timeout_ms)))
             .map_err(|e| napi::Error::from_reason(format!("{e}")))?;
 
+        let upstream_arc: Arc<dyn UpstreamClient> = Arc::new(upstream);
+        let poster: Arc<dyn PostClient> =
+            Arc::new(ReqwestPostClient::new(Duration::from_millis(u64::from(rpc_timeout_ms))));
+        let webhooks = Arc::new(WebhookRuntime::with_memory_registry(
+            Arc::clone(&upstream_arc),
+            poster,
+        ));
+
         Ok(Self {
             cnft: Arc::new(MemoryCnftStore::new()) as Arc<dyn CnftStore>,
             cache: Arc::new(MemoryCache::new()) as Arc<dyn CacheStore>,
-            upstream: Arc::new(upstream) as Arc<dyn UpstreamClient>,
+            upstream: upstream_arc,
             decoders: Arc::from(vec![
                 Arc::new(MplCoreDecoder) as Arc<dyn AccountDecoder>,
                 Arc::new(TokenMetadataDecoder) as Arc<dyn AccountDecoder>,
             ]),
+            webhooks,
         })
     }
 }
@@ -115,6 +127,7 @@ pub async fn handle_json_rpc_body(ctx: &HeliusContext, body: String) -> napi::Re
         cache: Arc::clone(&ctx.cache),
         upstream: Arc::clone(&ctx.upstream),
         decoders: Arc::clone(&ctx.decoders),
+        webhooks: Arc::clone(&ctx.webhooks),
     };
     let Some(response) = tidepool_rpc_server::dispatcher::dispatch(&server_ctx, &req).await else {
         return Ok(None);

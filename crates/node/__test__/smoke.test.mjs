@@ -25,12 +25,12 @@ test("HeliusContext accepts options", () => {
   assert.ok(ctx instanceof HeliusContext);
 });
 
-test("handleJsonRpcBody dispatches surfpoolHeliusInfo and returns JSON", async () => {
+test("handleJsonRpcBody dispatches tidepool_info and returns JSON", async () => {
   const ctx = new HeliusContext();
   const body = JSON.stringify({
     jsonrpc: "2.0",
     id: 1,
-    method: "surfpoolHeliusInfo",
+    method: "tidepool_info",
     params: {},
   });
   const response = await handleJsonRpcBody(ctx, body);

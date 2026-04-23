@@ -1,0 +1,550 @@
+{
+  "case": "getTransactionsByAddress_small_wallet",
+  "method": "getTransactionsByAddress",
+  "source_fixture": "contracts/fixtures/getTransactionsByAddress/getTransactionsByAddress_small_wallet.json",
+  "schema": {
+    "type": "array",
+    "items": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "fee": {
+              "type": "integer"
+            },
+            "feePayer": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "slot": {
+              "type": "integer"
+            },
+            "timestamp": {
+              "type": "integer"
+            },
+            "tokenTransfers": {
+              "type": "array",
+              "items": {}
+            },
+            "nativeTransfers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fromUserAccount": {
+                    "type": "string"
+                  },
+                  "toUserAccount": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "fromUserAccount",
+                  "toUserAccount"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "accountData": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "account": {
+                    "type": "string"
+                  },
+                  "nativeBalanceChange": {
+                    "type": "integer"
+                  },
+                  "tokenBalanceChanges": {
+                    "type": "array",
+                    "items": {}
+                  }
+                },
+                "required": [
+                  "account",
+                  "nativeBalanceChange",
+                  "tokenBalanceChanges"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "transactionError": {
+              "type": "null"
+            },
+            "instructions": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {}
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "accounts": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "data": {
+                              "type": "string"
+                            },
+                            "programId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "accounts",
+                            "data",
+                            "programId"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "lighthouseData": {
+              "type": "null"
+            },
+            "events": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "accountData",
+            "description",
+            "events",
+            "fee",
+            "feePayer",
+            "instructions",
+            "lighthouseData",
+            "nativeTransfers",
+            "signature",
+            "slot",
+            "source",
+            "timestamp",
+            "tokenTransfers",
+            "transactionError",
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "fee": {
+              "type": "integer"
+            },
+            "feePayer": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "slot": {
+              "type": "integer"
+            },
+            "timestamp": {
+              "type": "integer"
+            },
+            "tokenTransfers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fromTokenAccount": {
+                    "type": "string"
+                  },
+                  "toTokenAccount": {
+                    "type": "string"
+                  },
+                  "fromUserAccount": {
+                    "type": "string"
+                  },
+                  "toUserAccount": {
+                    "type": "string"
+                  },
+                  "tokenAmount": {
+                    "type": "integer"
+                  },
+                  "mint": {
+                    "type": "string"
+                  },
+                  "tokenStandard": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fromTokenAccount",
+                  "fromUserAccount",
+                  "mint",
+                  "toTokenAccount",
+                  "toUserAccount",
+                  "tokenAmount",
+                  "tokenStandard"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "nativeTransfers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fromUserAccount": {
+                    "type": "string"
+                  },
+                  "toUserAccount": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "fromUserAccount",
+                  "toUserAccount"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "accountData": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "account": {
+                        "type": "string"
+                      },
+                      "nativeBalanceChange": {
+                        "type": "integer"
+                      },
+                      "tokenBalanceChanges": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "account",
+                      "nativeBalanceChange",
+                      "tokenBalanceChanges"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "account": {
+                        "type": "string"
+                      },
+                      "nativeBalanceChange": {
+                        "type": "integer"
+                      },
+                      "tokenBalanceChanges": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "userAccount": {
+                              "type": "string"
+                            },
+                            "tokenAccount": {
+                              "type": "string"
+                            },
+                            "rawTokenAmount": {
+                              "type": "object",
+                              "properties": {
+                                "tokenAmount": {
+                                  "type": "string"
+                                },
+                                "decimals": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "decimals",
+                                "tokenAmount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "mint": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mint",
+                            "rawTokenAmount",
+                            "tokenAccount",
+                            "userAccount"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "account",
+                      "nativeBalanceChange",
+                      "tokenBalanceChanges"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "transactionError": {
+              "type": "null"
+            },
+            "instructions": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {}
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "accounts": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "data": {
+                              "type": "string"
+                            },
+                            "programId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "accounts",
+                            "data",
+                            "programId"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "programId": {
+                        "type": "string"
+                      },
+                      "innerInstructions": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "accounts",
+                      "data",
+                      "innerInstructions",
+                      "programId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "lighthouseData": {
+              "type": "null"
+            },
+            "events": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "accountData",
+            "description",
+            "events",
+            "fee",
+            "feePayer",
+            "instructions",
+            "lighthouseData",
+            "nativeTransfers",
+            "signature",
+            "slot",
+            "source",
+            "timestamp",
+            "tokenTransfers",
+            "transactionError",
+            "type"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

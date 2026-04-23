@@ -1,0 +1,672 @@
+{
+  "case": "searchAssets_by_collection",
+  "method": "searchAssets",
+  "recorded_at": "epoch-1776916700",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "searchAssets",
+    "params": {
+      "grouping": [
+        "collection",
+        "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+      ],
+      "page": 1,
+      "limit": 5
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415050761,
+      "total": 5,
+      "limit": 5,
+      "page": 1,
+      "items": [
+        {
+          "interface": "ProgrammableNFT",
+          "id": "JEGruwYE13mhX2wi2MGrPmeLiVyZtbBptmVy9vG3pXRC",
+          "content": {
+            "$schema": "https://schema.metaplex.com/nft1.0.json",
+            "json_uri": "https://madlads.s3.us-west-2.amazonaws.com/json/6867.json",
+            "files": [
+              {
+                "uri": "https://madlads.s3.us-west-2.amazonaws.com/images/6867.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads.s3.us-west-2.amazonaws.com/images/6867.png",
+                "mime": "image/png"
+              },
+              {
+                "uri": "https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/6867.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/6867.png",
+                "mime": "image/png"
+              }
+            ],
+            "metadata": {
+              "attributes": [
+                {
+                  "value": "Male",
+                  "trait_type": "Gender"
+                },
+                {
+                  "value": "Galaxy",
+                  "trait_type": "Type"
+                },
+                {
+                  "value": "Galaxy",
+                  "trait_type": "Expression"
+                },
+                {
+                  "value": "Galaxy",
+                  "trait_type": "Eyes"
+                },
+                {
+                  "value": "Warlock Robe",
+                  "trait_type": "Clothing"
+                },
+                {
+                  "value": "Purple",
+                  "trait_type": "Background"
+                }
+              ],
+              "description": "Fock it.",
+              "name": "Mad Lads #6867",
+              "symbol": "MAD",
+              "token_standard": "ProgrammableNonFungible"
+            },
+            "links": {
+              "image": "https://madlads.s3.us-west-2.amazonaws.com/images/6867.png",
+              "external_url": "https://madlads.com"
+            },
+            "category": "image"
+          },
+          "authorities": [
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "scopes": [
+                "full"
+              ]
+            }
+          ],
+          "compression": {
+            "eligible": false,
+            "compressed": false,
+            "data_hash": "",
+            "creator_hash": "",
+            "asset_hash": "",
+            "tree": "",
+            "seq": 0,
+            "leaf_id": 0
+          },
+          "grouping": [
+            {
+              "group_key": "collection",
+              "group_value": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+            }
+          ],
+          "royalty": {
+            "royalty_model": "creators",
+            "target": null,
+            "percent": 0.042,
+            "basis_points": 420,
+            "primary_sale_happened": true,
+            "locked": false
+          },
+          "creators": [
+            {
+              "address": "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+              "share": 0,
+              "verified": true
+            },
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "share": 100,
+              "verified": true
+            }
+          ],
+          "ownership": {
+            "frozen": true,
+            "delegated": true,
+            "delegate": "FARqKAafAbgT25QcgiX5d1g6xpadgG7xymu5N6gSmp4x",
+            "ownership_model": "single",
+            "owner": "CxBhuJwhVgNMc7yjnRx3XFAsTnnbYDc2bhAGSaLBjNqZ"
+          },
+          "supply": {
+            "print_max_supply": 0,
+            "print_current_supply": 0,
+            "edition_nonce": 254
+          },
+          "mutable": true,
+          "burnt": false,
+          "token_info": {
+            "supply": 1,
+            "decimals": 0,
+            "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "associated_token_address": "J4z9rkXuQFVFYEcE4FnbZrT677Eh6WU3f125wyaDyQXg"
+          }
+        },
+        {
+          "interface": "ProgrammableNFT",
+          "id": "JECLQnbo2CCL8Ygn6vTFn7yeKn8qc7i51bAa9BCAJnWG",
+          "content": {
+            "$schema": "https://schema.metaplex.com/nft1.0.json",
+            "json_uri": "https://madlads.s3.us-west-2.amazonaws.com/json/9764.json",
+            "files": [
+              {
+                "uri": "https://madlads.s3.us-west-2.amazonaws.com/images/9764.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads.s3.us-west-2.amazonaws.com/images/9764.png",
+                "mime": "image/png"
+              },
+              {
+                "uri": "https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/9764.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/9764.png",
+                "mime": "image/png"
+              }
+            ],
+            "metadata": {
+              "attributes": [
+                {
+                  "value": "Male",
+                  "trait_type": "Gender"
+                },
+                {
+                  "value": "Dark",
+                  "trait_type": "Type"
+                },
+                {
+                  "value": "Serious",
+                  "trait_type": "Expression"
+                },
+                {
+                  "value": "Blond Beard",
+                  "trait_type": "Hair"
+                },
+                {
+                  "value": "Brown",
+                  "trait_type": "Eyes"
+                },
+                {
+                  "value": "Poncho",
+                  "trait_type": "Clothing"
+                },
+                {
+                  "value": "Purple",
+                  "trait_type": "Background"
+                }
+              ],
+              "description": "Fock it.",
+              "name": "Mad Lads #9764",
+              "symbol": "MAD",
+              "token_standard": "ProgrammableNonFungible"
+            },
+            "links": {
+              "image": "https://madlads.s3.us-west-2.amazonaws.com/images/9764.png",
+              "external_url": "https://madlads.com"
+            },
+            "category": "image"
+          },
+          "authorities": [
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "scopes": [
+                "full"
+              ]
+            }
+          ],
+          "compression": {
+            "eligible": false,
+            "compressed": false,
+            "data_hash": "",
+            "creator_hash": "",
+            "asset_hash": "",
+            "tree": "",
+            "seq": 0,
+            "leaf_id": 0
+          },
+          "grouping": [
+            {
+              "group_key": "collection",
+              "group_value": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+            }
+          ],
+          "royalty": {
+            "royalty_model": "creators",
+            "target": null,
+            "percent": 0.042,
+            "basis_points": 420,
+            "primary_sale_happened": true,
+            "locked": false
+          },
+          "creators": [
+            {
+              "address": "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+              "share": 0,
+              "verified": true
+            },
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "share": 100,
+              "verified": true
+            }
+          ],
+          "ownership": {
+            "frozen": true,
+            "delegated": true,
+            "delegate": "HNLyZxGQSdcvUSbfU4QzghxJPaLq3bzwardp1iSQcixc",
+            "ownership_model": "single",
+            "owner": "9UfXX287j3x8AKVny4GxCfd2ADVaS8ABM3MEZPtDoPs3"
+          },
+          "supply": {
+            "print_max_supply": 0,
+            "print_current_supply": 0,
+            "edition_nonce": 255
+          },
+          "mutable": true,
+          "burnt": false,
+          "token_info": {
+            "supply": 1,
+            "decimals": 0,
+            "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "associated_token_address": "AHQQrDhVWn5hJohivXfJvMLqsr9L8zH8hEYYF3rBzqp7"
+          }
+        },
+        {
+          "interface": "ProgrammableNFT",
+          "id": "JE9knx5TYxevHFqS2mNJC41cLHeuK999wec7PoavK5Tj",
+          "content": {
+            "$schema": "https://schema.metaplex.com/nft1.0.json",
+            "json_uri": "https://madlads.s3.us-west-2.amazonaws.com/json/1214.json",
+            "files": [
+              {
+                "uri": "https://madlads.s3.us-west-2.amazonaws.com/images/1214.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads.s3.us-west-2.amazonaws.com/images/1214.png",
+                "mime": "image/png"
+              },
+              {
+                "uri": "https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/1214.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/1214.png",
+                "mime": "image/png"
+              }
+            ],
+            "metadata": {
+              "attributes": [
+                {
+                  "value": "Male",
+                  "trait_type": "Gender"
+                },
+                {
+                  "value": "Dark",
+                  "trait_type": "Type"
+                },
+                {
+                  "value": "Smile",
+                  "trait_type": "Expression"
+                },
+                {
+                  "value": "Brown Messy",
+                  "trait_type": "Hair"
+                },
+                {
+                  "value": "Brown",
+                  "trait_type": "Eyes"
+                },
+                {
+                  "value": "Milord",
+                  "trait_type": "Clothing"
+                },
+                {
+                  "value": "Pink",
+                  "trait_type": "Background"
+                }
+              ],
+              "description": "Fock it.",
+              "name": "Mad Lads #1214",
+              "symbol": "MAD",
+              "token_standard": "ProgrammableNonFungible"
+            },
+            "links": {
+              "external_url": "https://madlads.com",
+              "image": "https://madlads.s3.us-west-2.amazonaws.com/images/1214.png"
+            },
+            "category": "image"
+          },
+          "authorities": [
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "scopes": [
+                "full"
+              ]
+            }
+          ],
+          "compression": {
+            "eligible": false,
+            "compressed": false,
+            "data_hash": "",
+            "creator_hash": "",
+            "asset_hash": "",
+            "tree": "",
+            "seq": 0,
+            "leaf_id": 0
+          },
+          "grouping": [
+            {
+              "group_key": "collection",
+              "group_value": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+            }
+          ],
+          "royalty": {
+            "royalty_model": "creators",
+            "target": null,
+            "percent": 0.042,
+            "basis_points": 420,
+            "primary_sale_happened": true,
+            "locked": false
+          },
+          "creators": [
+            {
+              "address": "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+              "share": 0,
+              "verified": true
+            },
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "share": 100,
+              "verified": true
+            }
+          ],
+          "ownership": {
+            "frozen": true,
+            "delegated": true,
+            "delegate": "13CtuqyiFCqVCqdBtDH4voaCecc7tco6H6FrUcAtSEhx",
+            "ownership_model": "single",
+            "owner": "FuCKGcFaQynhazwGfSQT4BpQnrWMwjGHuJ7CDJpHKjsd"
+          },
+          "supply": {
+            "print_max_supply": 0,
+            "print_current_supply": 0,
+            "edition_nonce": 254
+          },
+          "mutable": true,
+          "burnt": false,
+          "token_info": {
+            "supply": 1,
+            "decimals": 0,
+            "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "associated_token_address": "C7S7nKH4U3iuzKFqmvfHSkKLrgXyZgkd9sbxaaHaPPf9"
+          }
+        },
+        {
+          "interface": "ProgrammableNFT",
+          "id": "JE5D5Vp6NQFT26YRwjeW5hiAU3B6ttXma6ztkPxgDhTD",
+          "content": {
+            "$schema": "https://schema.metaplex.com/nft1.0.json",
+            "json_uri": "https://madlads.s3.us-west-2.amazonaws.com/json/1858.json",
+            "files": [
+              {
+                "uri": "https://madlads.s3.us-west-2.amazonaws.com/images/1858.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads.s3.us-west-2.amazonaws.com/images/1858.png",
+                "mime": "image/png"
+              },
+              {
+                "uri": "https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/1858.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/1858.png",
+                "mime": "image/png"
+              }
+            ],
+            "metadata": {
+              "attributes": [
+                {
+                  "value": "Male",
+                  "trait_type": "Gender"
+                },
+                {
+                  "value": "Light",
+                  "trait_type": "Type"
+                },
+                {
+                  "value": "Shocked",
+                  "trait_type": "Expression"
+                },
+                {
+                  "value": "Punk",
+                  "trait_type": "Hair"
+                },
+                {
+                  "value": "Green",
+                  "trait_type": "Eyes"
+                },
+                {
+                  "value": "Cigarette",
+                  "trait_type": "Smoking"
+                },
+                {
+                  "value": "White",
+                  "trait_type": "Smoke"
+                },
+                {
+                  "value": "Bloody Tuxedo",
+                  "trait_type": "Clothing"
+                },
+                {
+                  "value": "Grey",
+                  "trait_type": "Background"
+                }
+              ],
+              "description": "Fock it.",
+              "name": "Mad Lads #1858",
+              "symbol": "MAD",
+              "token_standard": "ProgrammableNonFungible"
+            },
+            "links": {
+              "image": "https://madlads.s3.us-west-2.amazonaws.com/images/1858.png",
+              "external_url": "https://madlads.com"
+            },
+            "category": "image"
+          },
+          "authorities": [
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "scopes": [
+                "full"
+              ]
+            }
+          ],
+          "compression": {
+            "eligible": false,
+            "compressed": false,
+            "data_hash": "",
+            "creator_hash": "",
+            "asset_hash": "",
+            "tree": "",
+            "seq": 0,
+            "leaf_id": 0
+          },
+          "grouping": [
+            {
+              "group_key": "collection",
+              "group_value": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+            }
+          ],
+          "royalty": {
+            "royalty_model": "creators",
+            "target": null,
+            "percent": 0.042,
+            "basis_points": 420,
+            "primary_sale_happened": true,
+            "locked": false
+          },
+          "creators": [
+            {
+              "address": "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+              "share": 0,
+              "verified": true
+            },
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "share": 100,
+              "verified": true
+            }
+          ],
+          "ownership": {
+            "frozen": true,
+            "delegated": true,
+            "delegate": "ALeneLDdU9rwjheEiEmgRmNvjxuv58coRzCeHc1Sfzt2",
+            "ownership_model": "single",
+            "owner": "eM8mJ9s8WmNBu2yBAZVM2kh6cyrQsdetvmptQjqYc47"
+          },
+          "supply": {
+            "print_max_supply": 0,
+            "print_current_supply": 0,
+            "edition_nonce": 254
+          },
+          "mutable": true,
+          "burnt": false,
+          "token_info": {
+            "supply": 1,
+            "decimals": 0,
+            "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "associated_token_address": "D9v6aoUHGhyqh8K3QHsJeVsrFkkTwfbcnUX9W5VqrZMy"
+          }
+        },
+        {
+          "interface": "ProgrammableNFT",
+          "id": "JE299A4MyVEynUh8hSnHALSSL15CtyuQ6fp6UvLL8uou",
+          "content": {
+            "$schema": "https://schema.metaplex.com/nft1.0.json",
+            "json_uri": "https://madlads.s3.us-west-2.amazonaws.com/json/187.json",
+            "files": [
+              {
+                "uri": "https://madlads.s3.us-west-2.amazonaws.com/images/187.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads.s3.us-west-2.amazonaws.com/images/187.png",
+                "mime": "image/png"
+              },
+              {
+                "uri": "https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/187.png",
+                "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://arweave.net/qJ5B6fx5hEt4P7XbicbJQRyTcbyLaV-OQNA1KjzdqOQ/187.png",
+                "mime": "image/png"
+              }
+            ],
+            "metadata": {
+              "attributes": [
+                {
+                  "value": "Male",
+                  "trait_type": "Gender"
+                },
+                {
+                  "value": "Dark",
+                  "trait_type": "Type"
+                },
+                {
+                  "value": "Shocked",
+                  "trait_type": "Expression"
+                },
+                {
+                  "value": "Soft Punk",
+                  "trait_type": "Hair"
+                },
+                {
+                  "value": "Snake",
+                  "trait_type": "Eyes"
+                },
+                {
+                  "value": "Cigarette",
+                  "trait_type": "Smoking"
+                },
+                {
+                  "value": "White",
+                  "trait_type": "Smoke"
+                },
+                {
+                  "value": "Buster",
+                  "trait_type": "Clothing"
+                },
+                {
+                  "value": "Backpack",
+                  "trait_type": "Back"
+                },
+                {
+                  "value": "Red",
+                  "trait_type": "Background"
+                }
+              ],
+              "description": "Fock it.",
+              "name": "Mad Lads #187",
+              "symbol": "MAD",
+              "token_standard": "ProgrammableNonFungible"
+            },
+            "links": {
+              "image": "https://madlads.s3.us-west-2.amazonaws.com/images/187.png",
+              "external_url": "https://madlads.com"
+            },
+            "category": "image"
+          },
+          "authorities": [
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "scopes": [
+                "full"
+              ]
+            }
+          ],
+          "compression": {
+            "eligible": false,
+            "compressed": false,
+            "data_hash": "",
+            "creator_hash": "",
+            "asset_hash": "",
+            "tree": "",
+            "seq": 0,
+            "leaf_id": 0
+          },
+          "grouping": [
+            {
+              "group_key": "collection",
+              "group_value": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+            }
+          ],
+          "royalty": {
+            "royalty_model": "creators",
+            "target": null,
+            "percent": 0.042,
+            "basis_points": 420,
+            "primary_sale_happened": true,
+            "locked": false
+          },
+          "creators": [
+            {
+              "address": "5XvhfmRjwXkGp3jHGmaKpqeerNYjkuZZBYLVQYdeVcRv",
+              "share": 0,
+              "verified": true
+            },
+            {
+              "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+              "share": 100,
+              "verified": true
+            }
+          ],
+          "ownership": {
+            "frozen": true,
+            "delegated": false,
+            "delegate": null,
+            "ownership_model": "single",
+            "owner": "F798uRiw4eEZtqMHLDsJho9r7h8nhtmRSAaU64CMf5HV"
+          },
+          "supply": {
+            "print_max_supply": 0,
+            "print_current_supply": 0,
+            "edition_nonce": 255
+          },
+          "mutable": true,
+          "burnt": false,
+          "token_info": {
+            "supply": 1,
+            "decimals": 0,
+            "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "associated_token_address": "5zHL4CP3efMSdkDkw6Ar5isx4bGGSoPhX7P3jYJpxdt6"
+          }
+        }
+      ]
+    },
+    "id": 1
+  }
+}

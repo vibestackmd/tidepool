@@ -11,21 +11,24 @@
 //!    matches the account's owner.
 //! 4. Populate the cache on success.
 //!
-//! Owner-resolution for Token Metadata (scanning the mint's token
-//! accounts to find the holder) is not yet implemented here — it
-//! requires `getProgramAccounts` + a memcmp filter dispatched through
-//! the upstream's generic `rpc_call`. Deferred to a follow-up; the
-//! Token Metadata decoder leaves `ownership.owner` blank, and
-//! by-owner indexing skips blank-owner entries in the cache layer so
-//! partially-populated assets don't pollute query results.
+//! For Token Metadata (`V1_NFT`), the decoder leaves `ownership.owner`
+//! blank because the Metadata account doesn't carry the holding wallet
+//! — only the mint. We resolve the holder here by calling
+//! `getTokenLargestAccounts(mint)` (top holder of an NFT is by
+//! definition the sole owner, since supply=1) and then reading the
+//! token account's 32-byte owner field. Two extra RPC round-trips, but
+//! only on the uncompressed-asset hot path — cNFTs and MplCore don't
+//! need this.
 
 use std::str::FromStr;
 use std::sync::Arc;
 
+use mpl_token_metadata::accounts::{Edition, MasterEdition, Metadata};
+use mpl_token_metadata::types::Key;
 use solana_program::pubkey::Pubkey;
 
 use crate::cache::CacheStore;
-use crate::das::{AccountDecoder, DasAsset};
+use crate::das::{AccountDecoder, DasAsset, MasterEditionRecord, PrintEditionRecord};
 use crate::upstream::{AccountData, UpstreamClient};
 
 /// Well-known Solana program IDs we recognize as "mint containers"
@@ -84,14 +87,149 @@ where
     let owner_str = bs58::encode(account.owner).into_string();
     for decoder in decoders {
         if decoder.program_id() == owner_str {
-            if let Some(asset) = decoder.decode(address, &account.data)? {
+            if let Some(mut asset) = decoder.decode(address, &account.data)? {
+                if asset.interface == "V1_NFT" && asset.ownership.owner.is_empty() {
+                    if let Some(owner) = resolve_token_metadata_owner(upstream, &account).await {
+                        asset.ownership.owner = owner;
+                    }
+                }
                 cache.put_asset(asset.clone()).await?;
+                // Token Metadata side-effect: index the mint's Edition
+                // PDA (if any) so `getNftEditions` can serve it later.
+                // Best-effort; failures don't break the primary fetch.
+                if asset.interface == "V1_NFT" {
+                    index_edition_pda(upstream, cache, address).await;
+                }
                 return Ok(Some(asset));
             }
         }
     }
 
     Ok(None)
+}
+
+/// Fetch the Metaplex Edition PDA for `mint` and, if it exists, record
+/// the master-vs-print relationship in the cache. Silent on every
+/// failure path — `getNftEditions` just returns empty for masters we
+/// never managed to index.
+async fn index_edition_pda<U, C>(upstream: &U, cache: &C, mint_b58: &str)
+where
+    U: UpstreamClient + ?Sized,
+    C: CacheStore + ?Sized,
+{
+    let edition_pda = derive_edition_pda(mint_b58);
+    if edition_pda.is_empty() {
+        return;
+    }
+    let Ok(Some(account)) = upstream.get_account(&edition_pda).await else {
+        return;
+    };
+    if account.data.is_empty() {
+        return;
+    }
+    // Dispatch on Key discriminator. MasterEditionV2 is current; V1 is
+    // deprecated but still live on-chain for older collections.
+    match account.data[0] {
+        k if k == Key::MasterEditionV2 as u8 || k == Key::MasterEditionV1 as u8 => {
+            if let Ok(master) = MasterEdition::from_bytes(&account.data) {
+                let _ = cache
+                    .put_master_edition(MasterEditionRecord {
+                        master_mint: mint_b58.to_string(),
+                        master_edition_pda: edition_pda,
+                        supply: master.supply,
+                        max_supply: master.max_supply,
+                    })
+                    .await;
+            }
+        }
+        k if k == Key::EditionV1 as u8 => {
+            if let Ok(edition) = Edition::from_bytes(&account.data) {
+                let _ = cache
+                    .put_print_edition(PrintEditionRecord {
+                        print_mint: mint_b58.to_string(),
+                        print_edition_pda: edition_pda,
+                        parent_master_edition_pda: edition.parent.to_string(),
+                        edition_num: edition.edition,
+                    })
+                    .await;
+            }
+        }
+        _ => {}
+    }
+}
+
+fn derive_edition_pda(mint_b58: &str) -> String {
+    let Ok(mint) = Pubkey::from_str(mint_b58) else {
+        return String::new();
+    };
+    let Ok(program) = Pubkey::from_str(MPL_TOKEN_METADATA_PROGRAM) else {
+        return String::new();
+    };
+    let (pda, _bump) = Pubkey::find_program_address(
+        &[b"metadata", program.as_ref(), mint.as_ref(), b"edition"],
+        &program,
+    );
+    pda.to_string()
+}
+
+/// Resolve the wallet that holds an NFT. `metadata_account` is the
+/// Metaplex Metadata PDA account — we parse `mint` out of it and defer
+/// to `resolve_owner_for_mint`. Kept as a thin wrapper so the core
+/// two-RPC dance is directly testable without synthesizing Metadata
+/// bytes (mpl-token-metadata 5.x uses a different solana-program major
+/// than the local one, making in-test Metadata construction painful).
+async fn resolve_token_metadata_owner<U>(
+    upstream: &U,
+    metadata_account: &AccountData,
+) -> Option<String>
+where
+    U: UpstreamClient + ?Sized,
+{
+    let metadata = Metadata::from_bytes(&metadata_account.data).ok()?;
+    resolve_owner_for_mint(upstream, &metadata.mint.to_string()).await
+}
+
+/// Core owner-resolution flow:
+///   1. `getTokenLargestAccounts(mint)` → find a token account holding
+///      the mint. For NFTs (supply=1) there's only ever one holder; for
+///      zero-balance remnants (e.g. a closed ATA left behind after
+///      burn) we skip them and take the next entry.
+///   2. `getAccountInfo` on that token account; bytes 32..64 are the
+///      owner wallet (SPL Token + Token-2022 share this offset for
+///      the base account layout).
+///
+/// Returns `None` on any step failure — callers fall back to an empty
+/// owner rather than 500ing the DAS response. Failure modes seen in
+/// practice: a mint with zero holders (burned or pre-mint), an
+/// upstream that doesn't implement `getTokenLargestAccounts`, or a
+/// token account whose layout isn't recognized.
+pub async fn resolve_owner_for_mint<U>(upstream: &U, mint: &str) -> Option<String>
+where
+    U: UpstreamClient + ?Sized,
+{
+    let raw = upstream
+        .rpc_call("getTokenLargestAccounts", serde_json::json!([mint]))
+        .await
+        .ok()?;
+    let parsed: serde_json::Value = serde_json::from_slice(&raw).ok()?;
+    let token_account_addr = parsed
+        .get("value")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|arr| {
+            arr.iter().find(|entry| {
+                entry.get("amount").and_then(serde_json::Value::as_str) != Some("0")
+            })
+        })
+        .and_then(|entry| entry.get("address"))
+        .and_then(serde_json::Value::as_str)?;
+
+    let token_account = upstream.get_account(token_account_addr).await.ok()??;
+    if token_account.data.len() < 64 {
+        return None;
+    }
+    let mut owner_bytes = [0u8; 32];
+    owner_bytes.copy_from_slice(&token_account.data[32..64]);
+    Some(bs58::encode(owner_bytes).into_string())
 }
 
 /// Bypass for cases where the caller already has the raw account —

@@ -1,0 +1,17 @@
+{
+  "case": "getSlot_current",
+  "method": "getSlot",
+  "recorded_at": "epoch-1776916702",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSlot",
+    "params": []
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": 415050736,
+    "id": 1
+  }
+}

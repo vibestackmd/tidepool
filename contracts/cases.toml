@@ -1,0 +1,138 @@
+# Recorded-fixture test cases. `cargo xtask record-helius` hits real
+# Helius for each case and writes the raw response to
+# `contracts/fixtures/<method>/<name>.json`.
+#
+# How to curate new cases:
+#   - Pick a *stable* input. Signatures age out of windows; popular
+#     NFT mints don't. Prefer well-known mainnet assets and wallets.
+#   - Name cases `<method>_<short-descriptor>` — becomes the fixture
+#     filename. Keep alphanumeric + underscore; the case name is also
+#     used as the key in drift reports.
+#   - Set `skip = "<reason>"` on a case to exclude it temporarily.
+#     The recorder logs skipped cases without making the call.
+#
+# Rule of thumb: aim for one happy-path case per method + one or two
+# edge cases that exercise the unusual shapes (errors, null results,
+# by-owner with a whale that has tens of thousands of assets, etc.).
+
+# ─── DAS: getAsset ─────────────────────────────────────────────────
+[[case]]
+name = "getAsset_mad_lads_1337"
+method = "getAsset"
+params = { id = "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w" }
+
+[[case]]
+name = "getAsset_nonexistent_mint"
+method = "getAsset"
+params = { id = "11111111111111111111111111111111" }
+
+# ─── DAS: getAssetBatch ────────────────────────────────────────────
+[[case]]
+name = "getAssetBatch_two_real_two_missing"
+method = "getAssetBatch"
+params = { ids = [
+    "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w",
+    "11111111111111111111111111111111",
+] }
+
+# ─── DAS: getAssetsByOwner ─────────────────────────────────────────
+[[case]]
+name = "getAssetsByOwner_small_wallet"
+method = "getAssetsByOwner"
+# A wallet with a small handful of NFTs — keeps the fixture readable.
+# Replace with a known-good pubkey after the first recording pass.
+params = { ownerAddress = "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY", page = 1, limit = 10 }
+
+# ─── DAS: searchAssets ─────────────────────────────────────────────
+[[case]]
+name = "searchAssets_by_collection"
+method = "searchAssets"
+params = { grouping = [
+    "collection",
+    "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w",
+], page = 1, limit = 5 }
+
+# ─── DAS: getNftEditions ───────────────────────────────────────────
+[[case]]
+name = "getNftEditions_no_editions"
+method = "getNftEditions"
+params = { mint = "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w" }
+
+# ─── Tx: getPriorityFeeEstimate ────────────────────────────────────
+[[case]]
+name = "getPriorityFeeEstimate_all_levels"
+method = "getPriorityFeeEstimate"
+params = [
+    { options = { includeAllPriorityFeeLevels = true } },
+]
+
+# ─── RPC (standard): getSlot ───────────────────────────────────────
+# Included as a control — if this ever breaks, the problem is
+# transport not classification.
+[[case]]
+name = "getSlot_current"
+method = "getSlot"
+params = []
+
+# ─── DAS: getTokenAccounts ─────────────────────────────────────────
+[[case]]
+name = "getTokenAccounts_by_owner"
+method = "getTokenAccounts"
+params = { owner = "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY", page = 1, limit = 5 }
+
+# ─── DAS: getAssetsByAuthority ─────────────────────────────────────
+[[case]]
+name = "getAssetsByAuthority_small_set"
+method = "getAssetsByAuthority"
+# A known update authority — Magic Eden's marketplace authority is a
+# safe bet since it's high-volume.
+params = { authorityAddress = "E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe", page = 1, limit = 5 }
+
+# ─── DAS: getAssetsByCreator ───────────────────────────────────────
+[[case]]
+name = "getAssetsByCreator_verified_only"
+method = "getAssetsByCreator"
+# Famous Fox Federation creator wallet, widely used as a stable test
+# fixture.
+params = { creatorAddress = "D3XrkNZz6wx6cofot7Zohsf2KSsu2ArngNk8VqU9cTY3", onlyVerified = true, page = 1, limit = 5 }
+
+# ─── DAS: getAssetsByGroup ─────────────────────────────────────────
+[[case]]
+name = "getAssetsByGroup_mad_lads_collection"
+method = "getAssetsByGroup"
+params = { groupKey = "collection", groupValue = "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w", page = 1, limit = 3 }
+
+# ─── DAS: getAssetProof ────────────────────────────────────────────
+# Requires a known cNFT asset id. Skip by default until we curate one
+# — cNFT ids aren't as well-known as mint addresses. Un-skip and
+# replace the id when you have a real one to pin.
+[[case]]
+name = "getAssetProof_known_cnft"
+method = "getAssetProof"
+params = { id = "ERLawM8svnLqWd3WCBJHRiJmwLmBpRQm8srudF6h68oE" }
+skip = "needs-curated-cnft-asset-id"
+
+# ─── Wallet: getBalances (REST) ────────────────────────────────────
+# Helius serves this as a REST endpoint on api.helius.xyz. Tidepool
+# mirrors that shape on /v0/addresses/<addr>/balances.
+[[case]]
+name = "getBalances_small_wallet"
+method = "getBalances"
+transport = "rest"
+rest = { verb = "GET", path = "/v0/addresses/86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY/balances" }
+
+# ─── Enhanced: getTransactionsByAddress (REST) ─────────────────────
+# REST-only on Helius. Small wallet keeps the response bounded.
+[[case]]
+name = "getTransactionsByAddress_small_wallet"
+method = "getTransactionsByAddress"
+transport = "rest"
+rest = { verb = "GET", path = "/v0/addresses/86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY/transactions?limit=3" }
+
+# ─── Intentional errors ────────────────────────────────────────────
+# Capture Helius's error envelope shape so our own error handlers
+# can match. `code: -32602` is invalid-params.
+[[case]]
+name = "getAsset_invalid_id_returns_error"
+method = "getAsset"
+params = { id = "not-a-valid-pubkey" }

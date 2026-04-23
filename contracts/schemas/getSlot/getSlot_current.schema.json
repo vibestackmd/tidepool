@@ -1,0 +1,25 @@
+{
+  "case": "getSlot_current",
+  "method": "getSlot",
+  "source_fixture": "contracts/fixtures/getSlot/getSlot_current.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

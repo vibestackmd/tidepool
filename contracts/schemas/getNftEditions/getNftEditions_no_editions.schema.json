@@ -1,0 +1,38 @@
+{
+  "case": "getNftEditions_no_editions",
+  "method": "getNftEditions",
+  "source_fixture": "contracts/fixtures/getNftEditions/getNftEditions_no_editions.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "error",
+      "id",
+      "jsonrpc"
+    ],
+    "additionalProperties": false
+  }
+}

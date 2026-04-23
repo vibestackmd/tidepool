@@ -1,0 +1,22 @@
+{
+  "case": "getNftEditions_no_editions",
+  "method": "getNftEditions",
+  "recorded_at": "epoch-1776916701",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getNftEditions",
+    "params": {
+      "mint": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "error": {
+      "code": -32000,
+      "message": "Database Error: Type Error: A null value was encountered while decoding id"
+    },
+    "id": 1
+  }
+}

@@ -389,10 +389,12 @@ async fn verify_creator_flips_the_matching_creator_and_adopts_noop_hashes() {
             noop: NoopOverride {
                 leaf_index: 0,
                 nonce: 0,
+                id: derive_asset_id(&TREE, 0),
                 owner: [1; 32],
                 delegate: [2; 32],
                 data_hash: [0xaa; 32],
                 creator_hash: [0xbb; 32],
+                leaf_hash: [0xcc; 32],
             },
         },
     )
@@ -441,10 +443,12 @@ async fn set_and_verify_collection_marks_collection_and_updates_hashes() {
             noop: NoopOverride {
                 leaf_index: 0,
                 nonce: 0,
+                id: derive_asset_id(&TREE, 0),
                 owner: [1; 32],
                 delegate: [2; 32],
                 data_hash: [0xfe; 32],
                 creator_hash: [0xfd; 32],
+                leaf_hash: [0xef; 32],
             },
         },
     )

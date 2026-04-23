@@ -1,0 +1,101 @@
+{
+  "case": "getAsset_mad_lads_1337",
+  "method": "getAsset",
+  "recorded_at": "epoch-1776916694",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAsset",
+    "params": {
+      "id": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415050746,
+      "interface": "ProgrammableNFT",
+      "id": "J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w",
+      "content": {
+        "$schema": "https://schema.metaplex.com/nft1.0.json",
+        "json_uri": "https://madlads-collection.s3.us-west-2.amazonaws.com/_collection.json",
+        "files": [
+          {
+            "uri": "https://madlads-collection.s3.us-west-2.amazonaws.com/_collection.png",
+            "cdn_uri": "https://cdn.helius-rpc.com/cdn-cgi/image//https://madlads-collection.s3.us-west-2.amazonaws.com/_collection.png",
+            "mime": "image/png"
+          }
+        ],
+        "metadata": {
+          "attributes": [],
+          "description": "Fock it.",
+          "name": "Mad Lads",
+          "symbol": "MAD",
+          "token_standard": "ProgrammableNonFungible"
+        },
+        "links": {
+          "external_url": "https://madlads.com",
+          "image": "https://madlads-collection.s3.us-west-2.amazonaws.com/_collection.png"
+        },
+        "category": "image"
+      },
+      "authorities": [
+        {
+          "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+          "scopes": [
+            "full"
+          ]
+        }
+      ],
+      "compression": {
+        "eligible": false,
+        "compressed": false,
+        "data_hash": "",
+        "creator_hash": "",
+        "asset_hash": "",
+        "tree": "",
+        "seq": 0,
+        "leaf_id": 0
+      },
+      "grouping": [],
+      "royalty": {
+        "royalty_model": "creators",
+        "target": null,
+        "percent": 0.05,
+        "basis_points": 500,
+        "primary_sale_happened": false,
+        "locked": false
+      },
+      "creators": [
+        {
+          "address": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW",
+          "share": 100,
+          "verified": true
+        }
+      ],
+      "ownership": {
+        "frozen": true,
+        "delegated": false,
+        "delegate": null,
+        "ownership_model": "single",
+        "owner": "2RtGg6fsFiiF1EQzHqbd66AhW7R5bWeQGpTbv2UMkCdW"
+      },
+      "supply": {
+        "print_max_supply": 0,
+        "print_current_supply": 0,
+        "edition_nonce": 253
+      },
+      "mutable": true,
+      "burnt": false,
+      "token_info": {
+        "supply": 1,
+        "decimals": 0,
+        "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "mint_authority": "2G5CotQ6Q87yhZxKUWkwLY6Foi12Q3VFQ6KN4nTLbPSz",
+        "freeze_authority": "2G5CotQ6Q87yhZxKUWkwLY6Foi12Q3VFQ6KN4nTLbPSz"
+      }
+    },
+    "id": 1
+  }
+}

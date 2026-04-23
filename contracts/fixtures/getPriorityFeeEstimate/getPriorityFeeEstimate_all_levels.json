@@ -1,0 +1,32 @@
+{
+  "case": "getPriorityFeeEstimate_all_levels",
+  "method": "getPriorityFeeEstimate",
+  "recorded_at": "epoch-1776916702",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getPriorityFeeEstimate",
+    "params": [
+      {
+        "options": {
+          "includeAllPriorityFeeLevels": true
+        }
+      }
+    ]
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "priorityFeeLevels": {
+        "min": 0.0,
+        "low": 0.0,
+        "medium": 501.0,
+        "high": 20000.0,
+        "veryHigh": 1195081.0,
+        "unsafeMax": 62680140983.0
+      }
+    },
+    "id": 1
+  }
+}

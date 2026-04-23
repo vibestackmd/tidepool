@@ -1,0 +1,38 @@
+{
+  "case": "getAsset_invalid_id_returns_error",
+  "method": "getAsset",
+  "source_fixture": "contracts/fixtures/getAsset/getAsset_invalid_id_returns_error.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "error",
+      "id",
+      "jsonrpc"
+    ],
+    "additionalProperties": false
+  }
+}

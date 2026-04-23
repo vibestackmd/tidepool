@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use thiserror::Error;
 use tokio::sync::Mutex;
 
-use crate::das::DasAsset;
+use crate::das::{DasAsset, MasterEditionRecord, PrintEditionRecord};
 
 #[derive(Debug, Error)]
 pub enum CacheError {
@@ -69,6 +69,25 @@ pub trait CacheStore: Send + Sync {
     ) -> CacheResult<Vec<DasAsset>>;
 
     async fn search_assets(&self, filter: &SearchFilter) -> CacheResult<Vec<DasAsset>>;
+
+    // ─── Edition indexing (getNftEditions) ──────────────────────────
+    // Populated as a side effect of `fetch_and_cache_asset` whenever a
+    // Token Metadata mint happens to have a MasterEdition or Edition
+    // PDA; queried by the `get_nft_editions` handler. Coverage is
+    // therefore LOCAL_INDEX — getNftEditions on a master we've never
+    // touched returns empty rather than enumerating chain state.
+
+    async fn put_master_edition(&self, record: MasterEditionRecord) -> CacheResult<()>;
+    async fn put_print_edition(&self, record: PrintEditionRecord) -> CacheResult<()>;
+    /// Look up the master-edition summary keyed by its mint (the input
+    /// users pass to `getNftEditions`).
+    async fn get_master_edition(&self, mint: &str) -> CacheResult<Option<MasterEditionRecord>>;
+    /// All print editions we've indexed for a given master edition
+    /// PDA, sorted by `edition_num` ascending.
+    async fn list_print_editions(
+        &self,
+        master_edition_pda: &str,
+    ) -> CacheResult<Vec<PrintEditionRecord>>;
 }
 
 #[derive(Default)]
@@ -84,6 +103,11 @@ struct MemoryCacheInner {
     by_authority: HashMap<String, HashSet<String>>,
     by_creator: HashMap<String, HashSet<String>>,
     by_group: HashMap<(String, String), HashSet<String>>,
+    master_editions_by_mint: HashMap<String, MasterEditionRecord>,
+    // Keyed by master-edition PDA because that's what Edition accounts
+    // actually point to in their `parent` field — avoids a master-mint
+    // lookup on every insert.
+    prints_by_master_edition_pda: HashMap<String, HashMap<String, PrintEditionRecord>>,
 }
 
 impl MemoryCache {
@@ -245,6 +269,41 @@ impl CacheStore for MemoryCache {
             });
         }
 
+        Ok(out)
+    }
+
+    async fn put_master_edition(&self, record: MasterEditionRecord) -> CacheResult<()> {
+        let mut g = self.inner.lock().await;
+        g.master_editions_by_mint
+            .insert(record.master_mint.clone(), record);
+        Ok(())
+    }
+
+    async fn put_print_edition(&self, record: PrintEditionRecord) -> CacheResult<()> {
+        let mut g = self.inner.lock().await;
+        g.prints_by_master_edition_pda
+            .entry(record.parent_master_edition_pda.clone())
+            .or_default()
+            .insert(record.print_mint.clone(), record);
+        Ok(())
+    }
+
+    async fn get_master_edition(&self, mint: &str) -> CacheResult<Option<MasterEditionRecord>> {
+        let g = self.inner.lock().await;
+        Ok(g.master_editions_by_mint.get(mint).cloned())
+    }
+
+    async fn list_print_editions(
+        &self,
+        master_edition_pda: &str,
+    ) -> CacheResult<Vec<PrintEditionRecord>> {
+        let g = self.inner.lock().await;
+        let mut out: Vec<PrintEditionRecord> = g
+            .prints_by_master_edition_pda
+            .get(master_edition_pda)
+            .map(|m| m.values().cloned().collect())
+            .unwrap_or_default();
+        out.sort_by_key(|r| r.edition_num);
         Ok(out)
     }
 }

@@ -15,7 +15,9 @@ pub mod config;
 pub mod dispatcher;
 pub mod http;
 pub mod json_rpc;
+pub mod rest;
 pub mod upstream_http;
+pub mod webhook_runtime;
 pub mod ws;
 
 pub use config::ServerConfig;

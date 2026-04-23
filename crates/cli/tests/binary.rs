@@ -40,14 +40,14 @@ fn version_runs() {
 }
 
 #[tokio::test]
-async fn start_binary_serves_surfpool_helius_info() {
+async fn start_binary_serves_tidepool_info() {
     // Pick a free port by binding briefly.
     let probe = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = probe.local_addr().unwrap().port();
     drop(probe);
 
     // Use a nonsense upstream — we only exercise the native dispatch
-    // path (surfpoolHeliusInfo), which doesn't touch the upstream.
+    // path (tidepool_info), which doesn't touch the upstream.
     let mut child = std::process::Command::new(binary_path())
         .args([
             "start",
@@ -87,7 +87,7 @@ async fn start_binary_serves_surfpool_helius_info() {
         .json(&serde_json::json!({
             "jsonrpc": "2.0",
             "id": 1,
-            "method": "surfpoolHeliusInfo",
+            "method": "tidepool_info",
             "params": {}
         }))
         .send()

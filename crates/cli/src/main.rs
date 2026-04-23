@@ -67,6 +67,21 @@ struct StartArgs {
     /// Upstream RPC call timeout in milliseconds.
     #[arg(long, env = "TIDEPOOL_RPC_TIMEOUT_MS", default_value_t = 10_000)]
     rpc_timeout_ms: u64,
+
+    /// Persistent state path. Mirrors Surfpool's `--db`: accepts a
+    /// filesystem path (typically `.sqlite`) for on-disk persistence
+    /// or `:memory:` for an explicit ephemeral SQLite run. When
+    /// omitted (default), all stores run in-memory and state is
+    /// lost on restart.
+    #[arg(long, env = "TIDEPOOL_DB")]
+    db: Option<std::path::PathBuf>,
+
+    /// Snapshot file(s) to preload at boot, repeatable. Format is the
+    /// `SnapshotBlob` envelope returned by `tidepool_exportTreeSnapshot`.
+    /// Mirrors Surfpool's `--snapshot` flag; loads happen before the
+    /// server starts serving requests.
+    #[arg(long = "snapshot", env = "TIDEPOOL_SNAPSHOTS", value_delimiter = ',')]
+    snapshots: Vec<std::path::PathBuf>,
 }
 
 impl StartArgs {
@@ -76,10 +91,13 @@ impl StartArgs {
             .unwrap_or_else(|| derive_ws_url(&self.upstream));
         ServerConfig {
             port: self.port,
+            ws_port: None,
             upstream_url: self.upstream,
             upstream_ws_url: ws_url,
             rpc_timeout: Duration::from_millis(self.rpc_timeout_ms),
             index_trees: self.index_tree,
+            db: self.db,
+            snapshots: self.snapshots,
         }
     }
 }
@@ -213,6 +231,8 @@ mod tests {
             upstream_ws: None,
             index_tree: vec![],
             rpc_timeout_ms: 10_000,
+            db: None,
+            snapshots: vec![],
         };
         let cfg = args.into_config();
         assert_eq!(cfg.upstream_ws_url, "ws://127.0.0.1:8900");
@@ -226,6 +246,8 @@ mod tests {
             upstream_ws: Some("wss://custom:9999".into()),
             index_tree: vec![],
             rpc_timeout_ms: 10_000,
+            db: None,
+            snapshots: vec![],
         };
         let cfg = args.into_config();
         assert_eq!(cfg.upstream_ws_url, "wss://custom:9999");

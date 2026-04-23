@@ -20,5 +20,11 @@ workspace = true
 # zero-dep itself, no_std-capable.
 sha3 = "0.10"
 
+# Serde traits on the public data types. Lets service-layer
+# persistence backends (SQLite) serialize Creator / LeafSchemaV1 etc.
+# without re-defining parallel types. Derive-only — no runtime cost
+# when serialization isn't exercised.
+serde = { version = "1", features = ["derive"] }
+
 [dev-dependencies]
 # None. Node's built-in #[test] + integration tests under /tests suffice.

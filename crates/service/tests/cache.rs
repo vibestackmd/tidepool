@@ -4,7 +4,7 @@
 use tidepool_rpc::cache::{CacheStore, MemoryCache, SearchFilter};
 use tidepool_rpc::das::{
     DasAsset, DasAuthority, DasContent, DasCreator, DasFile, DasGrouping, DasLinks, DasMetadata,
-    DasOwnership,
+    DasOwnership, MasterEditionRecord, PrintEditionRecord,
 };
 
 fn stub_asset(id: &str, owner: &str) -> DasAsset {
@@ -12,31 +12,18 @@ fn stub_asset(id: &str, owner: &str) -> DasAsset {
         id: id.into(),
         interface: "V1_NFT".into(),
         content: DasContent {
-            schema: String::new(),
-            json_uri: String::new(),
-            metadata: DasMetadata {
-                name: String::new(),
-                symbol: String::new(),
-                description: String::new(),
-            },
-            links: DasLinks {
-                image: None,
-                animation_url: None,
-            },
+            metadata: DasMetadata::default(),
+            links: DasLinks::default(),
             files: Vec::<DasFile>::new(),
+            ..Default::default()
         },
-        authorities: vec![],
-        creators: vec![],
         ownership: DasOwnership {
-            frozen: false,
-            delegated: false,
             ownership_model: "single".into(),
             owner: owner.into(),
+            ..Default::default()
         },
-        grouping: vec![],
         mutable: true,
-        burnt: false,
-        compression: None,
+        ..Default::default()
     }
 }
 
@@ -211,4 +198,101 @@ async fn search_assets_filters_by_interface_and_burnt() {
     let results = cache.search_assets(&filter).await.unwrap();
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].id, "A2");
+}
+
+// ─── edition index (getNftEditions) ─────────────────────────────────
+
+#[tokio::test]
+async fn master_edition_round_trip() {
+    let cache = MemoryCache::new();
+    let record = MasterEditionRecord {
+        master_mint: "MASTER_MINT".into(),
+        master_edition_pda: "MASTER_EDITION_PDA".into(),
+        supply: 3,
+        max_supply: Some(10),
+    };
+    cache.put_master_edition(record.clone()).await.unwrap();
+    let got = cache.get_master_edition("MASTER_MINT").await.unwrap();
+    assert_eq!(got, Some(record));
+    let miss = cache.get_master_edition("UNKNOWN").await.unwrap();
+    assert!(miss.is_none());
+}
+
+#[tokio::test]
+async fn print_editions_sort_by_edition_num() {
+    let cache = MemoryCache::new();
+    let parent = "MASTER_EDITION_PDA";
+    // Insert out of order.
+    for (mint, num) in [("MINT3", 3u64), ("MINT1", 1), ("MINT2", 2)] {
+        cache
+            .put_print_edition(PrintEditionRecord {
+                print_mint: mint.into(),
+                print_edition_pda: format!("{mint}_EDITION_PDA"),
+                parent_master_edition_pda: parent.into(),
+                edition_num: num,
+            })
+            .await
+            .unwrap();
+    }
+    let listed = cache.list_print_editions(parent).await.unwrap();
+    assert_eq!(listed.len(), 3);
+    assert_eq!(listed[0].edition_num, 1);
+    assert_eq!(listed[1].edition_num, 2);
+    assert_eq!(listed[2].edition_num, 3);
+}
+
+#[tokio::test]
+async fn print_edition_repeated_put_overwrites_same_mint() {
+    let cache = MemoryCache::new();
+    let parent = "MASTER_EDITION_PDA";
+    cache
+        .put_print_edition(PrintEditionRecord {
+            print_mint: "MINT1".into(),
+            print_edition_pda: "OLD_PDA".into(),
+            parent_master_edition_pda: parent.into(),
+            edition_num: 1,
+        })
+        .await
+        .unwrap();
+    cache
+        .put_print_edition(PrintEditionRecord {
+            print_mint: "MINT1".into(),
+            print_edition_pda: "NEW_PDA".into(),
+            parent_master_edition_pda: parent.into(),
+            edition_num: 1,
+        })
+        .await
+        .unwrap();
+    let listed = cache.list_print_editions(parent).await.unwrap();
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].print_edition_pda, "NEW_PDA");
+}
+
+#[tokio::test]
+async fn print_editions_are_scoped_by_parent() {
+    let cache = MemoryCache::new();
+    cache
+        .put_print_edition(PrintEditionRecord {
+            print_mint: "A1".into(),
+            print_edition_pda: "A1_PDA".into(),
+            parent_master_edition_pda: "PARENT_A".into(),
+            edition_num: 1,
+        })
+        .await
+        .unwrap();
+    cache
+        .put_print_edition(PrintEditionRecord {
+            print_mint: "B1".into(),
+            print_edition_pda: "B1_PDA".into(),
+            parent_master_edition_pda: "PARENT_B".into(),
+            edition_num: 1,
+        })
+        .await
+        .unwrap();
+    let a = cache.list_print_editions("PARENT_A").await.unwrap();
+    let b = cache.list_print_editions("PARENT_B").await.unwrap();
+    assert_eq!(a.len(), 1);
+    assert_eq!(b.len(), 1);
+    assert_eq!(a[0].print_mint, "A1");
+    assert_eq!(b[0].print_mint, "B1");
 }

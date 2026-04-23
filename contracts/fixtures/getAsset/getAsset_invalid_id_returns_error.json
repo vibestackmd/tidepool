@@ -1,0 +1,22 @@
+{
+  "case": "getAsset_invalid_id_returns_error",
+  "method": "getAsset",
+  "recorded_at": "epoch-1776916706",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAsset",
+    "params": {
+      "id": "not-a-valid-pubkey"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "error": {
+      "code": -32000,
+      "message": "Pubkey Validation Err: not-a-valid-pubkey is invalid"
+    },
+    "id": 1
+  }
+}

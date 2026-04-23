@@ -13,25 +13,33 @@
 //! `VerifyCreator { noop: NoopOverride }` simply cannot be
 //! constructed without one.
 
+use serde::{Deserialize, Serialize};
 use tidepool_rpc_core::Creator;
 
 /// Authoritative leaf state from a LeafSchemaEvent. Whenever present,
 /// `apply_event` uses these values directly instead of reconstructing
 /// from ix args + prior store state.
+///
+/// Covers both V1 and V2 leaf schemas. `leaf_hash` is the final
+/// keccak hash Bubblegum emitted — we store it verbatim rather than
+/// recomputing, which keeps us schema-agnostic (V2 hashing folds in
+/// collection_hash/asset_data_hash/flags we don't otherwise track).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NoopOverride {
     pub leaf_index: u64,
     pub nonce: u64,
+    pub id: [u8; 32],
     pub owner: [u8; 32],
     pub delegate: [u8; 32],
     pub data_hash: [u8; 32],
     pub creator_hash: [u8; 32],
+    pub leaf_hash: [u8; 32],
 }
 
 /// Per-tree metadata captured at `createTree`. `num_minted` starts at
 /// zero and increments on every applied mint. The indexer reaches for
 /// it to assign fresh leaf indices when no noop override is available.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TreeInfo {
     pub tree: [u8; 32],
     pub depth: u8,
@@ -43,7 +51,7 @@ pub struct TreeInfo {
 /// can be reconstructed without re-reading the chain. `data_hash_input`
 /// is the Borsh-encoded MetadataArgs preimage used to compute the
 /// dataHash — kept around so `updateMetadata` can diff cleanly.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MintMetadata {
     pub name: String,
     pub symbol: String,
@@ -61,7 +69,7 @@ pub struct MintMetadata {
 /// Durable per-asset record in `CnftStore`. Immutable-after-mint
 /// fields sit above the mutable ones to make the distinction visually
 /// obvious.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LeafRecord {
     // Immutable once minted.
     pub asset_id: [u8; 32],

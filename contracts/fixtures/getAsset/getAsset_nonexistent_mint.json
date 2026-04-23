@@ -1,0 +1,22 @@
+{
+  "case": "getAsset_nonexistent_mint",
+  "method": "getAsset",
+  "recorded_at": "epoch-1776916695",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAsset",
+    "params": {
+      "id": "11111111111111111111111111111111"
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "error": {
+      "code": -32000,
+      "message": "Database Error: RecordNotFound Error: Asset Not Found"
+    },
+    "id": 1
+  }
+}

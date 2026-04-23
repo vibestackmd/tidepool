@@ -19,7 +19,12 @@ pub mod cache;
 pub mod cnft;
 pub mod compat;
 pub mod das;
+pub mod enhanced;
+pub mod priority_fee;
+pub mod sqlite_backend;
+pub mod sqlite_cache;
 pub mod upstream;
+pub mod webhooks;
 
 // Re-export core primitives so downstream consumers don't need to
 // depend on both crates by hand.

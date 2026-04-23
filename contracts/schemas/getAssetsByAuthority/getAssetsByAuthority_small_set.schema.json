@@ -1,0 +1,51 @@
+{
+  "case": "getAssetsByAuthority_small_set",
+  "method": "getAssetsByAuthority",
+  "source_fixture": "contracts/fixtures/getAssetsByAuthority/getAssetsByAuthority_small_set.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "last_indexed_slot": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "items",
+          "last_indexed_slot",
+          "limit",
+          "page",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

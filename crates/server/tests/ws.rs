@@ -170,6 +170,8 @@ async fn signature_unsubscribe_acks_and_cancels() {
 
 #[tokio::test]
 async fn unsupported_method_returns_method_not_found() {
+    // `logsSubscribe` is representative of the WS methods we haven't
+    // polyfilled yet — expect a clean -32601 response.
     let upstream = spawn_upstream(0).await;
     let port = spawn_ws(upstream).await;
     let url = format!("ws://127.0.0.1:{port}/");
@@ -180,7 +182,7 @@ async fn unsupported_method_returns_method_not_found() {
             json!({
                 "jsonrpc": "2.0",
                 "id": 99,
-                "method": "accountSubscribe",
+                "method": "logsSubscribe",
                 "params": []
             })
             .to_string()
@@ -191,6 +193,156 @@ async fn unsupported_method_returns_method_not_found() {
     let err: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
     assert_eq!(err["id"], 99);
     assert_eq!(err["error"]["code"], -32601);
+}
+
+/// Mock upstream that varies `getAccountInfo` responses across polls
+/// so accountSubscribe's change-detection logic is exercised.
+async fn spawn_account_upstream(
+    snapshots: Vec<serde_json::Value>,
+) -> String {
+    let snapshots = Arc::new(tokio::sync::Mutex::new(snapshots));
+    let app = Router::new().route(
+        "/",
+        post(
+            move |State(snaps): State<Arc<tokio::sync::Mutex<Vec<Value>>>>, Json(body): Json<Value>| {
+                let snaps = Arc::clone(&snaps);
+                async move {
+                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                    if method != "getAccountInfo" {
+                        return Json(json!({ "jsonrpc": "2.0", "id": body.get("id"), "result": null }));
+                    }
+                    let mut g = snaps.lock().await;
+                    // Pop next snapshot; stick on the last one once exhausted.
+                    let value = if g.len() > 1 {
+                        g.remove(0)
+                    } else {
+                        g.first().cloned().unwrap_or(Value::Null)
+                    };
+                    Json(json!({
+                        "jsonrpc": "2.0",
+                        "id": body.get("id"),
+                        "result": {
+                            "context": { "slot": 123 },
+                            "value": value
+                        }
+                    }))
+                }
+            },
+        ),
+    )
+    .with_state(snapshots);
+
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+    format!("http://{addr}")
+}
+
+fn account_snapshot(lamports: u64, data: &str) -> Value {
+    json!({
+        "data": [data, "base64"],
+        "executable": false,
+        "lamports": lamports,
+        "owner": "11111111111111111111111111111111",
+        "rentEpoch": 0
+    })
+}
+
+#[tokio::test]
+async fn account_subscribe_emits_on_state_change() {
+    // First two polls return snapshot A, then snapshots B, C — should
+    // produce three notifications total (A baseline, B change, C change).
+    let snapshots = vec![
+        account_snapshot(1_000, "AA=="),
+        account_snapshot(1_000, "AA=="),
+        account_snapshot(2_000, "BB=="),
+        account_snapshot(3_000, "CC=="),
+    ];
+    let upstream = spawn_account_upstream(snapshots).await;
+    let port = spawn_ws(upstream).await;
+    let url = format!("ws://127.0.0.1:{port}/");
+
+    let (mut socket, _) = connect_async(url).await.unwrap();
+    socket
+        .send(Message::Text(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "accountSubscribe",
+                "params": [
+                    "AcctTest1111111111111111111111111111111111",
+                    { "commitment": "confirmed", "encoding": "base64" }
+                ]
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+
+    let ack: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    let sub_id = ack["result"].as_u64().expect("sub id");
+
+    // Read three notifications — polls beyond the 3rd (repeat of C)
+    // should NOT emit because state is unchanged.
+    let mut seen_lamports: Vec<u64> = Vec::new();
+    for _ in 0..3 {
+        let notif: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+        assert_eq!(notif["method"], "accountNotification");
+        assert_eq!(notif["params"]["subscription"], sub_id);
+        let l = notif["params"]["result"]["value"]["lamports"]
+            .as_u64()
+            .expect("lamports");
+        seen_lamports.push(l);
+    }
+    assert_eq!(seen_lamports, vec![1_000, 2_000, 3_000]);
+}
+
+#[tokio::test]
+async fn account_unsubscribe_acks_and_cancels() {
+    // Upstream returns a fixed snapshot — no change after baseline, so
+    // polling is quiet and unsubscribe is what stops the task.
+    let upstream = spawn_account_upstream(vec![account_snapshot(5_000, "ZZ==")]).await;
+    let port = spawn_ws(upstream).await;
+    let url = format!("ws://127.0.0.1:{port}/");
+
+    let (mut socket, _) = connect_async(url).await.unwrap();
+    socket
+        .send(Message::Text(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "accountSubscribe",
+                "params": ["AcctTest1111111111111111111111111111111111"]
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+    let ack: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    let sub_id = ack["result"].as_u64().unwrap();
+    // Read the baseline notification so subsequent reads don't race.
+    let _baseline: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+
+    socket
+        .send(Message::Text(
+            json!({
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "accountUnsubscribe",
+                "params": [sub_id]
+            })
+            .to_string()
+            .into(),
+        ))
+        .await
+        .unwrap();
+    let resp: Value = serde_json::from_str(&next_text(&mut socket).await).unwrap();
+    assert_eq!(resp["id"], 6);
+    assert_eq!(resp["result"], true);
 }
 
 async fn next_text<S>(socket: &mut S) -> String

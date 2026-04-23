@@ -1,0 +1,27 @@
+{
+  "case": "getAssetsByAuthority_small_set",
+  "method": "getAssetsByAuthority",
+  "recorded_at": "epoch-1776916703",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAssetsByAuthority",
+    "params": {
+      "authorityAddress": "E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe",
+      "page": 1,
+      "limit": 5
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415050769,
+      "total": 0,
+      "limit": 5,
+      "page": 1,
+      "items": []
+    },
+    "id": 1
+  }
+}

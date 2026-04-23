@@ -1,0 +1,68 @@
+{
+  "case": "getTokenAccounts_by_owner",
+  "method": "getTokenAccounts",
+  "recorded_at": "epoch-1776916703",
+  "endpoint_host": "mainnet.helius-rpc.com",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTokenAccounts",
+    "params": {
+      "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+      "page": 1,
+      "limit": 5
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "last_indexed_slot": 415050768,
+      "total": 5,
+      "limit": 5,
+      "page": 1,
+      "token_accounts": [
+        {
+          "address": "12gn9xgCGuMG26QvgJszBefbnrQ3Q3LYix2TurHn1qDu",
+          "mint": "4UAKiJ5pqdaSzUXbGETtjJ8s1HisznLZN2boCfBbNbUT",
+          "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+          "amount": 100,
+          "delegated_amount": 0,
+          "frozen": false
+        },
+        {
+          "address": "13W1rY9YaTK1HTpFA3aXg1swEN3NAym2aSZj1Ggn3grd",
+          "mint": "2PGzsg8yeAXRA6i9WYztBs3YWdbr4jRbixM1oTZEArX7",
+          "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+          "amount": 1,
+          "delegated_amount": 0,
+          "frozen": true
+        },
+        {
+          "address": "14WWhAkAsqVd4EgrVGuvJPP7b7Z7eo7SMQxypfXJjC6N",
+          "mint": "CT4BJTcwKDa5P19Cq4uqDK8hcBwWooB2rnDyTAXvXT5K",
+          "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+          "amount": 1000000000,
+          "delegated_amount": 0,
+          "frozen": false
+        },
+        {
+          "address": "5RMqF8jquSLnJpBrAoTNMPuzCHKn7e8H6widmbM9G8M",
+          "mint": "B2GeAG8oxuoPVEHb6ZJ77p3zPMgZP2s92Nf8mqqzP9SN",
+          "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+          "amount": 69000000000000,
+          "delegated_amount": 0,
+          "frozen": false
+        },
+        {
+          "address": "7m2TH2x9jmoGUYxBHSzxJmmPDCsDVdy4mz9A1UrCnnK",
+          "mint": "BbHgaZ2oVAjr8RxkaMDqxJyNGeCMyQKcoj4Um1mVUr6y",
+          "owner": "86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY",
+          "amount": 1,
+          "delegated_amount": 0,
+          "frozen": false
+        }
+      ]
+    },
+    "id": 1
+  }
+}

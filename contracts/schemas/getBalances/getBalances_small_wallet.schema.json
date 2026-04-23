@@ -1,0 +1,45 @@
+{
+  "case": "getBalances_small_wallet",
+  "method": "getBalances",
+  "source_fixture": "contracts/fixtures/getBalances/getBalances_small_wallet.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "tokens": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "tokenAccount": {
+              "type": "string"
+            },
+            "mint": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "integer"
+            },
+            "decimals": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "amount",
+            "decimals",
+            "mint",
+            "tokenAccount"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "nativeBalance": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "nativeBalance",
+      "tokens"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -18,10 +18,11 @@ workspace = true
 # Pure algorithms (keccak, merkle proof).
 tidepool-rpc-core = { version = "0.1", path = "../core" }
 
-# Async utilities. tokio::sync for the memory store's locking. We pick
-# up tokio's multi-threaded runtime at higher layers; here we only need
-# sync primitives.
-tokio = { version = "1", features = ["sync", "rt", "macros"] }
+# Async utilities. tokio::sync for the memory store's locking;
+# tokio::time for the webhook delivery loop's poll interval. We pick
+# up tokio's multi-threaded runtime at higher layers; here we only
+# need sync + time primitives.
+tokio = { version = "1", features = ["sync", "rt", "macros", "time"] }
 
 # Async traits: dyn-compatible async fn in trait is still unstable, so
 # we use the `async-trait` macro for `UpstreamClient`, `CnftStore`,
@@ -63,5 +64,18 @@ borsh = { version = "1", features = ["derive"] }
 # Base58 — for diagnostics + tx-wire ix-data decoding.
 bs58 = "0.5"
 
+# Base64 — compact wire envelope for tree-snapshot dump/load payloads.
+base64 = "0.22"
+
+# Optional SQLite persistence. `bundled` compiles SQLite from source
+# so we don't inherit a system-lib dependency; the binary gets ~2 MB
+# bigger in exchange for a fully self-contained build.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+# Temporary directories for SQLite persistence round-trip tests.
+tempfile = "3"
+# JSON Schema validation for contract tests against committed Helius
+# fixtures. Draft 7; no network access.
+jsonschema = { version = "0.26", default-features = false }

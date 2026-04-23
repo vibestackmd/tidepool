@@ -7,9 +7,11 @@
 
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 /// Creator entry as it appears in Bubblegum's metadata args and in the
 /// creator-hash computation. Matches `mpl-bubblegum::Creator`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Creator {
     pub address: [u8; 32],
     pub verified: bool,

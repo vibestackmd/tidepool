@@ -95,14 +95,11 @@ fn to_das_asset(pubkey: &str, ix: &IndexableAsset, key: Key) -> DasAsset {
             json_uri: ix.uri.clone(),
             metadata: DasMetadata {
                 name: ix.name.clone(),
-                symbol: String::new(),
-                description: String::new(),
+                ..Default::default()
             },
-            links: DasLinks {
-                image: None,
-                animation_url: None,
-            },
+            links: DasLinks::default(),
             files: Vec::<DasFile>::new(),
+            category: None,
         },
         authorities,
         creators,
@@ -111,11 +108,13 @@ fn to_das_asset(pubkey: &str, ix: &IndexableAsset, key: Key) -> DasAsset {
             delegated: delegated_by_plugin,
             ownership_model: "single".into(),
             owner,
+            ..Default::default()
         },
         grouping,
         mutable: true, // MplCore assets are mutable unless ImmutableMetadata plugin is present.
         burnt: false,
         compression: None,
+        ..Default::default()
     }
 }
 

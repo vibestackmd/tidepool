@@ -61,3 +61,6 @@ tracing-subscriber = "0.3"
 # WebSocket client for integration tests of the signatureSubscribe
 # polyfill.
 tokio-tungstenite = "0.24"
+
+# Temp directories for --state-dir persistence round-trip tests.
+tempfile = "3"

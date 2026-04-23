@@ -8,5 +8,8 @@ node_modules/
 .idea/
 coverage/
 
+# Claude Code runtime state — local scratch only
+.claude/
+
 # Private strategy / session notes — never commit
 docs/

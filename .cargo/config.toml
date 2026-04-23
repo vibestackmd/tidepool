@@ -1,0 +1,6 @@
+# Cargo aliases. `cargo xtask <cmd>` runs the xtask binary from
+# anywhere in the workspace — standard pattern for repo-local dev
+# tooling that shouldn't ship as part of any published crate.
+
+[alias]
+xtask = "run --package xtask --"

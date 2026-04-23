@@ -1,0 +1,76 @@
+name: Helius contract drift
+
+# Weekly re-record of Helius fixtures + schema diff. Opens a PR when
+# the real upstream has drifted. Not a PR gate — the offline contract
+# tests in crates/service/tests/contracts.rs cover every PR and don't
+# need network access.
+#
+# Gated on `workflow_dispatch` + schedule so we can trigger manually
+# when investigating a suspected change. The schedule fires Mondays
+# at 14:00 UTC — outside peak US hours, before most people arrive.
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    env:
+      HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Re-record Helius fixtures
+        run: cargo xtask record-helius
+
+      - name: Re-derive schemas
+        run: cargo xtask derive-schemas
+
+      - name: Offline contract tests
+        run: cargo test -p tidepool-rpc --test contracts
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if [ -n "$(git status --porcelain contracts/)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open drift PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: helius-drift-${{ github.run_id }}
+          title: "Helius contract drift (weekly)"
+          body: |
+            Automated re-record from the weekly drift-check job.
+
+            Compare the committed fixtures/schemas against the updated
+            ones in this PR. Changes mean Helius shipped something
+            different — either an added field (probably safe to accept),
+            a renamed field (likely a breaking change to triage), or
+            shape drift we should investigate before merging.
+
+            Review checklist:
+            - [ ] Schema diffs are additions, not renames/removals.
+            - [ ] Offline contract tests still pass on main with the
+                  new fixtures (run `cargo test -p tidepool-rpc --test contracts`).
+            - [ ] If anything breaks, fix the Rust types before merging.
+          commit-message: "contracts: weekly re-record (Helius drift check)"
+          add-paths: |
+            contracts/fixtures/**
+            contracts/schemas/**

@@ -1,0 +1,82 @@
+{
+  "case": "getTokenAccounts_by_owner",
+  "method": "getTokenAccounts",
+  "source_fixture": "contracts/fixtures/getTokenAccounts/getTokenAccounts_by_owner.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "last_indexed_slot": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "token_accounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "mint": {
+                  "type": "string"
+                },
+                "owner": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "integer"
+                },
+                "delegated_amount": {
+                  "type": "integer"
+                },
+                "frozen": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "address",
+                "amount",
+                "delegated_amount",
+                "frozen",
+                "mint",
+                "owner"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "last_indexed_slot",
+          "limit",
+          "page",
+          "token_accounts",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -125,28 +125,47 @@ pub fn decode_leaf_schema_event(data: &[u8]) -> Option<LeafSchemaEventDecoded> {
 }
 
 impl LeafSchemaEventDecoded {
-    /// Convert into the service-layer `NoopOverride` shape when the
-    /// schema is V1. V2 returns None — the parser turns that into a
-    /// `ParseError::Unsupported`.
+    /// Convert into the service-layer `NoopOverride`. Works for both
+    /// V1 and V2 leaves — the override carries the final `leaf_hash`
+    /// emitted by Bubblegum, so downstream code never has to
+    /// reconstruct schema-specific hashes (V2's collection_hash /
+    /// asset_data_hash / flags are implicitly baked in).
     #[must_use]
-    pub fn as_v1_override(&self) -> Option<crate::cnft::types::NoopOverride> {
-        match &self.schema {
+    pub fn as_override(&self) -> crate::cnft::types::NoopOverride {
+        let (id, owner, delegate, nonce, data_hash, creator_hash) = match &self.schema {
             DecodedLeafSchema::V1 {
-                nonce,
+                id,
                 owner,
                 delegate,
+                nonce,
                 data_hash,
                 creator_hash,
-                ..
-            } => Some(crate::cnft::types::NoopOverride {
-                leaf_index: *nonce,
-                nonce: *nonce,
-                owner: *owner,
-                delegate: *delegate,
-                data_hash: *data_hash,
-                creator_hash: *creator_hash,
-            }),
-            DecodedLeafSchema::V2 { .. } => None,
+            }
+            | DecodedLeafSchema::V2 {
+                id,
+                owner,
+                delegate,
+                nonce,
+                data_hash,
+                creator_hash,
+            } => (*id, *owner, *delegate, *nonce, *data_hash, *creator_hash),
+        };
+        crate::cnft::types::NoopOverride {
+            leaf_index: nonce,
+            nonce,
+            id,
+            owner,
+            delegate,
+            data_hash,
+            creator_hash,
+            leaf_hash: self.leaf_hash,
         }
+    }
+
+    /// True when the event carries a V2 leaf schema. Parsers use this
+    /// to pick the V1 vs V2 handling branch.
+    #[must_use]
+    pub fn is_v2(&self) -> bool {
+        matches!(&self.schema, DecodedLeafSchema::V2 { .. })
     }
 }

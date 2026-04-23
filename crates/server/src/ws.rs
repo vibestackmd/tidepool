@@ -1,14 +1,17 @@
-//! WebSocket server with `signatureSubscribe` polyfill.
+//! WebSocket server with polling-based subscription polyfills.
 //!
 //! Surfpool's native WS doesn't implement Solana's subscription
-//! methods, so `@solana/web3.js`'s `confirmTransaction()` and
-//! `sendAndConfirm()` hang against it. We polyfill
-//! `signatureSubscribe` / `signatureUnsubscribe` via periodic HTTP
-//! polling of `getSignatureStatuses` against the upstream RPC URL.
-//! Other subscription methods (`accountSubscribe`, `logsSubscribe`,
-//! etc.) are currently dropped; the TS version forwards them to the
-//! upstream WS, which we can add in a follow-up when Surfpool ships
-//! them or when consumers ask.
+//! methods, so `@solana/web3.js`'s `confirmTransaction()` and similar
+//! hang against it. We polyfill the commonly-needed subscriptions via
+//! periodic HTTP polling of the upstream RPC URL:
+//!
+//! - `signatureSubscribe` → `getSignatureStatuses` (one-shot; resolves
+//!   when the tx reaches the requested commitment).
+//! - `accountSubscribe` → `getAccountInfo` (long-lived; emits a
+//!   notification every time the account's observed state changes).
+//!
+//! Other subscription methods (`logsSubscribe`, `programSubscribe`,
+//! etc.) are not yet polyfilled.
 //!
 //! Per-connection state lives for the lifetime of the WS upgrade —
 //! when the client disconnects, all outstanding polling tasks are
@@ -84,6 +87,7 @@ async fn ws_upgrade(ws: WebSocketUpgrade, State(state): State<WsState>) -> Respo
 
 /// One connection's lifetime. The main task owns the outbound sink;
 /// polling tasks forward notifications via an mpsc channel.
+#[allow(clippy::too_many_lines)]
 async fn handle_connection(socket: WebSocket, state: WsState) {
     let (mut sink, mut stream) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
@@ -161,7 +165,50 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
                 subs.lock().await.insert(sub_id, handle);
             }
 
-            "signatureUnsubscribe" => {
+            "accountSubscribe" => {
+                let sub_id = NEXT_SUB_ID.fetch_add(1, Ordering::Relaxed);
+                let Some(pubkey) = req
+                    .get("params")
+                    .and_then(Value::as_array)
+                    .and_then(|a| a.first())
+                    .and_then(Value::as_str)
+                    .map(String::from)
+                else {
+                    send(&tx, &error_msg(&id, -32602, "missing account pubkey param"));
+                    continue;
+                };
+                let opts = req
+                    .get("params")
+                    .and_then(Value::as_array)
+                    .and_then(|a| a.get(1))
+                    .cloned()
+                    .unwrap_or(Value::Null);
+                let commitment = opts
+                    .get("commitment")
+                    .and_then(Value::as_str)
+                    .unwrap_or("finalized")
+                    .to_string();
+                // Default Solana RPC encoding for accountSubscribe is
+                // base58; clients usually want base64 or jsonParsed.
+                let encoding = opts
+                    .get("encoding")
+                    .and_then(Value::as_str)
+                    .unwrap_or("base64")
+                    .to_string();
+
+                send(&tx, &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }));
+
+                let poll_tx = tx.clone();
+                let state_clone = state.clone();
+                let subs_clone = Arc::clone(&subs);
+                let handle = tokio::spawn(async move {
+                    poll_account(sub_id, pubkey, commitment, encoding, state_clone, poll_tx).await;
+                    subs_clone.lock().await.remove(&sub_id);
+                });
+                subs.lock().await.insert(sub_id, handle);
+            }
+
+            "signatureUnsubscribe" | "accountUnsubscribe" => {
                 let Some(sub_id) = req
                     .get("params")
                     .and_then(Value::as_array)
@@ -279,6 +326,77 @@ async fn poll_signature(
         }
     }
     warn!(sub_id, signature, "signatureSubscribe poll timed out");
+}
+
+// ─── account polling ────────────────────────────────────────────────
+
+/// Long-lived account polling loop. Emits an `accountNotification`
+/// each time `getAccountInfo` returns a state that differs from the
+/// previously observed value. First poll emits the current state as
+/// the baseline; subsequent polls compare `{data, owner, lamports,
+/// executable, rentEpoch}` and only push on change.
+///
+/// Runs until the task is aborted (on `accountUnsubscribe` or client
+/// disconnect). Transient HTTP errors skip a cycle; we don't fail the
+/// subscription so clients stay connected across brief upstream
+/// flakes.
+async fn poll_account(
+    sub_id: u64,
+    pubkey: String,
+    commitment: String,
+    encoding: String,
+    state: WsState,
+    tx: mpsc::UnboundedSender<Message>,
+) {
+    let client = match reqwest::Client::builder()
+        .timeout(state.rpc_timeout)
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            warn!(err = %e, "failed to build reqwest client for account polling");
+            return;
+        }
+    };
+    let mut last: Option<Value> = None;
+    loop {
+        tokio::time::sleep(POLL_INTERVAL).await;
+        let body = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getAccountInfo",
+            "params": [pubkey, { "commitment": commitment, "encoding": encoding }]
+        });
+        let Ok(resp) = client.post(&state.upstream_url).json(&body).send().await else {
+            continue;
+        };
+        let Ok(json): Result<Value, _> = resp.json().await else {
+            continue;
+        };
+        let Some(result) = json.get("result") else {
+            continue;
+        };
+        // The `value` field is the account snapshot (may be Null when
+        // the account doesn't exist yet). `context` we include in the
+        // notification to match Helius / native Solana RPC shape.
+        let value = result.get("value").cloned().unwrap_or(Value::Null);
+        if last.as_ref() == Some(&value) {
+            continue;
+        }
+        last = Some(value.clone());
+        let notif = json!({
+            "jsonrpc": "2.0",
+            "method": "accountNotification",
+            "params": {
+                "result": {
+                    "context": result.get("context").cloned().unwrap_or(Value::Null),
+                    "value": value
+                },
+                "subscription": sub_id
+            }
+        });
+        send(&tx, &notif);
+    }
 }
 
 fn commitment_matches(requested: &str, actual: &str) -> bool {

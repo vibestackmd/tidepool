@@ -1,0 +1,40 @@
+[package]
+name = "xtask"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "Tidepool repo-local dev tooling. Not published."
+
+[lints]
+workspace = true
+
+[dependencies]
+# NOTE: intentionally no workspace-crate deps here. Phase 1 (fixture
+# recording) is pure HTTP + JSON — dragging in the service crate
+# would pull solana-program transitively for no benefit. Phase 2
+# (schema derivation) may add `tidepool-rpc` back when it needs the
+# DAS types for cross-validation.
+
+# CLI.
+clap = { version = "4", features = ["derive", "env"] }
+
+# Load `.env` for local dev before we read env vars. `.env` is
+# gitignored; CI injects the same vars via GitHub Actions secrets.
+dotenvy = "0.15"
+
+# Async runtime + HTTP.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Data.
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+toml = "0.8"
+
+# Logging.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Errors.
+anyhow = "1"

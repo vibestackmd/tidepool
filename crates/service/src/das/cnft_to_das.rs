@@ -49,20 +49,19 @@ pub fn leaf_record_to_das_asset(record: &LeafRecord) -> DasAsset {
                 name: m.name.clone(),
                 symbol: m.symbol.clone(),
                 description: String::new(),
+                ..Default::default()
             },
-            links: DasLinks {
-                image: None,
-                animation_url: None,
-            },
+            links: DasLinks::default(),
             files: Vec::<DasFile>::new(),
+            category: None,
         },
         authorities: Vec::<DasAuthority>::new(),
         creators,
         ownership: DasOwnership {
-            frozen: false,
             delegated,
             ownership_model: "single".into(),
             owner,
+            ..Default::default()
         },
         grouping,
         mutable: m.is_mutable,
@@ -77,5 +76,6 @@ pub fn leaf_record_to_das_asset(record: &LeafRecord) -> DasAsset {
             seq: 0,
             leaf_id: record.leaf_index,
         }),
+        ..Default::default()
     }
 }

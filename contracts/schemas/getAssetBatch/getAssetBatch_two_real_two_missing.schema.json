@@ -1,0 +1,353 @@
+{
+  "case": "getAssetBatch_two_real_two_missing",
+  "method": "getAssetBatch",
+  "source_fixture": "contracts/fixtures/getAssetBatch/getAssetBatch_two_real_two_missing.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "array",
+        "items": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "interface": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "object",
+                  "properties": {
+                    "$schema": {
+                      "type": "string"
+                    },
+                    "json_uri": {
+                      "type": "string"
+                    },
+                    "files": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "uri": {
+                            "type": "string"
+                          },
+                          "cdn_uri": {
+                            "type": "string"
+                          },
+                          "mime": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "cdn_uri",
+                          "mime",
+                          "uri"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "attributes": {
+                          "type": "array",
+                          "items": {}
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "symbol": {
+                          "type": "string"
+                        },
+                        "token_standard": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "attributes",
+                        "description",
+                        "name",
+                        "symbol",
+                        "token_standard"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "links": {
+                      "type": "object",
+                      "properties": {
+                        "external_url": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "external_url",
+                        "image"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "category": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "$schema",
+                    "category",
+                    "files",
+                    "json_uri",
+                    "links",
+                    "metadata"
+                  ],
+                  "additionalProperties": false
+                },
+                "authorities": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "scopes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "address",
+                      "scopes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "compression": {
+                  "type": "object",
+                  "properties": {
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "compressed": {
+                      "type": "boolean"
+                    },
+                    "data_hash": {
+                      "type": "string"
+                    },
+                    "creator_hash": {
+                      "type": "string"
+                    },
+                    "asset_hash": {
+                      "type": "string"
+                    },
+                    "tree": {
+                      "type": "string"
+                    },
+                    "seq": {
+                      "type": "integer"
+                    },
+                    "leaf_id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "asset_hash",
+                    "compressed",
+                    "creator_hash",
+                    "data_hash",
+                    "eligible",
+                    "leaf_id",
+                    "seq",
+                    "tree"
+                  ],
+                  "additionalProperties": false
+                },
+                "grouping": {
+                  "type": "array",
+                  "items": {}
+                },
+                "royalty": {
+                  "type": "object",
+                  "properties": {
+                    "royalty_model": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "null"
+                    },
+                    "percent": {
+                      "type": "number"
+                    },
+                    "basis_points": {
+                      "type": "integer"
+                    },
+                    "primary_sale_happened": {
+                      "type": "boolean"
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "basis_points",
+                    "locked",
+                    "percent",
+                    "primary_sale_happened",
+                    "royalty_model",
+                    "target"
+                  ],
+                  "additionalProperties": false
+                },
+                "creators": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "share": {
+                        "type": "integer"
+                      },
+                      "verified": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "address",
+                      "share",
+                      "verified"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "ownership": {
+                  "type": "object",
+                  "properties": {
+                    "frozen": {
+                      "type": "boolean"
+                    },
+                    "delegated": {
+                      "type": "boolean"
+                    },
+                    "delegate": {
+                      "type": "null"
+                    },
+                    "ownership_model": {
+                      "type": "string"
+                    },
+                    "owner": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "delegate",
+                    "delegated",
+                    "frozen",
+                    "owner",
+                    "ownership_model"
+                  ],
+                  "additionalProperties": false
+                },
+                "supply": {
+                  "type": "object",
+                  "properties": {
+                    "print_max_supply": {
+                      "type": "integer"
+                    },
+                    "print_current_supply": {
+                      "type": "integer"
+                    },
+                    "edition_nonce": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "edition_nonce",
+                    "print_current_supply",
+                    "print_max_supply"
+                  ],
+                  "additionalProperties": false
+                },
+                "mutable": {
+                  "type": "boolean"
+                },
+                "burnt": {
+                  "type": "boolean"
+                },
+                "token_info": {
+                  "type": "object",
+                  "properties": {
+                    "supply": {
+                      "type": "integer"
+                    },
+                    "decimals": {
+                      "type": "integer"
+                    },
+                    "token_program": {
+                      "type": "string"
+                    },
+                    "mint_authority": {
+                      "type": "string"
+                    },
+                    "freeze_authority": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "decimals",
+                    "freeze_authority",
+                    "mint_authority",
+                    "supply",
+                    "token_program"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "authorities",
+                "burnt",
+                "compression",
+                "content",
+                "creators",
+                "grouping",
+                "id",
+                "interface",
+                "mutable",
+                "ownership",
+                "royalty",
+                "supply",
+                "token_info"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}

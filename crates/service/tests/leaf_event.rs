@@ -69,7 +69,7 @@ fn rejects_truncated_bytes() {
 }
 
 #[test]
-fn as_v1_override_produces_matching_noop_override() {
+fn as_override_produces_matching_noop_override_for_v1() {
     let event = LeafSchemaEvent::new(
         Version::V1,
         LeafSchema::V1 {
@@ -86,11 +86,14 @@ fn as_v1_override_produces_matching_noop_override() {
     event.serialize(&mut bytes).unwrap();
     let decoded = decode_leaf_schema_event(&bytes).unwrap();
 
-    let ov = decoded.as_v1_override().expect("V1 → Some");
+    let ov = decoded.as_override();
     assert_eq!(ov.nonce, 7);
     assert_eq!(ov.leaf_index, 7);
+    assert_eq!(ov.id, [1; 32]);
     assert_eq!(ov.owner, [2; 32]);
     assert_eq!(ov.delegate, [3; 32]);
     assert_eq!(ov.data_hash, [4; 32]);
     assert_eq!(ov.creator_hash, [5; 32]);
+    assert_eq!(ov.leaf_hash, [6; 32]);
+    assert!(!decoded.is_v2());
 }

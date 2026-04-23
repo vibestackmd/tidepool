@@ -1,0 +1,63 @@
+{
+  "case": "getPriorityFeeEstimate_all_levels",
+  "method": "getPriorityFeeEstimate",
+  "source_fixture": "contracts/fixtures/getPriorityFeeEstimate/getPriorityFeeEstimate_all_levels.json",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "jsonrpc": {
+        "type": "string"
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "priorityFeeLevels": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "low": {
+                "type": "number"
+              },
+              "medium": {
+                "type": "number"
+              },
+              "high": {
+                "type": "number"
+              },
+              "veryHigh": {
+                "type": "number"
+              },
+              "unsafeMax": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "high",
+              "low",
+              "medium",
+              "min",
+              "unsafeMax",
+              "veryHigh"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "priorityFeeLevels"
+        ],
+        "additionalProperties": false
+      },
+      "id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "jsonrpc",
+      "result"
+    ],
+    "additionalProperties": false
+  }
+}
