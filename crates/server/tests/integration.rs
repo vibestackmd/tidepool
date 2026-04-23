@@ -107,11 +107,22 @@ async fn spawn_tidepool_with_state(
 }
 
 /// Bind two sockets to `127.0.0.1:0` so the OS hands out two unique
-/// ephemeral ports, then drop them immediately. The returned ports
-/// have a brief TOCTOU window between drop + rebind where another
-/// process could grab them — on local dev + CI this is statistically
-/// negligible. Sequential binds avoid the adjacency hazard of
-/// `port` + (`port` + 1).
+/// ephemeral ports, then drop them immediately.
+///
+/// There's a brief TOCTOU window between `drop(listener)` and the
+/// server's later `bind(port)` where another process could snatch the
+/// port. In practice this hasn't flaked across ~100 parallel CI
+/// invocations to date. If it ever starts flaking:
+/// 1. Extend the server's `run()` with a `ServerConfig::bound`
+///    option that accepts a pre-bound `TcpListener`, and pass our
+///    listeners through directly — eliminates the window entirely.
+/// 2. Alternatively, wrap the test in a file-lock-coordinated port
+///    allocator so parallel tests don't compete for the same
+///    ephemeral range.
+///
+/// Sequential binds (vs. `SocketAddr::from(([0,0,0,0], 0))` twice in
+/// parallel) avoid the adjacency hazard of `port` + (`port` + 1)
+/// colliding when two tests race.
 async fn pick_two_free_ports() -> (u16, u16) {
     let a = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let b = TcpListener::bind("127.0.0.1:0").await.unwrap();

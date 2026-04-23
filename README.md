@@ -79,6 +79,34 @@ setupServer(
 
 Full runnable vitest setup in [`examples/msw-integration/`](examples/msw-integration/).
 
+### As a drop-in for `helius-sdk`
+
+If you're already using `helius-sdk` in production, point the same client at Tidepool for local development — one URL swap, everything works. The SDK's JSON-RPC, REST (`/v0/…`), and WebSocket transports all resolve against Tidepool because we mirror Helius's transport split exactly.
+
+```ts
+import { Helius } from "helius-sdk";
+
+const helius = new Helius(
+  process.env.HELIUS_API_KEY ?? "local-dev",
+  // Dev: Tidepool. Prod: omit and let the SDK default to
+  // mainnet.helius-rpc.com + api.helius.xyz.
+  process.env.NODE_ENV === "development"
+    ? { url: "http://localhost:8897", restUrl: "http://localhost:8897" }
+    : undefined,
+);
+
+// Uses JSON-RPC — hits Tidepool's local DAS index.
+await helius.rpc.getAsset({ id: mintPubkey });
+
+// Uses REST — hits Tidepool's /v0 layer.
+await helius.enhanced.getTransactions([signature]);
+
+// Uses WS — hits Tidepool's polling polyfill on :8898.
+await helius.ws.signatureNotifications(signature);
+```
+
+The `restUrl` + `url` split above assumes a small PR landing in [`helius-xyz/helius-sdk`](https://github.com/helius-xyz/helius-sdk) (WIP) to make the REST base URL configurable. Until it merges, the JSON-RPC + WS paths work today; REST needs the SDK's internal base URL overridden via whatever escape hatch your SDK version provides (older versions allow a patched `fetch` wrapper).
+
 ## Architecture
 
 ```
