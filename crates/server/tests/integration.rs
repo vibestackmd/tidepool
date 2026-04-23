@@ -150,6 +150,27 @@ async fn tidepool_info_native_dispatch() {
     assert!(methods
         .iter()
         .any(|m| m["method"] == "tidepool_indexTree"));
+
+    // Every method entry surfaces its transport so tooling can sort
+    // without guessing. Spot-check each transport value shows up.
+    let transports: std::collections::HashSet<_> = methods
+        .iter()
+        .filter_map(|m| m["transport"].as_str())
+        .collect();
+    for expected in ["json_rpc", "rest", "ws", "sdk_wrapper"] {
+        assert!(
+            transports.contains(expected),
+            "tidepool_info should surface `{expected}` transport; got {transports:?}"
+        );
+    }
+
+    // Webhooks live on REST, never JSON-RPC — sanity guard for the
+    // parity rule this harness enforces.
+    let create_webhook = methods
+        .iter()
+        .find(|m| m["method"] == "createWebhook")
+        .expect("createWebhook in manifest");
+    assert_eq!(create_webhook["transport"], "rest");
 }
 
 #[tokio::test]
