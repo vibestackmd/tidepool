@@ -287,10 +287,6 @@ The polyfill polls `getSignatureStatuses`, which resolves any signature the vali
 
 <div align="center">
 
-Built by [**Tyler Buchea**](https://github.com/TylerTheBuildor) · [Twitter](https://twitter.com/TylerTheBuildor)
-
-Building on Solana since the Candy Machine era. Tidepool exists because every team I've worked with on Helius hit the same local-dev wall.
-
 **MIT** · [LICENSE](./LICENSE)
 
 </div>
