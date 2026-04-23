@@ -56,10 +56,7 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
                 continue;
             }
             if let Some(only) = &args.only {
-                let stem = case_path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("");
+                let stem = case_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
                 if !stem.contains(only.as_str()) {
                     skipped += 1;
                     continue;
@@ -196,10 +193,12 @@ mod tests {
     #[test]
     fn object_captures_all_keys_as_required_and_forbids_extras() {
         let schema = derive_schema(&json!({ "a": 1, "b": "x" }));
-        assert_eq!(schema["type"], "integer".strip_prefix('i').map_or(
-            json!("object"),
-            |_| json!("object")
-        ));
+        assert_eq!(
+            schema["type"],
+            "integer"
+                .strip_prefix('i')
+                .map_or(json!("object"), |_| json!("object"))
+        );
         assert_eq!(schema["required"], json!(["a", "b"]));
         assert_eq!(schema["additionalProperties"], json!(false));
     }

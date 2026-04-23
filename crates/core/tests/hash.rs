@@ -7,8 +7,7 @@ use tidepool_rpc_core::{
     empty_node, hash_creators, hash_leaf_v1, hash_pair, keccak256, Creator, LeafSchemaV1,
 };
 
-const KECCAK_EMPTY_HEX: &str =
-    "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
+const KECCAK_EMPTY_HEX: &str = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
 
 fn to_hex(bytes: &[u8]) -> String {
     use std::fmt::Write;
@@ -95,12 +94,48 @@ fn hash_leaf_v1_is_sensitive_to_every_field() {
     let base_hash = hash_leaf_v1(&base);
 
     let perturbations: &[(&str, LeafSchemaV1)] = &[
-        ("id", LeafSchemaV1 { id: [0xff; 32], ..base.clone() }),
-        ("owner", LeafSchemaV1 { owner: [0xff; 32], ..base.clone() }),
-        ("delegate", LeafSchemaV1 { delegate: [0xff; 32], ..base.clone() }),
-        ("nonce", LeafSchemaV1 { nonce: 43, ..base.clone() }),
-        ("data_hash", LeafSchemaV1 { data_hash: [0xff; 32], ..base.clone() }),
-        ("creator_hash", LeafSchemaV1 { creator_hash: [0xff; 32], ..base.clone() }),
+        (
+            "id",
+            LeafSchemaV1 {
+                id: [0xff; 32],
+                ..base.clone()
+            },
+        ),
+        (
+            "owner",
+            LeafSchemaV1 {
+                owner: [0xff; 32],
+                ..base.clone()
+            },
+        ),
+        (
+            "delegate",
+            LeafSchemaV1 {
+                delegate: [0xff; 32],
+                ..base.clone()
+            },
+        ),
+        (
+            "nonce",
+            LeafSchemaV1 {
+                nonce: 43,
+                ..base.clone()
+            },
+        ),
+        (
+            "data_hash",
+            LeafSchemaV1 {
+                data_hash: [0xff; 32],
+                ..base.clone()
+            },
+        ),
+        (
+            "creator_hash",
+            LeafSchemaV1 {
+                creator_hash: [0xff; 32],
+                ..base.clone()
+            },
+        ),
     ];
     for (field, mutated) in perturbations {
         assert_ne!(
@@ -128,14 +163,25 @@ fn hash_leaf_v1_honors_nonce_little_endian() {
     let h1 = hash_leaf_v1(&mk(1));
     let h_be_if_swapped = hash_leaf_v1(&mk(0x0100_0000_0000_0000));
     let h256 = hash_leaf_v1(&mk(256));
-    assert_ne!(h1, h_be_if_swapped, "endianness of nonce serialization is wrong");
+    assert_ne!(
+        h1, h_be_if_swapped,
+        "endianness of nonce serialization is wrong"
+    );
     assert_ne!(h1, h256);
 }
 
 #[test]
 fn hash_creators_is_deterministic_and_order_sensitive() {
-    let a = Creator { address: [1u8; 32], verified: true, share: 50 };
-    let b = Creator { address: [2u8; 32], verified: false, share: 50 };
+    let a = Creator {
+        address: [1u8; 32],
+        verified: true,
+        share: 50,
+    };
+    let b = Creator {
+        address: [2u8; 32],
+        verified: false,
+        share: 50,
+    };
 
     let ab = hash_creators(&[a.clone(), b.clone()]);
     let ba = hash_creators(&[b.clone(), a.clone()]);
@@ -147,8 +193,15 @@ fn hash_creators_is_deterministic_and_order_sensitive() {
 
 #[test]
 fn hash_creators_distinguishes_verified_vs_unverified() {
-    let c = Creator { address: [1u8; 32], verified: true, share: 100 };
-    let c_unverified = Creator { verified: false, ..c.clone() };
+    let c = Creator {
+        address: [1u8; 32],
+        verified: true,
+        share: 100,
+    };
+    let c_unverified = Creator {
+        verified: false,
+        ..c.clone()
+    };
     assert_ne!(hash_creators(&[c]), hash_creators(&[c_unverified]));
 }
 

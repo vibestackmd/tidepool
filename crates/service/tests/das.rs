@@ -99,7 +99,10 @@ async fn get_asset_proof_round_trips_against_verify_proof() {
     let store = MemoryCnftStore::new();
     let asset_id = seed(&store).await;
 
-    let proof = get_asset_proof(&store, &asset_id).await.unwrap().expect("Some");
+    let proof = get_asset_proof(&store, &asset_id)
+        .await
+        .unwrap()
+        .expect("Some");
     assert_eq!(proof.tree_id, bs58::encode(TREE).into_string());
     // depth 6 → node_index = 2^6 + leaf_index(0) = 64
     assert_eq!(proof.node_index, 64);
@@ -486,7 +489,10 @@ async fn get_token_accounts_paginates_with_page_limit() {
 
     let p2 = get_token_accounts(
         &upstream,
-        &TokenAccountsFilter { page: 2, ..base.clone() },
+        &TokenAccountsFilter {
+            page: 2,
+            ..base.clone()
+        },
     )
     .await
     .unwrap();
@@ -494,7 +500,10 @@ async fn get_token_accounts_paginates_with_page_limit() {
 
     let past = get_token_accounts(
         &upstream,
-        &TokenAccountsFilter { page: 99, ..base.clone() },
+        &TokenAccountsFilter {
+            page: 99,
+            ..base.clone()
+        },
     )
     .await
     .unwrap();

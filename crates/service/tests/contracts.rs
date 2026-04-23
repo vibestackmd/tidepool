@@ -37,8 +37,8 @@ fn load_fixture_response(method: &str, case: &str) -> Value {
         .join("contracts/fixtures")
         .join(method)
         .join(format!("{case}.json"));
-    let bytes = std::fs::read(&path)
-        .unwrap_or_else(|e| panic!("read fixture {}: {e}", path.display()));
+    let bytes =
+        std::fs::read(&path).unwrap_or_else(|e| panic!("read fixture {}: {e}", path.display()));
     let envelope: Value = serde_json::from_slice(&bytes).expect("parse fixture envelope");
     envelope.get("response").cloned().expect("response key")
 }
@@ -48,8 +48,8 @@ fn load_schema(method: &str, case: &str) -> Value {
         .join("contracts/schemas")
         .join(method)
         .join(format!("{case}.schema.json"));
-    let bytes = std::fs::read(&path)
-        .unwrap_or_else(|e| panic!("read schema {}: {e}", path.display()));
+    let bytes =
+        std::fs::read(&path).unwrap_or_else(|e| panic!("read schema {}: {e}", path.display()));
     let envelope: Value = serde_json::from_slice(&bytes).expect("parse schema envelope");
     envelope.get("schema").cloned().expect("schema key")
 }
@@ -207,10 +207,7 @@ fn search_assets_items_round_trip() {
 fn get_asset_batch_items_round_trip() {
     // getAssetBatch returns a raw array, not a {items} wrapper.
     use tidepool_rpc::das::DasAsset;
-    let response = load_fixture_response(
-        "getAssetBatch",
-        "getAssetBatch_two_real_two_missing",
-    );
+    let response = load_fixture_response("getAssetBatch", "getAssetBatch_two_real_two_missing");
     let arr = response
         .pointer("/result")
         .and_then(Value::as_array)
@@ -234,10 +231,7 @@ fn get_asset_batch_items_round_trip() {
 fn get_asset_invalid_id_returns_error_envelope() {
     // Regression test for error-shape fidelity. Helius returns a
     // standard JSON-RPC error envelope when `id` fails to parse.
-    let response = load_fixture_response(
-        "getAsset",
-        "getAsset_invalid_id_returns_error",
-    );
+    let response = load_fixture_response("getAsset", "getAsset_invalid_id_returns_error");
     // Either .error is populated and .result is absent, or vice versa.
     let err = response.pointer("/error").expect("error envelope");
     assert!(err.is_object(), "error must be an object");
@@ -302,7 +296,10 @@ fn get_transactions_by_address_response_round_trips() {
         "getTransactionsByAddress_small_wallet",
     );
     let items = response.as_array().expect("REST returns a bare array");
-    assert!(!items.is_empty(), "small wallet should have at least one tx");
+    assert!(
+        !items.is_empty(),
+        "small wallet should have at least one tx"
+    );
     for (i, raw) in items.iter().enumerate() {
         let parsed: EnhancedTransaction = serde_json::from_value(raw.clone()).unwrap_or_else(|e| {
             panic!("item {i}: EnhancedTransaction rejected real Helius response: {e}\nvalue: {raw}")
@@ -326,10 +323,7 @@ fn get_all_webhooks_list_is_array() {
     // a JSON array (possibly empty) — not `{ webhooks: [] }` or an
     // error envelope. Our REST handler produces the same shape from
     // an empty SqliteWebhookRegistry.
-    let response = load_fixture_response(
-        "getAllWebhooks",
-        "getAllWebhooks_empty_project",
-    );
+    let response = load_fixture_response("getAllWebhooks", "getAllWebhooks_empty_project");
     assert!(
         response.is_array(),
         "getAllWebhooks must return a bare JSON array, got {response}"
@@ -372,7 +366,10 @@ fn get_asset_proof_cnft_parses() {
     let raw = response.pointer("/result").cloned().expect("result");
     let parsed: DasAssetProof = serde_json::from_value(raw.clone())
         .expect("DasAssetProof should accept real Helius proof response");
-    assert!(!parsed.proof.is_empty(), "proof should be a non-empty array");
+    assert!(
+        !parsed.proof.is_empty(),
+        "proof should be a non-empty array"
+    );
     assert!(!parsed.root.is_empty(), "root should be populated");
     let reserialized = serde_json::to_value(&parsed).expect("serialize DasAssetProof");
     let dropped = missing_keys(&raw, &reserialized, "");
@@ -395,8 +392,8 @@ fn get_priority_fee_estimate_levels_round_trip() {
         .cloned()
         .expect("priorityFeeLevels key");
 
-    let parsed: PriorityFeeLevels = serde_json::from_value(levels_raw.clone())
-        .expect("parse priorityFeeLevels");
+    let parsed: PriorityFeeLevels =
+        serde_json::from_value(levels_raw.clone()).expect("parse priorityFeeLevels");
     let reserialized = serde_json::to_value(parsed).unwrap();
     let dropped = missing_keys(&levels_raw, &reserialized, "");
     assert!(

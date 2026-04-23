@@ -33,34 +33,40 @@ async fn spawn_upstream(confirmed_after: u32) -> String {
     let counter: Arc<AtomicU32> = Arc::new(AtomicU32::new(0));
     let counter_for = Arc::clone(&counter);
 
-    let app = Router::new().route(
-        "/",
-        post(move |State(counter): State<Arc<AtomicU32>>, Json(body): Json<Value>| async move {
-            let method = body.get("method").and_then(Value::as_str).unwrap_or("");
-            if method != "getSignatureStatuses" {
-                return Json(json!({ "jsonrpc": "2.0", "id": body.get("id"), "result": null }));
-            }
-            let calls = counter.fetch_add(1, Ordering::SeqCst) + 1;
-            let status = if calls >= confirmed_after {
-                json!({
-                    "slot": 100,
-                    "confirmations": null,
-                    "err": null,
-                    "confirmationStatus": "finalized"
-                })
-            } else {
-                json!(null)
-            };
-            Json(json!({
-                "jsonrpc": "2.0",
-                "id": body.get("id"),
-                "result": {
-                    "context": { "slot": 100 },
-                    "value": [status]
-                }
-            }))
-        }),
-    ).with_state(counter_for);
+    let app = Router::new()
+        .route(
+            "/",
+            post(
+                move |State(counter): State<Arc<AtomicU32>>, Json(body): Json<Value>| async move {
+                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                    if method != "getSignatureStatuses" {
+                        return Json(
+                            json!({ "jsonrpc": "2.0", "id": body.get("id"), "result": null }),
+                        );
+                    }
+                    let calls = counter.fetch_add(1, Ordering::SeqCst) + 1;
+                    let status = if calls >= confirmed_after {
+                        json!({
+                            "slot": 100,
+                            "confirmations": null,
+                            "err": null,
+                            "confirmationStatus": "finalized"
+                        })
+                    } else {
+                        json!(null)
+                    };
+                    Json(json!({
+                        "jsonrpc": "2.0",
+                        "id": body.get("id"),
+                        "result": {
+                            "context": { "slot": 100 },
+                            "value": [status]
+                        }
+                    }))
+                },
+            ),
+        )
+        .with_state(counter_for);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -235,55 +241,57 @@ async fn spawn_logs_upstream(mention: &'static str) -> String {
     let state: Arc<tokio::sync::Mutex<u32>> = Arc::new(tokio::sync::Mutex::new(0));
     let state_clone = Arc::clone(&state);
 
-    let app = Router::new().route(
-        "/",
-        post(
-            move |State(state): State<Arc<tokio::sync::Mutex<u32>>>, Json(body): Json<Value>| {
-                let state = Arc::clone(&state);
-                async move {
-                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
-                    let id = body.get("id").cloned().unwrap_or(Value::Null);
-                    match method {
-                        "getSignaturesForAddress" => {
-                            // Confirm the filter pubkey matches the subscribed mention.
-                            assert_eq!(
-                                body["params"][0].as_str().unwrap_or(""),
-                                mention,
-                                "upstream saw wrong mention filter"
-                            );
-                            let mut calls = state.lock().await;
-                            *calls += 1;
-                            let sigs = if *calls == 1 {
-                                json!([{ "signature": "BASELINE_SIG", "slot": 100 }])
-                            } else {
-                                json!([
-                                    { "signature": "NEW_SIG_1", "slot": 101 },
-                                    { "signature": "BASELINE_SIG", "slot": 100 }
-                                ])
-                            };
-                            Json(json!({ "jsonrpc": "2.0", "id": id, "result": sigs }))
-                        }
-                        "getTransaction" => Json(json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "result": {
-                                "slot": 101,
-                                "meta": {
-                                    "err": null,
-                                    "logMessages": [
-                                        "Program log: hello",
-                                        "Program log: world"
-                                    ]
-                                }
+    let app = Router::new()
+        .route(
+            "/",
+            post(
+                move |State(state): State<Arc<tokio::sync::Mutex<u32>>>,
+                      Json(body): Json<Value>| {
+                    let state = Arc::clone(&state);
+                    async move {
+                        let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                        let id = body.get("id").cloned().unwrap_or(Value::Null);
+                        match method {
+                            "getSignaturesForAddress" => {
+                                // Confirm the filter pubkey matches the subscribed mention.
+                                assert_eq!(
+                                    body["params"][0].as_str().unwrap_or(""),
+                                    mention,
+                                    "upstream saw wrong mention filter"
+                                );
+                                let mut calls = state.lock().await;
+                                *calls += 1;
+                                let sigs = if *calls == 1 {
+                                    json!([{ "signature": "BASELINE_SIG", "slot": 100 }])
+                                } else {
+                                    json!([
+                                        { "signature": "NEW_SIG_1", "slot": 101 },
+                                        { "signature": "BASELINE_SIG", "slot": 100 }
+                                    ])
+                                };
+                                Json(json!({ "jsonrpc": "2.0", "id": id, "result": sigs }))
                             }
-                        })),
-                        _ => Json(json!({ "jsonrpc": "2.0", "id": id, "result": null })),
+                            "getTransaction" => Json(json!({
+                                "jsonrpc": "2.0",
+                                "id": id,
+                                "result": {
+                                    "slot": 101,
+                                    "meta": {
+                                        "err": null,
+                                        "logMessages": [
+                                            "Program log: hello",
+                                            "Program log: world"
+                                        ]
+                                    }
+                                }
+                            })),
+                            _ => Json(json!({ "jsonrpc": "2.0", "id": id, "result": null })),
+                        }
                     }
-                }
-            },
-        ),
-    )
-    .with_state(state_clone);
+                },
+            ),
+        )
+        .with_state(state_clone);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -336,40 +344,42 @@ async fn logs_subscribe_emits_notification_for_mention() {
 
 /// Mock upstream that varies `getAccountInfo` responses across polls
 /// so accountSubscribe's change-detection logic is exercised.
-async fn spawn_account_upstream(
-    snapshots: Vec<serde_json::Value>,
-) -> String {
+async fn spawn_account_upstream(snapshots: Vec<serde_json::Value>) -> String {
     let snapshots = Arc::new(tokio::sync::Mutex::new(snapshots));
-    let app = Router::new().route(
-        "/",
-        post(
-            move |State(snaps): State<Arc<tokio::sync::Mutex<Vec<Value>>>>, Json(body): Json<Value>| {
-                let snaps = Arc::clone(&snaps);
-                async move {
-                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
-                    if method != "getAccountInfo" {
-                        return Json(json!({ "jsonrpc": "2.0", "id": body.get("id"), "result": null }));
-                    }
-                    let mut g = snaps.lock().await;
-                    // Pop next snapshot; stick on the last one once exhausted.
-                    let value = if g.len() > 1 {
-                        g.remove(0)
-                    } else {
-                        g.first().cloned().unwrap_or(Value::Null)
-                    };
-                    Json(json!({
-                        "jsonrpc": "2.0",
-                        "id": body.get("id"),
-                        "result": {
-                            "context": { "slot": 123 },
-                            "value": value
+    let app = Router::new()
+        .route(
+            "/",
+            post(
+                move |State(snaps): State<Arc<tokio::sync::Mutex<Vec<Value>>>>,
+                      Json(body): Json<Value>| {
+                    let snaps = Arc::clone(&snaps);
+                    async move {
+                        let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                        if method != "getAccountInfo" {
+                            return Json(
+                                json!({ "jsonrpc": "2.0", "id": body.get("id"), "result": null }),
+                            );
                         }
-                    }))
-                }
-            },
-        ),
-    )
-    .with_state(snapshots);
+                        let mut g = snaps.lock().await;
+                        // Pop next snapshot; stick on the last one once exhausted.
+                        let value = if g.len() > 1 {
+                            g.remove(0)
+                        } else {
+                            g.first().cloned().unwrap_or(Value::Null)
+                        };
+                        Json(json!({
+                            "jsonrpc": "2.0",
+                            "id": body.get("id"),
+                            "result": {
+                                "context": { "slot": 123 },
+                                "value": value
+                            }
+                        }))
+                    }
+                },
+            ),
+        )
+        .with_state(snapshots);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();

@@ -143,7 +143,11 @@ async fn concurrent_writes_across_three_stores_dont_corrupt() {
     // cNFT — probe at both ends of the seed space.
     let seed_first = tree(0).tree;
     let seed_last = tree(u16::try_from(expected - 1).unwrap()).tree;
-    assert!(cnft.get_tree(&seed_first).await.expect("get_tree").is_some());
+    assert!(cnft
+        .get_tree(&seed_first)
+        .await
+        .expect("get_tree")
+        .is_some());
     assert!(cnft.get_tree(&seed_last).await.expect("get_tree").is_some());
 
     // Webhooks — exact count invariant. Any lost write surfaces here

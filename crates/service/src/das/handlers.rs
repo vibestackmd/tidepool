@@ -570,7 +570,11 @@ pub async fn get_balances<U: UpstreamClient + ?Sized>(
         tokens.extend(fetch_token_balances(upstream, owner, program_id).await?);
     }
     // Deterministic order for stability — mint then account.
-    tokens.sort_by(|a, b| a.mint.cmp(&b.mint).then_with(|| a.token_account.cmp(&b.token_account)));
+    tokens.sort_by(|a, b| {
+        a.mint
+            .cmp(&b.mint)
+            .then_with(|| a.token_account.cmp(&b.token_account))
+    });
 
     Ok(DasBalances {
         native_balance: lamports,

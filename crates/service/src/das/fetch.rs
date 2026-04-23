@@ -226,9 +226,8 @@ where
         .get("value")
         .and_then(serde_json::Value::as_array)
         .and_then(|arr| {
-            arr.iter().find(|entry| {
-                entry.get("amount").and_then(serde_json::Value::as_str) != Some("0")
-            })
+            arr.iter()
+                .find(|entry| entry.get("amount").and_then(serde_json::Value::as_str) != Some("0"))
         })
         .and_then(|entry| entry.get("address"))
         .and_then(serde_json::Value::as_str)?;
@@ -280,9 +279,7 @@ fn derive_metadata_pda(mint_b58: &str) -> String {
     let Ok(program) = Pubkey::from_str(MPL_TOKEN_METADATA_PROGRAM) else {
         return String::new();
     };
-    let (pda, _bump) = Pubkey::find_program_address(
-        &[b"metadata", program.as_ref(), mint.as_ref()],
-        &program,
-    );
+    let (pda, _bump) =
+        Pubkey::find_program_address(&[b"metadata", program.as_ref(), mint.as_ref()], &program);
     pda.to_string()
 }

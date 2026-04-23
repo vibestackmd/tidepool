@@ -137,7 +137,6 @@ pub enum CnftEvent {
     },
 
     // ─── noop-required family ───────────────────────────────────────
-
     VerifyCreator {
         tree: [u8; 32],
         creator: [u8; 32],

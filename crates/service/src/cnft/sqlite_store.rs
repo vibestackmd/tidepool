@@ -137,11 +137,8 @@ impl CnftStore for SqliteCnftStore {
             )
             .optional()
             .map_err(map_sqlite_err)?;
-        new.map(|n| u64::try_from(n).unwrap_or(0)).ok_or_else(|| {
-            StoreError::UnknownTree {
-                tree: hex_of(tree),
-            }
-        })
+        new.map(|n| u64::try_from(n).unwrap_or(0))
+            .ok_or_else(|| StoreError::UnknownTree { tree: hex_of(tree) })
     }
 
     async fn ensure_num_minted_at_least(&self, tree: &[u8; 32], floor: u64) -> StoreResult<()> {
@@ -163,9 +160,7 @@ impl CnftStore for SqliteCnftStore {
                 .map_err(map_sqlite_err)?
                 .unwrap_or(false);
             if !exists {
-                return Err(StoreError::UnknownTree {
-                    tree: hex_of(tree),
-                });
+                return Err(StoreError::UnknownTree { tree: hex_of(tree) });
             }
         }
         Ok(())
@@ -173,11 +168,10 @@ impl CnftStore for SqliteCnftStore {
 
     async fn put_leaf(&self, record: LeafRecord) -> StoreResult<()> {
         let c = self.conn.lock().await;
-        let metadata_json = serde_json::to_vec(&record.mint_metadata).map_err(|e| {
-            StoreError::UnknownTree {
+        let metadata_json =
+            serde_json::to_vec(&record.mint_metadata).map_err(|e| StoreError::UnknownTree {
                 tree: format!("serialize metadata: {e}"),
-            }
-        })?;
+            })?;
         c.execute(
             "INSERT INTO cnft_leaves(asset_id, tree, nonce, leaf_index, owner, delegate,
                                 data_hash, creator_hash, leaf_hash, burned,

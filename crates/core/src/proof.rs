@@ -36,7 +36,11 @@ impl std::fmt::Display for ProofError {
             Self::UnsupportedDepth(d) => {
                 write!(f, "unsupported tree depth {d} (must be 1..=30)")
             }
-            Self::OutOfRange { leaf_index, depth, capacity } => write!(
+            Self::OutOfRange {
+                leaf_index,
+                depth,
+                capacity,
+            } => write!(
                 f,
                 "leaf_index {leaf_index} out of range for depth {depth} (capacity {capacity})"
             ),
@@ -59,7 +63,11 @@ pub fn compute_proof(tree: &TreeState, leaf_index: u64) -> Result<MerkleProof, P
     let depth = tree.depth;
     let capacity = 1u64 << depth;
     if leaf_index >= capacity {
-        return Err(ProofError::OutOfRange { leaf_index, depth, capacity });
+        return Err(ProofError::OutOfRange {
+            leaf_index,
+            depth,
+            capacity,
+        });
     }
 
     // Working level: positions present at this height. Start at leaves.
@@ -128,12 +136,7 @@ pub fn compute_proof(tree: &TreeState, leaf_index: u64) -> Result<MerkleProof, P
 /// Verify a proof bottom-up. The lowest bit of `leaf_index` at each
 /// level says which side of the parent the current node is on.
 #[must_use]
-pub fn verify_proof(
-    leaf: &[u8; 32],
-    proof: &[[u8; 32]],
-    leaf_index: u64,
-    root: &[u8; 32],
-) -> bool {
+pub fn verify_proof(leaf: &[u8; 32], proof: &[[u8; 32]], leaf_index: u64, root: &[u8; 32]) -> bool {
     let mut current = *leaf;
     let mut idx = leaf_index;
     for sibling in proof {

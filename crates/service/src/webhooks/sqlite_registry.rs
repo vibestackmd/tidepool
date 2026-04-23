@@ -144,7 +144,9 @@ impl WebhookRegistry for SqliteWebhookRegistry {
         let merged = Webhook {
             webhook_id: existing.webhook_id.clone(),
             webhook_url: input.webhook_url.unwrap_or(existing.webhook_url),
-            account_addresses: input.account_addresses.unwrap_or(existing.account_addresses),
+            account_addresses: input
+                .account_addresses
+                .unwrap_or(existing.account_addresses),
             transaction_types: if input.transaction_types.is_empty() {
                 existing.transaction_types
             } else {

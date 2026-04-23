@@ -30,10 +30,7 @@ fn stub_mint_metadata() -> MintMetadata {
     }
 }
 
-async fn build_tree_state(
-    store: &MemoryCnftStore,
-    tree: [u8; 32],
-) -> TreeState {
+async fn build_tree_state(store: &MemoryCnftStore, tree: [u8; 32]) -> TreeState {
     let info = store.get_tree(&tree).await.unwrap().expect("tree present");
     let mut leaves = BTreeMap::new();
     for rec in store.list_leaves(&tree).await.unwrap() {
@@ -258,7 +255,10 @@ async fn transfer_with_wrong_data_hash_and_no_noop_is_silent_noop() {
     .unwrap();
 
     let after = store.get_leaf_by_index(&TREE, 0).await.unwrap().unwrap();
-    assert_eq!(after.leaf_hash, before.leaf_hash, "mismatch should not mutate");
+    assert_eq!(
+        after.leaf_hash, before.leaf_hash,
+        "mismatch should not mutate"
+    );
 }
 
 #[tokio::test]

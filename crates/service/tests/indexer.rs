@@ -16,8 +16,9 @@ use serde_json::json;
 use solana_program::pubkey::Pubkey;
 
 use tidepool_rpc::cnft::{
-    index_tree, parser::{BURN_DISC, CREATE_TREE_CONFIG_DISC, MINT_V1_DISC}, CnftStore,
-    IndexTreeOptions, MemoryCnftStore, BUBBLEGUM_PROGRAM_ID,
+    index_tree,
+    parser::{BURN_DISC, CREATE_TREE_CONFIG_DISC, MINT_V1_DISC},
+    CnftStore, IndexTreeOptions, MemoryCnftStore, BUBBLEGUM_PROGRAM_ID,
 };
 use tidepool_rpc::upstream::{FixtureUpstream, UpstreamError};
 
@@ -59,11 +60,7 @@ fn stub_metadata() -> MetadataArgs {
 
 // Build a tx JSON for a single outer Bubblegum ix with the given
 // discriminator + Borsh-serialized body + the given account list.
-fn outer_bubblegum_tx(
-    disc: [u8; 8],
-    body: Vec<u8>,
-    accounts: &[&str],
-) -> serde_json::Value {
+fn outer_bubblegum_tx(disc: [u8; 8], body: Vec<u8>, accounts: &[&str]) -> serde_json::Value {
     let mut data = disc.to_vec();
     data.extend(body);
     let account_keys: Vec<String> = accounts
@@ -115,7 +112,10 @@ fn upstream_for_chain(chain: &Arc<Mutex<FixtureChain>>) -> FixtureUpstream {
                 .get("limit")
                 .and_then(serde_json::Value::as_u64)
                 .unwrap_or(1000) as usize;
-            let before = opts.get("before").and_then(|v| v.as_str()).map(String::from);
+            let before = opts
+                .get("before")
+                .and_then(|v| v.as_str())
+                .map(String::from);
             let until = opts.get("until").and_then(|v| v.as_str()).map(String::from);
 
             let guard = sigs_chain.lock().unwrap();
@@ -144,7 +144,11 @@ fn upstream_for_chain(chain: &Arc<Mutex<FixtureChain>>) -> FixtureUpstream {
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| UpstreamError::Transport("missing sig".into()))?;
             let guard = txs_chain.lock().unwrap();
-            Ok(guard.txs.get(sig).cloned().unwrap_or(serde_json::Value::Null))
+            Ok(guard
+                .txs
+                .get(sig)
+                .cloned()
+                .unwrap_or(serde_json::Value::Null))
         })
 }
 
@@ -162,7 +166,15 @@ async fn single_create_tree_tx_populates_store() {
         }),
         // create_tree_config accounts: [treeConfig, merkleTree, payer,
         //   treeCreator, logWrapper, compressionProgram, systemProgram]
-        &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+        &[
+            ADDR_SYS,
+            &tree_b58(),
+            ADDR_SYS,
+            ADDR_SYS,
+            ADDR_SYS,
+            ADDR_SYS,
+            ADDR_SYS,
+        ],
     );
     chain.lock().unwrap().append("sig-create", json!(null), tx);
 
@@ -194,12 +206,22 @@ async fn create_plus_two_mints_apply_in_chronological_order() {
                 max_buffer_size: 16,
                 public: Some(false),
             }),
-            &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+            &[
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+            ],
         ),
     );
 
     // mint_v1 × 2
-    let mint_body = enc(&MintV1InstructionArgs { metadata: stub_metadata() });
+    let mint_body = enc(&MintV1InstructionArgs {
+        metadata: stub_metadata(),
+    });
     for sig in ["sig-mint1", "sig-mint2"] {
         chain.lock().unwrap().append(
             sig,
@@ -211,8 +233,15 @@ async fn create_plus_two_mints_apply_in_chronological_order() {
                 //   merkleTree, payer, treeDelegate, logWrapper,
                 //   compressionProgram, systemProgram]
                 &[
-                    ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS,
-                    ADDR_SYS, ADDR_SYS,
+                    ADDR_SYS,
+                    ADDR_SYS,
+                    ADDR_SYS,
+                    &tree_b58(),
+                    ADDR_SYS,
+                    ADDR_SYS,
+                    ADDR_SYS,
+                    ADDR_SYS,
+                    ADDR_SYS,
                 ],
             ),
         );
@@ -247,7 +276,15 @@ async fn incremental_call_resumes_from_cursor() {
                 max_buffer_size: 16,
                 public: Some(false),
             }),
-            &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+            &[
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+            ],
         ),
     );
     chain.lock().unwrap().append(
@@ -255,9 +292,18 @@ async fn incremental_call_resumes_from_cursor() {
         json!(null),
         outer_bubblegum_tx(
             MINT_V1_DISC,
-            enc(&MintV1InstructionArgs { metadata: stub_metadata() }),
+            enc(&MintV1InstructionArgs {
+                metadata: stub_metadata(),
+            }),
             &[
-                ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
                 ADDR_SYS,
             ],
         ),
@@ -270,7 +316,11 @@ async fn incremental_call_resumes_from_cursor() {
         .unwrap();
     assert_eq!(first.processed, 2);
     assert_eq!(
-        store.get_last_signature(&TREE_BYTES).await.unwrap().as_deref(),
+        store
+            .get_last_signature(&TREE_BYTES)
+            .await
+            .unwrap()
+            .as_deref(),
         Some("sig-mint1")
     );
 
@@ -280,9 +330,18 @@ async fn incremental_call_resumes_from_cursor() {
         json!(null),
         outer_bubblegum_tx(
             MINT_V1_DISC,
-            enc(&MintV1InstructionArgs { metadata: stub_metadata() }),
+            enc(&MintV1InstructionArgs {
+                metadata: stub_metadata(),
+            }),
             &[
-                ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
                 ADDR_SYS,
             ],
         ),
@@ -308,7 +367,15 @@ async fn failed_tx_advances_cursor_without_applying_state() {
                 max_buffer_size: 16,
                 public: Some(false),
             }),
-            &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+            &[
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+            ],
         ),
     );
     // Failed tx with Bubblegum ix in it — should NOT apply.
@@ -317,9 +384,18 @@ async fn failed_tx_advances_cursor_without_applying_state() {
         json!({ "InstructionError": [0, "Custom"] }),
         outer_bubblegum_tx(
             MINT_V1_DISC,
-            enc(&MintV1InstructionArgs { metadata: stub_metadata() }),
+            enc(&MintV1InstructionArgs {
+                metadata: stub_metadata(),
+            }),
             &[
-                ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
                 ADDR_SYS,
             ],
         ),
@@ -332,11 +408,18 @@ async fn failed_tx_advances_cursor_without_applying_state() {
         .unwrap();
 
     assert_eq!(result.processed, 2);
-    assert_eq!(result.applied, 1, "only createTree applies; failed mint doesn't");
+    assert_eq!(
+        result.applied, 1,
+        "only createTree applies; failed mint doesn't"
+    );
     let info = store.get_tree(&TREE_BYTES).await.unwrap().unwrap();
     assert_eq!(info.num_minted, 0, "no mint should have run");
     assert_eq!(
-        store.get_last_signature(&TREE_BYTES).await.unwrap().as_deref(),
+        store
+            .get_last_signature(&TREE_BYTES)
+            .await
+            .unwrap()
+            .as_deref(),
         Some("sig-failed")
     );
 }
@@ -345,10 +428,24 @@ async fn failed_tx_advances_cursor_without_applying_state() {
 async fn burn_of_indexed_leaf_marks_it_burned_end_to_end() {
     let chain = Arc::new(Mutex::new(FixtureChain::default()));
     let mint_v1_accounts = [
-        ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        &tree_b58(),
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
     ];
     let burn_accounts = [
-        ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
+        &tree_b58(),
+        ADDR_SYS,
+        ADDR_SYS,
+        ADDR_SYS,
     ];
     chain.lock().unwrap().append(
         "sig-create",
@@ -360,7 +457,15 @@ async fn burn_of_indexed_leaf_marks_it_burned_end_to_end() {
                 max_buffer_size: 16,
                 public: Some(false),
             }),
-            &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+            &[
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+            ],
         ),
     );
     chain.lock().unwrap().append(
@@ -368,7 +473,9 @@ async fn burn_of_indexed_leaf_marks_it_burned_end_to_end() {
         json!(null),
         outer_bubblegum_tx(
             MINT_V1_DISC,
-            enc(&MintV1InstructionArgs { metadata: stub_metadata() }),
+            enc(&MintV1InstructionArgs {
+                metadata: stub_metadata(),
+            }),
             &mint_v1_accounts,
         ),
     );
@@ -395,7 +502,11 @@ async fn burn_of_indexed_leaf_marks_it_burned_end_to_end() {
         .unwrap();
     assert_eq!(result.applied, 3);
 
-    let leaf = store.get_leaf_by_index(&TREE_BYTES, 0).await.unwrap().unwrap();
+    let leaf = store
+        .get_leaf_by_index(&TREE_BYTES, 0)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(leaf.burned);
 }
 
@@ -429,7 +540,15 @@ async fn noop_event_pairing_covers_verify_creator_flow() {
                 max_buffer_size: 16,
                 public: Some(false),
             }),
-            &[ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS],
+            &[
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+            ],
         ),
     );
 
@@ -447,7 +566,14 @@ async fn noop_event_pairing_covers_verify_creator_flow() {
             MINT_V1_DISC,
             enc(&MintV1InstructionArgs { metadata: md }),
             &[
-                ADDR_SYS, ADDR_SYS, ADDR_SYS, &tree_b58(), ADDR_SYS, ADDR_SYS, ADDR_SYS, ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                &tree_b58(),
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
+                ADDR_SYS,
                 ADDR_SYS,
             ],
         ),
@@ -504,7 +630,10 @@ async fn noop_event_pairing_covers_verify_creator_flow() {
             }
         }
     });
-    chain.lock().unwrap().append("sig-verify", json!(null), verify_creator_tx);
+    chain
+        .lock()
+        .unwrap()
+        .append("sig-verify", json!(null), verify_creator_tx);
 
     let upstream = upstream_for_chain(&chain);
     let store = MemoryCnftStore::new();
@@ -515,7 +644,10 @@ async fn noop_event_pairing_covers_verify_creator_flow() {
     assert_eq!(result.applied, 3, "createTree + mint + verifyCreator");
     let leaves = store.list_leaves(&TREE_BYTES).await.unwrap();
     assert_eq!(leaves.len(), 1);
-    assert_eq!(leaves[0].data_hash, [0xee; 32], "noop-authoritative dataHash");
+    assert_eq!(
+        leaves[0].data_hash, [0xee; 32],
+        "noop-authoritative dataHash"
+    );
     assert_eq!(leaves[0].creator_hash, [0xef; 32]);
     assert!(
         leaves[0].mint_metadata.creators[0].verified,

@@ -72,9 +72,7 @@ pub async fn get_transactions_by_address<U: UpstreamClient + ?Sized>(
         // ask for them via an `include_err` signal; our simpler rule
         // is "deliver everything, let type-filter do the rest". So:
         if let Some(etx) = fetch_and_parse(upstream, sig).await {
-            if !options.types.is_empty()
-                && !options.types.iter().any(|t| t == &etx.tx_type)
-            {
+            if !options.types.is_empty() && !options.types.iter().any(|t| t == &etx.tx_type) {
                 continue;
             }
             out.push(etx);

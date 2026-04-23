@@ -580,10 +580,18 @@ mod tests {
         for e in manifest() {
             match e.compat {
                 CompatLevel::Planned | CompatLevel::Skipped => {
-                    assert!(e.since_version.is_none(), "planned/skipped should not have since_version: {}", e.method);
+                    assert!(
+                        e.since_version.is_none(),
+                        "planned/skipped should not have since_version: {}",
+                        e.method
+                    );
                 }
                 _ => {
-                    assert!(e.since_version.is_some(), "shipped method missing since_version: {}", e.method);
+                    assert!(
+                        e.since_version.is_some(),
+                        "shipped method missing since_version: {}",
+                        e.method
+                    );
                 }
             }
         }

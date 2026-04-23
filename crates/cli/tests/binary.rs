@@ -68,7 +68,10 @@ async fn start_binary_serves_tidepool_info() {
     // fixed duration — CI machines are sometimes slow.
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
     loop {
-        if tokio::net::TcpStream::connect(("127.0.0.1", port)).await.is_ok() {
+        if tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .is_ok()
+        {
             break;
         }
         if std::time::Instant::now() > deadline {

@@ -28,12 +28,7 @@ impl RecordingPoster {
 
 #[async_trait]
 impl PostClient for RecordingPoster {
-    async fn post_json(
-        &self,
-        url: &str,
-        auth: Option<&str>,
-        body: &Value,
-    ) -> Result<(), String> {
+    async fn post_json(&self, url: &str, auth: Option<&str>, body: &Value) -> Result<(), String> {
         self.calls
             .lock()
             .await
@@ -100,10 +95,7 @@ async fn tick_once_delivers_enhanced_tx_per_fresh_signature() {
             ]))
         })
         .with_method("getTransaction", |params| {
-            let sig = params
-                .get(0)
-                .and_then(Value::as_str)
-                .unwrap_or("");
+            let sig = params.get(0).and_then(Value::as_str).unwrap_or("");
             // Vary slot per signature so events are distinguishable.
             let slot = match sig {
                 "SIG1" => 101,
@@ -141,8 +133,7 @@ async fn tick_once_delivers_enhanced_tx_per_fresh_signature() {
 
 #[tokio::test]
 async fn tick_once_skips_delivery_when_no_new_signatures() {
-    let upstream = FixtureUpstream::new()
-        .with_method("getSignaturesForAddress", |_| Ok(json!([])));
+    let upstream = FixtureUpstream::new().with_method("getSignaturesForAddress", |_| Ok(json!([])));
     let poster = RecordingPoster::new();
     let cursors: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
     let delivered = tick_once(&webhook(&["ADDR"]), &upstream, &poster, &cursors).await;
@@ -228,9 +219,19 @@ async fn tick_once_aggregates_across_multiple_addresses() {
         .with_method("getSignaturesForAddress", |params| {
             let addr = params.get(0).and_then(Value::as_str).unwrap_or("");
             if addr == "A" {
-                Ok(json!([sig_entry("A_SIG", 100, &Value::Null, 1_700_000_000)]))
+                Ok(json!([sig_entry(
+                    "A_SIG",
+                    100,
+                    &Value::Null,
+                    1_700_000_000
+                )]))
             } else {
-                Ok(json!([sig_entry("B_SIG", 100, &Value::Null, 1_700_000_000)]))
+                Ok(json!([sig_entry(
+                    "B_SIG",
+                    100,
+                    &Value::Null,
+                    1_700_000_000
+                )]))
             }
         })
         .with_method("getTransaction", |params| {

@@ -92,7 +92,9 @@ where
         if !entry.err_is_null() {
             // On-chain failure — no state to replay. Still advance the
             // cursor so a re-scan skips cheaply.
-            store.set_last_signature(&tree, entry.signature.clone()).await?;
+            store
+                .set_last_signature(&tree, entry.signature.clone())
+                .await?;
             result.processed += 1;
             continue;
         }
@@ -124,7 +126,9 @@ where
             }
         }
 
-        store.set_last_signature(&tree, entry.signature.clone()).await?;
+        store
+            .set_last_signature(&tree, entry.signature.clone())
+            .await?;
         result.processed += 1;
     }
 
@@ -189,9 +193,7 @@ async fn fetch_signatures_until<U: UpstreamClient + ?Sized>(
             let signature = entry
                 .get("signature")
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| {
-                    IndexError::MalformedSignatures("missing `signature` field".into())
-                })?
+                .ok_or_else(|| IndexError::MalformedSignatures("missing `signature` field".into()))?
                 .to_string();
             let err = entry.get("err").cloned().unwrap_or(serde_json::Value::Null);
             collected.push(SignatureEntry { signature, err });

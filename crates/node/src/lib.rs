@@ -81,12 +81,16 @@ impl HeliusContext {
             .unwrap_or_else(|| "http://127.0.0.1:8899".to_string());
         let rpc_timeout_ms = opts.rpc_timeout_ms.unwrap_or(10_000);
 
-        let upstream = HttpUpstream::new(upstream_url, Duration::from_millis(u64::from(rpc_timeout_ms)))
-            .map_err(|e| napi::Error::from_reason(format!("{e}")))?;
+        let upstream = HttpUpstream::new(
+            upstream_url,
+            Duration::from_millis(u64::from(rpc_timeout_ms)),
+        )
+        .map_err(|e| napi::Error::from_reason(format!("{e}")))?;
 
         let upstream_arc: Arc<dyn UpstreamClient> = Arc::new(upstream);
-        let poster: Arc<dyn PostClient> =
-            Arc::new(ReqwestPostClient::new(Duration::from_millis(u64::from(rpc_timeout_ms))));
+        let poster: Arc<dyn PostClient> = Arc::new(ReqwestPostClient::new(Duration::from_millis(
+            u64::from(rpc_timeout_ms),
+        )));
         let webhooks = Arc::new(WebhookRuntime::with_memory_registry(
             Arc::clone(&upstream_arc),
             poster,
@@ -117,7 +121,10 @@ impl HeliusContext {
 /// caller. Response is a JSON-encoded string so it drops straight into
 /// most mock-HTTP APIs (e.g. `HttpResponse.json(JSON.parse(r))`).
 #[napi]
-pub async fn handle_json_rpc_body(ctx: &HeliusContext, body: String) -> napi::Result<Option<String>> {
+pub async fn handle_json_rpc_body(
+    ctx: &HeliusContext,
+    body: String,
+) -> napi::Result<Option<String>> {
     let req: tidepool_rpc_server::json_rpc::JsonRpcRequest = match serde_json::from_str(&body) {
         Ok(r) => r,
         Err(_) => return Ok(None),

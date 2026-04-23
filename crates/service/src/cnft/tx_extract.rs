@@ -153,10 +153,7 @@ pub fn extract_bubblegum_ixs(tx: &RpcTransactionResponse) -> Vec<ExtractedIx> {
 
     let mut out = Vec::new();
     let empty_inner: Vec<InnerInstructionGroup> = Vec::new();
-    let inner_ixs = meta
-        .inner_instructions
-        .as_ref()
-        .unwrap_or(&empty_inner);
+    let inner_ixs = meta.inner_instructions.as_ref().unwrap_or(&empty_inner);
 
     for (i, ix) in message.instructions.iter().enumerate() {
         let inner_group = inner_ixs

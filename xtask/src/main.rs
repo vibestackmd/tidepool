@@ -21,7 +21,10 @@ mod record;
 mod schemas;
 
 #[derive(Parser)]
-#[command(name = "xtask", about = "Tidepool dev tooling — fixture recording, schema derivation, drift detection.")]
+#[command(
+    name = "xtask",
+    about = "Tidepool dev tooling — fixture recording, schema derivation, drift detection."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

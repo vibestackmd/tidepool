@@ -65,9 +65,14 @@ async fn fetch_returns_none_for_missing_account() {
     let cache = MemoryCache::new();
     let decoders: Vec<Arc<dyn AccountDecoder>> = vec![Arc::new(MplCoreDecoder)];
 
-    let got = fetch_and_cache_asset(&upstream, &cache, &decoders, "11111111111111111111111111111111")
-        .await
-        .unwrap();
+    let got = fetch_and_cache_asset(
+        &upstream,
+        &cache,
+        &decoders,
+        "11111111111111111111111111111111",
+    )
+    .await
+    .unwrap();
     assert!(got.is_none());
 }
 

@@ -22,11 +22,18 @@ pub fn parse_enhanced_tx(signature: &str, tx: &Value) -> Option<EnhancedTransact
     let fee = meta.get("fee").and_then(Value::as_u64).unwrap_or(0);
     let transaction_error = meta.get("err").cloned().filter(|v| !v.is_null());
 
-    let message = tx.pointer("/transaction/message").cloned().unwrap_or(Value::Null);
+    let message = tx
+        .pointer("/transaction/message")
+        .cloned()
+        .unwrap_or(Value::Null);
     let account_keys: Vec<String> = message
         .get("accountKeys")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
 
     let fee_payer = account_keys.first().cloned().unwrap_or_default();
@@ -66,7 +73,10 @@ pub fn parse_enhanced_tx(signature: &str, tx: &Value) -> Option<EnhancedTransact
     );
 
     let pre_tok = meta.get("preTokenBalances").cloned().unwrap_or(Value::Null);
-    let post_tok = meta.get("postTokenBalances").cloned().unwrap_or(Value::Null);
+    let post_tok = meta
+        .get("postTokenBalances")
+        .cloned()
+        .unwrap_or(Value::Null);
     let token_transfers = extract_token_transfers(&account_keys, &pre_tok, &post_tok);
 
     // Build enhanced ix shape with inner ixs grouped by outer index.

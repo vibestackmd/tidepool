@@ -36,7 +36,10 @@ fn map_err(e: rusqlite::Error) -> CacheError {
 }
 
 fn wipe_indexes_for(conn: &Connection, id: &str) -> rusqlite::Result<()> {
-    conn.execute("DELETE FROM cache_by_owner WHERE asset_id = ?1", params![id])?;
+    conn.execute(
+        "DELETE FROM cache_by_owner WHERE asset_id = ?1",
+        params![id],
+    )?;
     conn.execute(
         "DELETE FROM cache_by_authority WHERE asset_id = ?1",
         params![id],
@@ -45,7 +48,10 @@ fn wipe_indexes_for(conn: &Connection, id: &str) -> rusqlite::Result<()> {
         "DELETE FROM cache_by_creator WHERE asset_id = ?1",
         params![id],
     )?;
-    conn.execute("DELETE FROM cache_by_group WHERE asset_id = ?1", params![id])?;
+    conn.execute(
+        "DELETE FROM cache_by_group WHERE asset_id = ?1",
+        params![id],
+    )?;
     Ok(())
 }
 
@@ -83,8 +89,7 @@ fn assets_by_ids(conn: &Connection, ids: &[String]) -> rusqlite::Result<Vec<DasA
     }
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     let sql = format!("SELECT json FROM cache_assets WHERE id IN ({placeholders})");
-    let params: Vec<&dyn rusqlite::ToSql> =
-        ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(&params[..], |row| row.get::<_, Vec<u8>>(0))?;
     let mut out = Vec::new();
@@ -324,7 +329,9 @@ impl CacheStore for SqliteCache {
                 record.master_mint,
                 record.master_edition_pda,
                 i64::try_from(record.supply).unwrap_or(i64::MAX),
-                record.max_supply.map(|v| i64::try_from(v).unwrap_or(i64::MAX)),
+                record
+                    .max_supply
+                    .map(|v| i64::try_from(v).unwrap_or(i64::MAX)),
             ],
         )
         .map_err(map_err)?;

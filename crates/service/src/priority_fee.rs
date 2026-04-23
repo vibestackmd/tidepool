@@ -140,9 +140,18 @@ mod tests {
         let mut sorted = vec![10u64, 20, 30, 40, 50, 60, 70, 80, 90, 100];
         sorted.sort_unstable();
         let levels = compute_levels(&sorted);
-        assert_eq!(percentile_at(&sorted, PriorityLevel::Min) as f64, levels.min);
-        assert_eq!(percentile_at(&sorted, PriorityLevel::Medium) as f64, levels.medium);
-        assert_eq!(percentile_at(&sorted, PriorityLevel::UnsafeMax) as f64, levels.unsafe_max);
+        assert_eq!(
+            percentile_at(&sorted, PriorityLevel::Min) as f64,
+            levels.min
+        );
+        assert_eq!(
+            percentile_at(&sorted, PriorityLevel::Medium) as f64,
+            levels.medium
+        );
+        assert_eq!(
+            percentile_at(&sorted, PriorityLevel::UnsafeMax) as f64,
+            levels.unsafe_max
+        );
     }
 
     #[test]

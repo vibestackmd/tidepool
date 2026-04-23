@@ -36,10 +36,7 @@ async fn rpc_call_routes_registered_methods() {
 #[tokio::test]
 async fn rpc_call_receives_params() {
     let upstream = FixtureUpstream::new().with_method("echo", |params| Ok(params.clone()));
-    let raw = upstream
-        .rpc_call("echo", json!([1, 2, 3]))
-        .await
-        .unwrap();
+    let raw = upstream.rpc_call("echo", json!([1, 2, 3])).await.unwrap();
     assert_eq!(raw, b"[1,2,3]");
 }
 

@@ -47,22 +47,19 @@ impl AccountDecoder for MplCoreDecoder {
             _ => return Ok(None),
         };
 
-        let indexable = IndexableAsset::fetch(key, data).map_err(|e| DecoderError::DecodeFailed {
-            decoder: Self::NAME,
-            context: format!("pubkey {pubkey}"),
-            source: e,
-        })?;
+        let indexable =
+            IndexableAsset::fetch(key, data).map_err(|e| DecoderError::DecodeFailed {
+                decoder: Self::NAME,
+                context: format!("pubkey {pubkey}"),
+                source: e,
+            })?;
 
         Ok(Some(to_das_asset(pubkey, &indexable, key)))
     }
 }
 
 fn to_das_asset(pubkey: &str, ix: &IndexableAsset, key: Key) -> DasAsset {
-    let owner = ix
-        .owner
-        .as_ref()
-        .map(Pubkey::to_string)
-        .unwrap_or_default();
+    let owner = ix.owner.as_ref().map(Pubkey::to_string).unwrap_or_default();
 
     // Creators: Royalties plugin carries canonical royalty splits;
     // VerifiedCreators plugin tracks which creator addresses have
@@ -202,11 +199,12 @@ fn freeze_and_delegate_flags(ix: &IndexableAsset) -> (bool, bool) {
         }
     }
     if ix.plugins.contains_key(&PluginType::TransferDelegate)
-        || ix.plugins.contains_key(&PluginType::PermanentTransferDelegate)
+        || ix
+            .plugins
+            .contains_key(&PluginType::PermanentTransferDelegate)
     {
         delegated = true;
     }
 
     (frozen, delegated)
 }
-

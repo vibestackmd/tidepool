@@ -291,7 +291,9 @@ pub fn parse_bubblegum_instruction(
         UPDATE_METADATA_V2_DISC => parse_update_metadata_v2(body, accounts, noop_event).map(Some),
         SET_COLLECTION_V2_DISC => parse_set_collection_v2(accounts, noop_event).map(Some),
 
-        _ => Err(ParseError::UnknownDiscriminator { discriminator: disc }),
+        _ => Err(ParseError::UnknownDiscriminator {
+            discriminator: disc,
+        }),
     }
 }
 
@@ -681,9 +683,9 @@ fn parse_set_collection_v2(
 fn is_bubblegum_placeholder(pk: &[u8; 32]) -> bool {
     static PLACEHOLDER: std::sync::OnceLock<[u8; 32]> = std::sync::OnceLock::new();
     let placeholder = PLACEHOLDER.get_or_init(|| {
-        let p: solana_program::pubkey::Pubkey = BUBBLEGUM_PROGRAM_ID.parse().expect(
-            "BUBBLEGUM_PROGRAM_ID is a valid base58 pubkey",
-        );
+        let p: solana_program::pubkey::Pubkey = BUBBLEGUM_PROGRAM_ID
+            .parse()
+            .expect("BUBBLEGUM_PROGRAM_ID is a valid base58 pubkey");
         p.to_bytes()
     });
     pk == placeholder
@@ -805,4 +807,3 @@ fn update_args_to_mint_metadata(u: &UpdateArgs, ix_body_after_disc: &[u8]) -> Mi
         data_hash_input: ix_body_after_disc.to_vec(),
     }
 }
-

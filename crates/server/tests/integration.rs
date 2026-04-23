@@ -21,15 +21,18 @@ async fn spawn_mock_upstream() -> (String, Arc<tokio::sync::Mutex<Vec<Value>>>) 
     let app = Router::new()
         .route(
             "/",
-            post(|State(seen): State<Arc<tokio::sync::Mutex<Vec<Value>>>>, Json(body): Json<Value>| async move {
-                seen.lock().await.push(body.clone());
-                let id = body.get("id").cloned().unwrap_or(Value::Null);
-                Json(json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "result": "upstream-saw-you"
-                }))
-            }),
+            post(
+                |State(seen): State<Arc<tokio::sync::Mutex<Vec<Value>>>>,
+                 Json(body): Json<Value>| async move {
+                    seen.lock().await.push(body.clone());
+                    let id = body.get("id").cloned().unwrap_or(Value::Null);
+                    Json(json!({
+                        "jsonrpc": "2.0",
+                        "id": id,
+                        "result": "upstream-saw-you"
+                    }))
+                },
+            ),
         )
         .with_state(seen_for_handler);
 
@@ -48,22 +51,23 @@ async fn spawn_mock_upstream_by_method(
     responses: std::collections::HashMap<&'static str, Value>,
 ) -> String {
     let responses = Arc::new(responses);
-    let app = Router::new().route(
-        "/",
-        post(
-            move |State(r): State<Arc<std::collections::HashMap<&'static str, Value>>>,
-                  Json(body): Json<Value>| {
-                let r = Arc::clone(&r);
-                async move {
-                    let id = body.get("id").cloned().unwrap_or(Value::Null);
-                    let method = body.get("method").and_then(Value::as_str).unwrap_or("");
-                    let result = r.get(method).cloned().unwrap_or(Value::Null);
-                    Json(json!({ "jsonrpc": "2.0", "id": id, "result": result }))
-                }
-            },
-        ),
-    )
-    .with_state(responses);
+    let app = Router::new()
+        .route(
+            "/",
+            post(
+                move |State(r): State<Arc<std::collections::HashMap<&'static str, Value>>>,
+                      Json(body): Json<Value>| {
+                    let r = Arc::clone(&r);
+                    async move {
+                        let id = body.get("id").cloned().unwrap_or(Value::Null);
+                        let method = body.get("method").and_then(Value::as_str).unwrap_or("");
+                        let result = r.get(method).cloned().unwrap_or(Value::Null);
+                        Json(json!({ "jsonrpc": "2.0", "id": id, "result": result }))
+                    }
+                },
+            ),
+        )
+        .with_state(responses);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -77,10 +81,7 @@ async fn spawn_tidepool(upstream_url: String) -> String {
     spawn_tidepool_with_state(upstream_url, None).await
 }
 
-async fn spawn_tidepool_with_state(
-    upstream_url: String,
-    db: Option<std::path::PathBuf>,
-) -> String {
+async fn spawn_tidepool_with_state(upstream_url: String, db: Option<std::path::PathBuf>) -> String {
     use tidepool_rpc_server::{run, ServerConfig};
     // Pick two free ports atomically. Production derives ws as
     // port+1; tests can't rely on that because parallel runs pick
@@ -158,9 +159,7 @@ async fn tidepool_info_native_dispatch() {
     assert_eq!(resp["result"]["name"], "tidepool-rpc");
     let methods = resp["result"]["methods"].as_array().expect("methods array");
     assert!(methods.iter().any(|m| m["method"] == "getAsset"));
-    assert!(methods
-        .iter()
-        .any(|m| m["method"] == "tidepool_indexTree"));
+    assert!(methods.iter().any(|m| m["method"] == "tidepool_indexTree"));
 
     // Every method entry surfaces its transport so tooling can sort
     // without guessing. Spot-check each transport value shows up.
@@ -617,8 +616,7 @@ async fn webhook_registry_persists_across_restart_with_db_flag() {
 
     // First process lifetime — create a webhook.
     let upstream_url1 = spawn_mock_upstream_by_method(std::collections::HashMap::new()).await;
-    let tidepool_url1 =
-        spawn_tidepool_with_state(upstream_url1, Some(db_path.clone())).await;
+    let tidepool_url1 = spawn_tidepool_with_state(upstream_url1, Some(db_path.clone())).await;
     let client = reqwest::Client::new();
     let created: Value = client
         .post(format!("{tidepool_url1}/v0/webhooks"))
@@ -637,8 +635,7 @@ async fn webhook_registry_persists_across_restart_with_db_flag() {
 
     // Second process lifetime — same db file, different port + upstream.
     let upstream_url2 = spawn_mock_upstream_by_method(std::collections::HashMap::new()).await;
-    let tidepool_url2 =
-        spawn_tidepool_with_state(upstream_url2, Some(db_path.clone())).await;
+    let tidepool_url2 = spawn_tidepool_with_state(upstream_url2, Some(db_path.clone())).await;
     let listed: Value = client
         .get(format!("{tidepool_url2}/v0/webhooks"))
         .send()
@@ -648,8 +645,10 @@ async fn webhook_registry_persists_across_restart_with_db_flag() {
         .await
         .unwrap();
     let items = listed.as_array().expect("array");
-    assert!(items.iter().any(|w| w["webhookID"] == webhook_id),
-        "webhook should survive across restarts when --db is set");
+    assert!(
+        items.iter().any(|w| w["webhookID"] == webhook_id),
+        "webhook should survive across restarts when --db is set"
+    );
 }
 
 #[tokio::test]
@@ -659,11 +658,11 @@ async fn tidepool_tree_snapshot_export_and_load_round_trip() {
     // getSignaturesForAddress + getTransaction fixtures — heavier than
     // we need here). Then dump via RPC, load into a fresh instance,
     // confirm state survived.
+    use tidepool_rpc::cnft::snapshot::dump_tree;
+    use tidepool_rpc::cnft::SnapshotBlob;
     use tidepool_rpc::cnft::{
         apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata,
     };
-    use tidepool_rpc::cnft::snapshot::dump_tree;
-    use tidepool_rpc::cnft::SnapshotBlob;
     use tidepool_rpc_core::Creator;
 
     let tree: [u8; 32] = [0x33; 32];
@@ -782,11 +781,10 @@ async fn snapshot_flag_preloads_tree_before_serving() {
     // tidepool with --snapshot pointing at it. After boot, getAssetProof
     // should resolve against the preloaded tree without us ever calling
     // tidepool_loadTreeSnapshot.
-    use tidepool_rpc::cnft::{
-        apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata,
-        SnapshotBlob,
-    };
     use tidepool_rpc::cnft::snapshot::dump_tree;
+    use tidepool_rpc::cnft::{
+        apply::derive_asset_id, apply_event, CnftEvent, MemoryCnftStore, MintMetadata, SnapshotBlob,
+    };
     use tidepool_rpc_core::Creator;
     use tidepool_rpc_server::{run, ServerConfig};
 
@@ -898,7 +896,9 @@ async fn cors_headers_are_set() {
 
     let headers = resp.headers();
     assert_eq!(
-        headers.get("access-control-allow-origin").and_then(|v| v.to_str().ok()),
+        headers
+            .get("access-control-allow-origin")
+            .and_then(|v| v.to_str().ok()),
         Some("*")
     );
 }

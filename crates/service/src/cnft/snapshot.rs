@@ -138,10 +138,7 @@ impl SnapshotBlob {
     /// envelope's `kind` doesn't match what was expected.
     pub fn into_tree_snapshot(self) -> Result<TreeSnapshot, String> {
         if self.kind != SnapshotKind::Tree {
-            return Err(format!(
-                "expected SnapshotKind::Tree, got {:?}",
-                self.kind
-            ));
+            return Err(format!("expected SnapshotKind::Tree, got {:?}", self.kind));
         }
         let bytes = B64
             .decode(self.data.as_bytes())

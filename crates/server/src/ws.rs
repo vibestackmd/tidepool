@@ -150,7 +150,10 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
                     .to_string();
 
                 // Ack immediately with the subscription id.
-                send(&tx, &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }));
+                send(
+                    &tx,
+                    &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }),
+                );
 
                 // Spawn the polling task.
                 let poll_tx = tx.clone();
@@ -197,7 +200,10 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
                     .unwrap_or("base64")
                     .to_string();
 
-                send(&tx, &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }));
+                send(
+                    &tx,
+                    &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }),
+                );
 
                 let poll_tx = tx.clone();
                 let state_clone = state.clone();
@@ -212,7 +218,10 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
             "logsSubscribe" => {
                 let sub_id = NEXT_SUB_ID.fetch_add(1, Ordering::Relaxed);
                 let params = req.get("params").and_then(Value::as_array);
-                let filter = params.and_then(|a| a.first()).cloned().unwrap_or(Value::Null);
+                let filter = params
+                    .and_then(|a| a.first())
+                    .cloned()
+                    .unwrap_or(Value::Null);
                 // Supported filter shapes: `{ mentions: [pubkey] }`.
                 // Reject `"all"` / `"allWithVotes"` with a typed error —
                 // there's no cheap polling shim for them.
@@ -255,7 +264,10 @@ async fn handle_connection(socket: WebSocket, state: WsState) {
                     .unwrap_or("finalized")
                     .to_string();
 
-                send(&tx, &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }));
+                send(
+                    &tx,
+                    &json!({ "jsonrpc": "2.0", "id": id, "result": sub_id }),
+                );
 
                 let poll_tx = tx.clone();
                 let state_clone = state.clone();
@@ -495,7 +507,12 @@ async fn poll_logs(
             "method": "getSignaturesForAddress",
             "params": [mention, { "commitment": commitment, "limit": 25 }]
         });
-        let Ok(resp) = client.post(&state.upstream_url).json(&sigs_body).send().await else {
+        let Ok(resp) = client
+            .post(&state.upstream_url)
+            .json(&sigs_body)
+            .send()
+            .await
+        else {
             continue;
         };
         let Ok(json): Result<Value, _> = resp.json().await else {
@@ -534,7 +551,9 @@ async fn poll_logs(
         }
 
         for sig in &new_sigs {
-            if let Some(notif) = fetch_logs_notification(&client, &state, &commitment, sub_id, sig).await {
+            if let Some(notif) =
+                fetch_logs_notification(&client, &state, &commitment, sub_id, sig).await
+            {
                 send(&tx, &notif);
             }
         }
@@ -562,7 +581,12 @@ async fn fetch_logs_notification(
             { "commitment": commitment, "encoding": "json", "maxSupportedTransactionVersion": 0 }
         ]
     });
-    let resp = client.post(&state.upstream_url).json(&body).send().await.ok()?;
+    let resp = client
+        .post(&state.upstream_url)
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
     let json: Value = resp.json().await.ok()?;
     let result = json.get("result")?;
     let slot = result.get("slot").and_then(Value::as_u64).unwrap_or(0);

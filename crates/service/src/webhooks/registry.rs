@@ -98,7 +98,9 @@ impl WebhookRegistry for MemoryWebhookRegistry {
         let merged = Webhook {
             webhook_id: existing.webhook_id.clone(),
             webhook_url: input.webhook_url.unwrap_or(existing.webhook_url),
-            account_addresses: input.account_addresses.unwrap_or(existing.account_addresses),
+            account_addresses: input
+                .account_addresses
+                .unwrap_or(existing.account_addresses),
             // Empty list from the user means "clear" — callers who
             // want "keep prior" should omit the field, which comes
             // through as an empty Vec after serde defaulting. We
@@ -221,7 +223,10 @@ mod tests {
     #[tokio::test]
     async fn edit_nonexistent_returns_not_found() {
         let r = MemoryWebhookRegistry::new();
-        let err = r.edit("missing", WebhookInput::default()).await.unwrap_err();
+        let err = r
+            .edit("missing", WebhookInput::default())
+            .await
+            .unwrap_err();
         assert!(matches!(err, WebhookError::NotFound { .. }));
     }
 }

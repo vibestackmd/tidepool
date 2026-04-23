@@ -6,8 +6,8 @@
 //! get a "confidently wrong" classification.
 
 use crate::cnft::parser::{
-    BURN_DISC, BURN_V2_DISC, MINT_TO_COLLECTION_V1_DISC, MINT_V1_DISC, MINT_V2_DISC,
-    TRANSFER_DISC, TRANSFER_V2_DISC,
+    BURN_DISC, BURN_V2_DISC, MINT_TO_COLLECTION_V1_DISC, MINT_V1_DISC, MINT_V2_DISC, TRANSFER_DISC,
+    TRANSFER_V2_DISC,
 };
 
 pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
@@ -99,7 +99,10 @@ pub fn classify(instructions: &[InstructionView<'_>]) -> EnhancedClass {
                     return EnhancedClass {
                         tx_type: t,
                         source: "BUBBLEGUM",
-                        description: format!("Compressed NFT {}", t.to_lowercase().replace('_', " ")),
+                        description: format!(
+                            "Compressed NFT {}",
+                            t.to_lowercase().replace('_', " ")
+                        ),
                     };
                 }
             }
@@ -142,7 +145,11 @@ pub fn classify(instructions: &[InstructionView<'_>]) -> EnhancedClass {
         });
         return EnhancedClass {
             tx_type: "TRANSFER",
-            source: if has_token { "SOLANA_TOKEN_PROGRAM" } else { "SYSTEM_PROGRAM" },
+            source: if has_token {
+                "SOLANA_TOKEN_PROGRAM"
+            } else {
+                "SYSTEM_PROGRAM"
+            },
             description: if has_token {
                 "Token transfer".into()
             } else {

@@ -37,7 +37,10 @@ impl TreeState {
     /// Build an empty tree at the given depth.
     #[must_use]
     pub fn new(depth: u8) -> Self {
-        Self { depth, leaves: BTreeMap::new() }
+        Self {
+            depth,
+            leaves: BTreeMap::new(),
+        }
     }
 }
 

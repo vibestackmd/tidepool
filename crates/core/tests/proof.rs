@@ -88,7 +88,11 @@ fn sparse_tree_uses_empty_cascade_for_unset_siblings() {
 
     // Sibling of the populated leaf at index 10 is empty.
     let p11 = compute_proof(&tree, 11).expect("compute");
-    assert_eq!(p11.proof[0], leaf(1), "sibling at 11 is the populated leaf 10");
+    assert_eq!(
+        p11.proof[0],
+        leaf(1),
+        "sibling at 11 is the populated leaf 10"
+    );
 
     // Far-away leaf has an empty sibling at level 0.
     let p7 = compute_proof(&tree, 7).expect("compute");

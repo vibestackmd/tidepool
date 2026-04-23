@@ -71,8 +71,7 @@ impl AccountDecoder for TokenMetadataDecoder {
 fn interface_for_standard(std: Option<&TokenStandard>) -> &'static str {
     match std {
         Some(
-            TokenStandard::ProgrammableNonFungible
-            | TokenStandard::ProgrammableNonFungibleEdition,
+            TokenStandard::ProgrammableNonFungible | TokenStandard::ProgrammableNonFungibleEdition,
         ) => "ProgrammableNFT",
         Some(TokenStandard::Fungible) => "FungibleToken",
         Some(TokenStandard::FungibleAsset) => "FungibleAsset",
@@ -225,10 +224,7 @@ mod tests {
             ),
         ];
         for (std, expected) in cases {
-            assert_eq!(
-                token_standard_name(Some(&std)).as_deref(),
-                Some(expected)
-            );
+            assert_eq!(token_standard_name(Some(&std)).as_deref(), Some(expected));
         }
         assert!(token_standard_name(None).is_none());
     }

@@ -38,9 +38,10 @@ pub async fn enrich_token_standards<C: CacheStore + ?Sized>(
 
     // Resolve each mint to an optional tokenStandard string. Batch
     // where the cache supports it; fall back to per-id lookups.
-    let batch = cache.get_asset_batch(&distinct_mints).await.unwrap_or_else(|_| {
-        distinct_mints.iter().map(|_| None).collect()
-    });
+    let batch = cache
+        .get_asset_batch(&distinct_mints)
+        .await
+        .unwrap_or_else(|_| distinct_mints.iter().map(|_| None).collect());
     let mut lookup: HashMap<String, String> = HashMap::new();
     for (mint, entry) in distinct_mints.iter().zip(batch.into_iter()) {
         if let Some(asset) = entry {

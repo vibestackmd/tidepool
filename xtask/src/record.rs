@@ -152,7 +152,11 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
 
     tokio::fs::create_dir_all(&args.out).await?;
 
-    let rpc_url = format!("{}/?api-key={}", args.endpoint.trim_end_matches('/'), api_key);
+    let rpc_url = format!(
+        "{}/?api-key={}",
+        args.endpoint.trim_end_matches('/'),
+        api_key
+    );
     let rpc_host = extract_host(&args.endpoint);
     let rest_base = args.rest_endpoint.trim_end_matches('/').to_string();
     let rest_host = extract_host(&args.rest_endpoint);
@@ -297,19 +301,15 @@ async fn record_rest<'a>(
     })
 }
 
-async fn post_once(
-    client: &reqwest::Client,
-    url: &str,
-    body: &Value,
-) -> anyhow::Result<Value> {
+async fn post_once(client: &reqwest::Client, url: &str, body: &Value) -> anyhow::Result<Value> {
     let resp = client.post(url).json(body).send().await?;
     let status = resp.status();
     let text = resp.text().await?;
     if !status.is_success() {
         bail!("upstream {status}: {}", truncate(&text, 400));
     }
-    let parsed: Value =
-        serde_json::from_str(&text).with_context(|| format!("parse JSON: {}", truncate(&text, 200)))?;
+    let parsed: Value = serde_json::from_str(&text)
+        .with_context(|| format!("parse JSON: {}", truncate(&text, 200)))?;
     Ok(parsed)
 }
 

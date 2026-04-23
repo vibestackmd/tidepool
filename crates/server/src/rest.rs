@@ -17,11 +17,10 @@ use std::sync::Arc;
 
 use axum::{
     extract::Path,
-    Extension,
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 use serde_json::{json, Value};
 
@@ -77,10 +76,7 @@ async fn get_balances_rest(
     Path(address): Path<String>,
     Extension(ctx): Extension<Arc<RestCtx>>,
 ) -> Response {
-    let req = synth_request(
-        "getBalances",
-        json!([address]),
-    );
+    let req = synth_request("getBalances", json!([address]));
     let resp = handle_get_balances(&*ctx, &req).await;
     rest_response_from_rpc(resp)
 }
@@ -89,10 +85,7 @@ async fn get_transactions_by_address_rest(
     Path(address): Path<String>,
     Extension(ctx): Extension<Arc<RestCtx>>,
 ) -> Response {
-    let req = synth_request(
-        "getTransactionsByAddress",
-        json!({ "address": address }),
-    );
+    let req = synth_request("getTransactionsByAddress", json!({ "address": address }));
     let resp = handle_get_transactions_by_address(&*ctx, &req).await;
     rest_response_from_rpc(resp)
 }
@@ -191,8 +184,6 @@ fn rest_response_from_rpc(mut resp: Value) -> Response {
         };
         return (status, Json(err)).into_response();
     }
-    let result = resp
-        .get_mut("result")
-        .map_or(Value::Null, Value::take);
+    let result = resp.get_mut("result").map_or(Value::Null, Value::take);
     (StatusCode::OK, Json(result)).into_response()
 }

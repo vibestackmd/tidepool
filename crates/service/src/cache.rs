@@ -130,10 +130,16 @@ impl CacheStore for MemoryCache {
                 .or_default()
                 .remove(&id);
             for auth in &prior.authorities {
-                g.by_authority.entry(auth.address.clone()).or_default().remove(&id);
+                g.by_authority
+                    .entry(auth.address.clone())
+                    .or_default()
+                    .remove(&id);
             }
             for creator in &prior.creators {
-                g.by_creator.entry(creator.address.clone()).or_default().remove(&id);
+                g.by_creator
+                    .entry(creator.address.clone())
+                    .or_default()
+                    .remove(&id);
             }
             for group in &prior.grouping {
                 g.by_group
@@ -309,12 +315,8 @@ impl CacheStore for MemoryCache {
 }
 
 fn resolve_ids(g: &MemoryCacheInner, ids: Option<&HashSet<String>>) -> Vec<DasAsset> {
-    ids.map(|s| {
-        s.iter()
-            .filter_map(|id| g.by_id.get(id).cloned())
-            .collect()
-    })
-    .unwrap_or_default()
+    ids.map(|s| s.iter().filter_map(|id| g.by_id.get(id).cloned()).collect())
+        .unwrap_or_default()
 }
 
 fn narrow(acc: &mut Option<HashSet<String>>, next: Option<&HashSet<String>>) {

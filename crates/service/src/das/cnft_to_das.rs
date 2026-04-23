@@ -5,8 +5,8 @@
 use crate::cnft::LeafRecord;
 
 use super::types::{
-    DasAsset, DasAuthority, DasCompression, DasContent, DasCreator, DasFile, DasGrouping,
-    DasLinks, DasMetadata, DasOwnership,
+    DasAsset, DasAuthority, DasCompression, DasContent, DasCreator, DasFile, DasGrouping, DasLinks,
+    DasMetadata, DasOwnership,
 };
 
 /// Convert a cNFT `LeafRecord` into the DAS `getAsset` response shape.

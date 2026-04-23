@@ -87,7 +87,11 @@ where
     if !out.is_empty() {
         let payload = json!(out);
         if let Err(e) = poster
-            .post_json(&webhook.webhook_url, webhook.auth_header.as_deref(), &payload)
+            .post_json(
+                &webhook.webhook_url,
+                webhook.auth_header.as_deref(),
+                &payload,
+            )
             .await
         {
             warn!(webhook = %webhook.webhook_id, err = %e, "webhook delivery failed");

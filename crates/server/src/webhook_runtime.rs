@@ -15,8 +15,8 @@ use tokio::sync::Mutex;
 
 use tidepool_rpc::upstream::UpstreamClient;
 use tidepool_rpc::webhooks::{
-    spawn_delivery_task, MemoryWebhookRegistry, PostClient, Webhook, WebhookInput,
-    WebhookRegistry, WebhookResult,
+    spawn_delivery_task, MemoryWebhookRegistry, PostClient, Webhook, WebhookInput, WebhookRegistry,
+    WebhookResult,
 };
 
 /// Default-backed `PostClient` — reqwest under the hood. Placed in

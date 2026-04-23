@@ -85,7 +85,11 @@ struct StartArgs {
 
     /// Bubblegum tree pubkey to backfill on startup. Repeatable.
     /// Via env: comma-separated `TIDEPOOL_INDEX_TREES=<pk1>,<pk2>`.
-    #[arg(long = "index-tree", env = "TIDEPOOL_INDEX_TREES", value_delimiter = ',')]
+    #[arg(
+        long = "index-tree",
+        env = "TIDEPOOL_INDEX_TREES",
+        value_delimiter = ','
+    )]
     index_tree: Vec<String>,
 
     /// Upstream RPC call timeout in milliseconds.
@@ -139,10 +143,7 @@ fn url_host(url: &str) -> Option<String> {
     // runs once at startup, complexity doesn't matter.
     let after_scheme = url.split_once("://").map_or(url, |(_, rest)| rest);
     let host_with_port = after_scheme.split('/').next().unwrap_or(after_scheme);
-    let host = host_with_port
-        .split(':')
-        .next()
-        .unwrap_or(host_with_port);
+    let host = host_with_port.split(':').next().unwrap_or(host_with_port);
     if host.is_empty() {
         None
     } else {
@@ -157,7 +158,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // when one is already set (allows library users with their own
     // subscriber to take over).
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
         .with_target(true)
         .try_init();
 
@@ -229,7 +232,10 @@ mod tests {
 
     #[test]
     fn derive_ws_url_from_default_upstream() {
-        assert_eq!(derive_ws_url("http://127.0.0.1:8899"), "ws://127.0.0.1:8900");
+        assert_eq!(
+            derive_ws_url("http://127.0.0.1:8899"),
+            "ws://127.0.0.1:8900"
+        );
     }
 
     #[test]

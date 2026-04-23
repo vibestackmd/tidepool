@@ -65,7 +65,9 @@ fn rejects_truncated_bytes() {
     assert!(decode_leaf_schema_event(&[]).is_none());
     assert!(decode_leaf_schema_event(&[BubblegumEventType::LeafSchemaEvent as u8]).is_none());
     // Valid first byte but not enough to parse — still returns None.
-    assert!(decode_leaf_schema_event(&[BubblegumEventType::LeafSchemaEvent as u8, 0, 0, 1]).is_none());
+    assert!(
+        decode_leaf_schema_event(&[BubblegumEventType::LeafSchemaEvent as u8, 0, 0, 1]).is_none()
+    );
 }
 
 #[test]

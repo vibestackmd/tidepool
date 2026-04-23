@@ -107,10 +107,14 @@ pub async fn run(config: ServerConfig) -> Result<(), Box<dyn std::error::Error +
                                 leaves = summary.leaf_count,
                                 "loaded snapshot"
                             ),
-                            Err(e) => warn!(path = %snap_path.display(), err = %e, "snapshot apply failed"),
+                            Err(e) => {
+                                warn!(path = %snap_path.display(), err = %e, "snapshot apply failed")
+                            }
                         }
                     }
-                    Err(e) => warn!(path = %snap_path.display(), err = %e, "snapshot decode failed"),
+                    Err(e) => {
+                        warn!(path = %snap_path.display(), err = %e, "snapshot decode failed")
+                    }
                 },
                 Err(e) => warn!(path = %snap_path.display(), err = %e, "snapshot parse failed"),
             },
@@ -152,9 +156,7 @@ pub async fn run(config: ServerConfig) -> Result<(), Box<dyn std::error::Error +
     }
 
     let upstream_url = config.upstream_url.clone();
-    let passthrough_client = Client::builder()
-        .timeout(config.rpc_timeout)
-        .build()?;
+    let passthrough_client = Client::builder().timeout(config.rpc_timeout).build()?;
 
     let state = AppState {
         ctx,
@@ -208,10 +210,7 @@ struct AppState {
     passthrough_client: Client,
 }
 
-async fn handle_post(
-    State(state): State<AppState>,
-    body: axum::body::Bytes,
-) -> Response {
+async fn handle_post(State(state): State<AppState>, body: axum::body::Bytes) -> Response {
     let Ok(req) = serde_json::from_slice::<JsonRpcRequest>(&body) else {
         // Forward malformed JSON to upstream unchanged — Surfpool's
         // own error becomes the user-visible error, matching TS
@@ -260,10 +259,13 @@ async fn passthrough(state: &AppState, body: &axum::body::Bytes) -> Response {
 }
 
 fn failure_response(status: u16, message: &str) -> Response {
-    let body = fail(&Value::Null, crate::json_rpc::codes::INTERNAL_ERROR, message);
+    let body = fail(
+        &Value::Null,
+        crate::json_rpc::codes::INTERNAL_ERROR,
+        message,
+    );
     let mut resp = Json(body).into_response();
-    *resp.status_mut() =
-        StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    *resp.status_mut() = StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
     resp
 }
 

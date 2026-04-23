@@ -13,7 +13,10 @@ use tidepool_rpc::das::{AccountDecoder, TokenMetadataDecoder};
 #[test]
 fn decoder_program_id_and_name() {
     let d = TokenMetadataDecoder;
-    assert_eq!(d.program_id(), "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+    assert_eq!(
+        d.program_id(),
+        "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+    );
     assert_eq!(d.name(), "V1_NFT");
 }
 
@@ -52,5 +55,8 @@ fn malformed_metadata_v1_body_returns_error() {
     let mut data = vec![4u8]; // Key::MetadataV1 discriminator
     data.extend_from_slice(&[0; 5]); // too few bytes for a valid Metadata
     let result = TokenMetadataDecoder.decode("pk", &data);
-    assert!(result.is_err(), "malformed MetadataV1 should be an explicit error, not None");
+    assert!(
+        result.is_err(),
+        "malformed MetadataV1 should be an explicit error, not None"
+    );
 }

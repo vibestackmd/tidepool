@@ -120,10 +120,8 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
     // Hand-rolled base64 decoder to avoid adding `base64` crate for
     // this single call site. Handles standard + URL-safe alphabets,
     // ignores padding strictness.
-    const ALPHABET: &[u8] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const ALPHABET_URL: &[u8] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET_URL: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     let mut table = [255u8; 256];
     for (i, &b) in ALPHABET.iter().enumerate() {
         table[b as usize] = i as u8;

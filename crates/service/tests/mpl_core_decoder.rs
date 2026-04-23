@@ -31,7 +31,10 @@ fn encode_collection(c: &BaseCollectionV1) -> Vec<u8> {
 #[test]
 fn decoder_program_id_and_name() {
     let d = MplCoreDecoder;
-    assert_eq!(d.program_id(), "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
+    assert_eq!(
+        d.program_id(),
+        "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+    );
     assert_eq!(d.name(), "MplCoreAsset");
 }
 
@@ -61,7 +64,10 @@ fn asset_v1_no_plugins_yields_basic_das_shape() {
     let data = encode_asset(&asset);
 
     let pubkey_str = "TestAssetPubkey".to_string();
-    let decoded = MplCoreDecoder.decode(&pubkey_str, &data).unwrap().expect("Some");
+    let decoded = MplCoreDecoder
+        .decode(&pubkey_str, &data)
+        .unwrap()
+        .expect("Some");
 
     assert_eq!(decoded.id, pubkey_str);
     assert_eq!(decoded.interface, "MplCoreAsset");

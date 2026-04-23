@@ -103,9 +103,12 @@ impl CnftStore for MemoryCnftStore {
 
     async fn alloc_leaf_index(&self, tree: &[u8; 32]) -> StoreResult<u64> {
         let mut g = self.inner.lock().await;
-        let info = g.trees.get_mut(tree).ok_or_else(|| StoreError::UnknownTree {
-            tree: bs58_like(tree),
-        })?;
+        let info = g
+            .trees
+            .get_mut(tree)
+            .ok_or_else(|| StoreError::UnknownTree {
+                tree: bs58_like(tree),
+            })?;
         let idx = info.num_minted;
         info.num_minted = idx + 1;
         Ok(idx)
@@ -113,9 +116,12 @@ impl CnftStore for MemoryCnftStore {
 
     async fn ensure_num_minted_at_least(&self, tree: &[u8; 32], floor: u64) -> StoreResult<()> {
         let mut g = self.inner.lock().await;
-        let info = g.trees.get_mut(tree).ok_or_else(|| StoreError::UnknownTree {
-            tree: bs58_like(tree),
-        })?;
+        let info = g
+            .trees
+            .get_mut(tree)
+            .ok_or_else(|| StoreError::UnknownTree {
+                tree: bs58_like(tree),
+            })?;
         if info.num_minted < floor {
             info.num_minted = floor;
         }
@@ -131,10 +137,7 @@ impl CnftStore for MemoryCnftStore {
         g.leaves_by_asset.insert(asset_id, record);
         g.leaf_index.insert((tree, leaf_index), asset_id);
         if is_new {
-            g.tree_leaf_order
-                .entry(tree)
-                .or_default()
-                .push(asset_id);
+            g.tree_leaf_order.entry(tree).or_default().push(asset_id);
         }
         Ok(())
     }

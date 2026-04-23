@@ -79,18 +79,33 @@ async fn get_assets_by_authority_and_creator_and_group() {
     }];
     cache.put_asset(asset).await.unwrap();
 
-    assert_eq!(cache.get_assets_by_authority("authA").await.unwrap().len(), 1);
     assert_eq!(
-        cache.get_assets_by_creator("creatorA", false).await.unwrap().len(),
+        cache.get_assets_by_authority("authA").await.unwrap().len(),
         1
     );
     assert_eq!(
-        cache.get_assets_by_creator("creatorA", true).await.unwrap().len(),
+        cache
+            .get_assets_by_creator("creatorA", false)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        cache
+            .get_assets_by_creator("creatorA", true)
+            .await
+            .unwrap()
+            .len(),
         1,
         "verified creator queries pass when the creator is verified"
     );
     assert_eq!(
-        cache.get_assets_by_group("collection", "coll1").await.unwrap().len(),
+        cache
+            .get_assets_by_group("collection", "coll1")
+            .await
+            .unwrap()
+            .len(),
         1
     );
 }
@@ -107,11 +122,19 @@ async fn get_assets_by_creator_only_verified_filters_unverified() {
     cache.put_asset(asset).await.unwrap();
 
     assert_eq!(
-        cache.get_assets_by_creator("creatorA", false).await.unwrap().len(),
+        cache
+            .get_assets_by_creator("creatorA", false)
+            .await
+            .unwrap()
+            .len(),
         1
     );
     assert_eq!(
-        cache.get_assets_by_creator("creatorA", true).await.unwrap().len(),
+        cache
+            .get_assets_by_creator("creatorA", true)
+            .await
+            .unwrap()
+            .len(),
         0,
         "only_verified filters unverified creators out"
     );

@@ -343,7 +343,11 @@ pub struct DasTokenBalance {
     pub mint: String,
     pub amount: u64,
     pub decimals: u8,
-    #[serde(default, skip_serializing_if = "Option::is_none", rename = "priceInUSD")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "priceInUSD"
+    )]
     pub price_in_usd: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total_price: Option<f64>,

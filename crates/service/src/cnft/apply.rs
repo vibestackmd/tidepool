@@ -37,7 +37,11 @@ pub type ApplyResult<T> = Result<T, ApplyError>;
 #[allow(clippy::too_many_lines)]
 pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> ApplyResult<()> {
     match event {
-        CnftEvent::CreateTree { tree, depth, max_buffer_size } => {
+        CnftEvent::CreateTree {
+            tree,
+            depth,
+            max_buffer_size,
+        } => {
             store
                 .put_tree(TreeInfo {
                     tree,
@@ -77,27 +81,29 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
             // match what we have — divergence means stale local
             // state, and we skip silently so a future re-scan can
             // catch up.
-            if noop.is_none() && (existing.data_hash != data_hash || existing.creator_hash != creator_hash) {
+            if noop.is_none()
+                && (existing.data_hash != data_hash || existing.creator_hash != creator_hash)
+            {
                 return Ok(());
             }
 
-            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) =
-                match noop.as_ref() {
-                    Some(ov) => (
-                        ov.owner,
-                        ov.delegate,
-                        ov.data_hash,
-                        ov.creator_hash,
-                        Some(ov.leaf_hash),
-                    ),
-                    None => (
-                        new_owner,
-                        new_delegate,
-                        existing.data_hash,
-                        existing.creator_hash,
-                        None,
-                    ),
-                };
+            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) = match noop.as_ref()
+            {
+                Some(ov) => (
+                    ov.owner,
+                    ov.delegate,
+                    ov.data_hash,
+                    ov.creator_hash,
+                    Some(ov.leaf_hash),
+                ),
+                None => (
+                    new_owner,
+                    new_delegate,
+                    existing.data_hash,
+                    existing.creator_hash,
+                    None,
+                ),
+            };
             put_updated_leaf(
                 store,
                 existing,
@@ -121,26 +127,28 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
             noop,
         } => {
             let existing = require_leaf(store, &tree, leaf_index).await?;
-            if noop.is_none() && (existing.data_hash != data_hash || existing.creator_hash != creator_hash) {
+            if noop.is_none()
+                && (existing.data_hash != data_hash || existing.creator_hash != creator_hash)
+            {
                 return Ok(());
             }
-            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) =
-                match noop.as_ref() {
-                    Some(ov) => (
-                        ov.owner,
-                        ov.delegate,
-                        ov.data_hash,
-                        ov.creator_hash,
-                        Some(ov.leaf_hash),
-                    ),
-                    None => (
-                        existing.owner,
-                        new_delegate,
-                        existing.data_hash,
-                        existing.creator_hash,
-                        None,
-                    ),
-                };
+            let (owner, delegate, data_hash, creator_hash, leaf_hash_override) = match noop.as_ref()
+            {
+                Some(ov) => (
+                    ov.owner,
+                    ov.delegate,
+                    ov.data_hash,
+                    ov.creator_hash,
+                    Some(ov.leaf_hash),
+                ),
+                None => (
+                    existing.owner,
+                    new_delegate,
+                    existing.data_hash,
+                    existing.creator_hash,
+                    None,
+                ),
+            };
             put_updated_leaf(
                 store,
                 existing,
@@ -154,7 +162,12 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
             .await?;
         }
 
-        CnftEvent::Burn { tree, leaf_index, nonce: _, noop: _ } => {
+        CnftEvent::Burn {
+            tree,
+            leaf_index,
+            nonce: _,
+            noop: _,
+        } => {
             let existing = require_leaf(store, &tree, leaf_index).await?;
             let next = LeafRecord {
                 burned: true,
@@ -164,10 +177,18 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
             store.put_leaf(next).await?;
         }
 
-        CnftEvent::VerifyCreator { tree, creator, noop } => {
+        CnftEvent::VerifyCreator {
+            tree,
+            creator,
+            noop,
+        } => {
             apply_creator_flip(store, &tree, &creator, true, &noop).await?;
         }
-        CnftEvent::UnverifyCreator { tree, creator, noop } => {
+        CnftEvent::UnverifyCreator {
+            tree,
+            creator,
+            noop,
+        } => {
             apply_creator_flip(store, &tree, &creator, false, &noop).await?;
         }
 
@@ -175,15 +196,31 @@ pub async fn apply_event<S: CnftStore + ?Sized>(store: &S, event: CnftEvent) -> 
         // collection as verified; the only difference is that
         // SetAndVerifyCollection can also overwrite the collection
         // key, which apply_collection_flip does unconditionally.
-        CnftEvent::VerifyCollection { tree, collection, noop }
-        | CnftEvent::SetAndVerifyCollection { tree, collection, noop } => {
+        CnftEvent::VerifyCollection {
+            tree,
+            collection,
+            noop,
+        }
+        | CnftEvent::SetAndVerifyCollection {
+            tree,
+            collection,
+            noop,
+        } => {
             apply_collection_flip(store, &tree, &collection, true, &noop).await?;
         }
-        CnftEvent::UnverifyCollection { tree, collection, noop } => {
+        CnftEvent::UnverifyCollection {
+            tree,
+            collection,
+            noop,
+        } => {
             apply_collection_flip(store, &tree, &collection, false, &noop).await?;
         }
 
-        CnftEvent::UpdateMetadata { tree, new_metadata, noop } => {
+        CnftEvent::UpdateMetadata {
+            tree,
+            new_metadata,
+            noop,
+        } => {
             apply_update_metadata(store, &tree, new_metadata, &noop).await?;
         }
     }
@@ -208,7 +245,9 @@ async fn apply_mint<S: CnftStore + ?Sized>(
     // Nonce assignment: noop is authoritative if present; otherwise
     // we allocate the next leaf index from the tree's counter.
     let leaf_index = if let Some(ov) = noop {
-        store.ensure_num_minted_at_least(&tree, ov.nonce + 1).await?;
+        store
+            .ensure_num_minted_at_least(&tree, ov.nonce + 1)
+            .await?;
         ov.nonce
     } else {
         store.alloc_leaf_index(&tree).await?
@@ -240,7 +279,14 @@ async fn apply_mint<S: CnftStore + ?Sized>(
             data_hash,
             creator_hash,
         });
-        (asset_id, owner, delegate, data_hash, creator_hash, leaf_hash)
+        (
+            asset_id,
+            owner,
+            delegate,
+            data_hash,
+            creator_hash,
+            leaf_hash,
+        )
     };
 
     store
@@ -329,9 +375,21 @@ async fn apply_update_metadata<S: CnftStore + ?Sized>(
     // at the parser; here we treat defaults as "not provided").
     let prev = &existing.mint_metadata;
     let merged = MintMetadata {
-        name: if new_metadata.name.is_empty() { prev.name.clone() } else { new_metadata.name },
-        symbol: if new_metadata.symbol.is_empty() { prev.symbol.clone() } else { new_metadata.symbol },
-        uri: if new_metadata.uri.is_empty() { prev.uri.clone() } else { new_metadata.uri },
+        name: if new_metadata.name.is_empty() {
+            prev.name.clone()
+        } else {
+            new_metadata.name
+        },
+        symbol: if new_metadata.symbol.is_empty() {
+            prev.symbol.clone()
+        } else {
+            new_metadata.symbol
+        },
+        uri: if new_metadata.uri.is_empty() {
+            prev.uri.clone()
+        } else {
+            new_metadata.uri
+        },
         seller_fee_basis_points: if new_metadata.seller_fee_basis_points == 0 {
             prev.seller_fee_basis_points
         } else {

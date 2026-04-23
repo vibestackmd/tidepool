@@ -158,10 +158,7 @@ where
 
 /// Dispatch one JSON-RPC request. Returns `Some(response)` when we
 /// handled it natively, `None` when the caller should passthrough.
-pub async fn dispatch<S, C, U>(
-    ctx: &Ctx<S, C, U>,
-    req: &JsonRpcRequest,
-) -> Option<Value>
+pub async fn dispatch<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Option<Value>
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -207,7 +204,15 @@ where
     let Some(asset_id) = extract_id_param(&req.params) else {
         return fail(&req.id, codes::INVALID_PARAMS, "missing `id` param");
     };
-    match get_asset_full(&*ctx.cnft, &*ctx.cache, &*ctx.upstream, &ctx.decoders, &asset_id).await {
+    match get_asset_full(
+        &*ctx.cnft,
+        &*ctx.cache,
+        &*ctx.upstream,
+        &ctx.decoders,
+        &asset_id,
+    )
+    .await
+    {
         Ok(Some(asset)) => ok(&req.id, serde_json::to_value(asset).unwrap_or(Value::Null)),
         Ok(None) => fail(&req.id, codes::INTERNAL_ERROR, "Asset not found"),
         Err(e) => {
@@ -239,7 +244,10 @@ where
     )
     .await
     {
-        Ok(results) => ok(&req.id, serde_json::to_value(results).unwrap_or(Value::Null)),
+        Ok(results) => ok(
+            &req.id,
+            serde_json::to_value(results).unwrap_or(Value::Null),
+        ),
         Err(e) => fail(&req.id, codes::INTERNAL_ERROR, format!("{e}")),
     }
 }
@@ -365,7 +373,11 @@ where
     let gk = req.params.get("groupKey").and_then(Value::as_str);
     let gv = req.params.get("groupValue").and_then(Value::as_str);
     let (Some(gk), Some(gv)) = (gk, gv) else {
-        return fail(&req.id, codes::INVALID_PARAMS, "missing `groupKey` / `groupValue`");
+        return fail(
+            &req.id,
+            codes::INVALID_PARAMS,
+            "missing `groupKey` / `groupValue`",
+        );
     };
     match get_assets_by_group(&*ctx.cache, gk, gv).await {
         Ok(items) => ok(&req.id, json!({ "items": items })),
@@ -380,9 +392,21 @@ where
     U: UpstreamClient + ?Sized + 'static,
 {
     let filter = SearchFilter {
-        owner_address: req.params.get("ownerAddress").and_then(Value::as_str).map(String::from),
-        authority_address: req.params.get("authorityAddress").and_then(Value::as_str).map(String::from),
-        creator_address: req.params.get("creatorAddress").and_then(Value::as_str).map(String::from),
+        owner_address: req
+            .params
+            .get("ownerAddress")
+            .and_then(Value::as_str)
+            .map(String::from),
+        authority_address: req
+            .params
+            .get("authorityAddress")
+            .and_then(Value::as_str)
+            .map(String::from),
+        creator_address: req
+            .params
+            .get("creatorAddress")
+            .and_then(Value::as_str)
+            .map(String::from),
         creator_verified: req.params.get("creatorVerified").and_then(Value::as_bool),
         grouping: req
             .params
@@ -393,7 +417,11 @@ where
                 let v = arr.get(1)?.as_str()?.to_string();
                 Some((k, v))
             }),
-        interface: req.params.get("interface").and_then(Value::as_str).map(String::from),
+        interface: req
+            .params
+            .get("interface")
+            .and_then(Value::as_str)
+            .map(String::from),
         burnt: req.params.get("burnt").and_then(Value::as_bool),
     };
     match search_assets(&*ctx.cache, &filter).await {
@@ -511,16 +539,12 @@ where
     U: UpstreamClient + ?Sized + 'static,
 {
     // Helius accepts either `owner` or positional `[owner]`.
-    let owner = req
-        .params
-        .get("owner")
-        .and_then(Value::as_str)
-        .or_else(|| {
-            req.params
-                .as_array()
-                .and_then(|a| a.first())
-                .and_then(Value::as_str)
-        });
+    let owner = req.params.get("owner").and_then(Value::as_str).or_else(|| {
+        req.params
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(Value::as_str)
+    });
     let Some(owner) = owner else {
         return fail(
             &req.id,
@@ -600,7 +624,10 @@ fn webhook_error_to_response(id: &Value, e: &WebhookError) -> Value {
     fail(id, code, format!("{e}"))
 }
 
-pub(crate) async fn handle_create_webhook<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
+pub(crate) async fn handle_create_webhook<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -613,7 +640,10 @@ where
     }
 }
 
-pub(crate) async fn handle_get_all_webhooks<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
+pub(crate) async fn handle_get_all_webhooks<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -625,7 +655,10 @@ where
     }
 }
 
-pub(crate) async fn handle_get_webhook_by_id<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
+pub(crate) async fn handle_get_webhook_by_id<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -669,7 +702,10 @@ where
     }
 }
 
-pub(crate) async fn handle_delete_webhook<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
+pub(crate) async fn handle_delete_webhook<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -694,7 +730,10 @@ where
 
 /// `helius.enhanced.getTransactions([signature, ...])`. Fans out one
 /// `getTransaction` per signature and classifies each.
-pub(crate) async fn handle_get_transactions<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
+pub(crate) async fn handle_get_transactions<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -791,10 +830,7 @@ where
 /// encoding verbatim to the upstream, sorts by pubkey for stable
 /// pagination, then slices by `cursor` + `limit`. Returns the next
 /// cursor only when there's more data.
-async fn handle_get_program_accounts_v2<S, C, U>(
-    ctx: &Ctx<S, C, U>,
-    req: &JsonRpcRequest,
-) -> Value
+async fn handle_get_program_accounts_v2<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -1157,10 +1193,7 @@ where
     )
 }
 
-async fn handle_tidepool_index_tree<S, C, U>(
-    ctx: &Ctx<S, C, U>,
-    req: &JsonRpcRequest,
-) -> Value
+async fn handle_tidepool_index_tree<S, C, U>(ctx: &Ctx<S, C, U>, req: &JsonRpcRequest) -> Value
 where
     S: CnftStore + ?Sized,
     C: CacheStore + ?Sized,
@@ -1170,7 +1203,11 @@ where
         return fail(&req.id, codes::INVALID_PARAMS, "missing `tree` param");
     };
     let Some(tree_bytes) = bs58_to_32(tree_b58) else {
-        return fail(&req.id, codes::INVALID_PARAMS, "`tree` is not a valid 32-byte base58 address");
+        return fail(
+            &req.id,
+            codes::INVALID_PARAMS,
+            "`tree` is not a valid 32-byte base58 address",
+        );
     };
     let opts = IndexTreeOptions::default();
     match index_tree(&*ctx.upstream, &*ctx.cnft, tree_bytes, &opts).await {
@@ -1207,7 +1244,11 @@ where
         return fail(&req.id, codes::INVALID_PARAMS, "missing `tree` param");
     };
     let Some(tree_bytes) = bs58_to_32(tree_b58) else {
-        return fail(&req.id, codes::INVALID_PARAMS, "`tree` is not a valid 32-byte base58 address");
+        return fail(
+            &req.id,
+            codes::INVALID_PARAMS,
+            "`tree` is not a valid 32-byte base58 address",
+        );
     };
     match tidepool_rpc::cnft::dump_tree(&*ctx.cnft, &tree_bytes).await {
         Ok(Some(snapshot)) => {
@@ -1241,11 +1282,16 @@ where
     let Some(snapshot_v) = req.params.get("snapshot") else {
         return fail(&req.id, codes::INVALID_PARAMS, "missing `snapshot` param");
     };
-    let blob: tidepool_rpc::cnft::SnapshotBlob =
-        match serde_json::from_value(snapshot_v.clone()) {
-            Ok(b) => b,
-            Err(e) => return fail(&req.id, codes::INVALID_PARAMS, format!("snapshot envelope: {e}")),
-        };
+    let blob: tidepool_rpc::cnft::SnapshotBlob = match serde_json::from_value(snapshot_v.clone()) {
+        Ok(b) => b,
+        Err(e) => {
+            return fail(
+                &req.id,
+                codes::INVALID_PARAMS,
+                format!("snapshot envelope: {e}"),
+            )
+        }
+    };
     let snapshot = match blob.into_tree_snapshot() {
         Ok(s) => s,
         Err(e) => return fail(&req.id, codes::INVALID_PARAMS, e),

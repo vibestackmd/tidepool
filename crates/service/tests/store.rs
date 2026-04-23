@@ -166,10 +166,17 @@ async fn list_leaves_is_insertion_ordered_and_tree_scoped() {
 async fn last_signature_is_per_tree() {
     let store = MemoryCnftStore::new();
     assert!(store.get_last_signature(&TREE).await.unwrap().is_none());
-    store.set_last_signature(&TREE, "sig-abc".into()).await.unwrap();
+    store
+        .set_last_signature(&TREE, "sig-abc".into())
+        .await
+        .unwrap();
     assert_eq!(
         store.get_last_signature(&TREE).await.unwrap().as_deref(),
         Some("sig-abc")
     );
-    assert!(store.get_last_signature(&OTHER_TREE).await.unwrap().is_none());
+    assert!(store
+        .get_last_signature(&OTHER_TREE)
+        .await
+        .unwrap()
+        .is_none());
 }

@@ -21,8 +21,8 @@ use mpl_bubblegum::instructions::{
     TransferInstructionData, TransferV2InstructionArgs, TransferV2InstructionData,
     UnverifyCollectionInstructionData, UnverifyCreatorInstructionData,
     UnverifyCreatorV2InstructionData, UpdateMetadataInstructionArgs, UpdateMetadataInstructionData,
-    UpdateMetadataV2InstructionData, VerifyCollectionInstructionData,
-    VerifyCreatorInstructionData, VerifyCreatorV2InstructionData,
+    UpdateMetadataV2InstructionData, VerifyCollectionInstructionData, VerifyCreatorInstructionData,
+    VerifyCreatorV2InstructionData,
 };
 use mpl_bubblegum::types::{
     LeafSchema, MetadataArgs, MetadataArgsV2, TokenProgramVersion, UpdateArgs, Version,
@@ -31,16 +31,16 @@ use mpl_bubblegum::LeafSchemaEvent;
 use solana_program::pubkey::Pubkey;
 
 use tidepool_rpc::cnft::{
-    decode_leaf_schema_event,
+    decode_leaf_schema_event, parse_bubblegum_instruction,
     parser::{
-        BURN_DISC, BURN_V2_DISC, CREATE_TREE_CONFIG_DISC, CREATE_TREE_CONFIG_V2_DISC, DELEGATE_DISC,
-        DELEGATE_V2_DISC, MINT_TO_COLLECTION_V1_DISC, MINT_V1_DISC, MINT_V2_DISC,
+        BURN_DISC, BURN_V2_DISC, CREATE_TREE_CONFIG_DISC, CREATE_TREE_CONFIG_V2_DISC,
+        DELEGATE_DISC, DELEGATE_V2_DISC, MINT_TO_COLLECTION_V1_DISC, MINT_V1_DISC, MINT_V2_DISC,
         SET_AND_VERIFY_COLLECTION_DISC, SET_COLLECTION_V2_DISC, TRANSFER_DISC, TRANSFER_V2_DISC,
         UNVERIFY_COLLECTION_DISC, UNVERIFY_CREATOR_DISC, UNVERIFY_CREATOR_V2_DISC,
-        UPDATE_METADATA_DISC, UPDATE_METADATA_V2_DISC, VERIFY_COLLECTION_DISC,
-        VERIFY_CREATOR_DISC, VERIFY_CREATOR_V2_DISC,
+        UPDATE_METADATA_DISC, UPDATE_METADATA_V2_DISC, VERIFY_COLLECTION_DISC, VERIFY_CREATOR_DISC,
+        VERIFY_CREATOR_V2_DISC,
     },
-    parse_bubblegum_instruction, CnftEvent, ParseError,
+    CnftEvent, ParseError,
 };
 
 const TREE: [u8; 32] = [0x11; 32];
@@ -108,7 +108,11 @@ fn hardcoded_discriminators_match_mpl_bubblegum_runtime() {
         CREATE_TREE_CONFIG_DISC,
         encode(&CreateTreeConfigInstructionData::new()),
     );
-    check("mint_v1", MINT_V1_DISC, encode(&MintV1InstructionData::new()));
+    check(
+        "mint_v1",
+        MINT_V1_DISC,
+        encode(&MintV1InstructionData::new()),
+    );
     check(
         "mint_to_collection_v1",
         MINT_TO_COLLECTION_V1_DISC,
@@ -216,9 +220,15 @@ fn create_tree_config_yields_tree_info() {
     }));
     let accounts = [FILLER, TREE, FILLER, FILLER, FILLER, FILLER, FILLER];
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
-        CnftEvent::CreateTree { tree, depth, max_buffer_size } => {
+        CnftEvent::CreateTree {
+            tree,
+            depth,
+            max_buffer_size,
+        } => {
             assert_eq!(tree, TREE);
             assert_eq!(depth, 20);
             assert_eq!(max_buffer_size, 64);
@@ -233,9 +243,13 @@ fn mint_v1_yields_mint_event_with_metadata() {
     data.extend(encode(&MintV1InstructionArgs {
         metadata: stub_metadata_args(),
     }));
-    let accounts = [FILLER, OWNER, DELEGATE, TREE, FILLER, FILLER, FILLER, FILLER, FILLER];
+    let accounts = [
+        FILLER, OWNER, DELEGATE, TREE, FILLER, FILLER, FILLER, FILLER, FILLER,
+    ];
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
         CnftEvent::Mint {
             tree,
@@ -267,7 +281,9 @@ fn mint_to_collection_v1_marks_verify_collection() {
     accounts[3] = TREE;
     accounts[8] = COLLECTION_MINT;
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
         CnftEvent::Mint {
             metadata,
@@ -291,9 +307,13 @@ fn transfer_yields_new_owner_and_delegate_equals_new_owner() {
         nonce: 7,
         index: 7,
     }));
-    let accounts = [FILLER, OWNER, DELEGATE, NEW_OWNER, TREE, FILLER, FILLER, FILLER];
+    let accounts = [
+        FILLER, OWNER, DELEGATE, NEW_OWNER, TREE, FILLER, FILLER, FILLER,
+    ];
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
         CnftEvent::Transfer {
             tree,
@@ -327,9 +347,16 @@ fn burn_yields_tree_leaf_and_nonce() {
     }));
     let accounts = [FILLER, OWNER, DELEGATE, TREE, FILLER, FILLER, FILLER];
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
-        CnftEvent::Burn { tree, leaf_index, nonce, .. } => {
+        CnftEvent::Burn {
+            tree,
+            leaf_index,
+            nonce,
+            ..
+        } => {
             assert_eq!(tree, TREE);
             assert_eq!(leaf_index, 42);
             assert_eq!(nonce, 42);
@@ -348,11 +375,27 @@ fn delegate_yields_new_delegate() {
         nonce: 3,
         index: 3,
     }));
-    let accounts = [FILLER, OWNER, DELEGATE, NEW_DELEGATE, TREE, FILLER, FILLER, FILLER];
+    let accounts = [
+        FILLER,
+        OWNER,
+        DELEGATE,
+        NEW_DELEGATE,
+        TREE,
+        FILLER,
+        FILLER,
+        FILLER,
+    ];
 
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
-        CnftEvent::Delegate { new_delegate, data_hash, creator_hash, .. } => {
+        CnftEvent::Delegate {
+            new_delegate,
+            data_hash,
+            creator_hash,
+            ..
+        } => {
             assert_eq!(new_delegate, NEW_DELEGATE);
             assert_eq!(data_hash, [0xaa; 32]);
             assert_eq!(creator_hash, [0xbb; 32]);
@@ -384,7 +427,11 @@ fn verify_creator_with_noop_event_yields_event_with_authoritative_state() {
         .unwrap()
         .unwrap();
     match res {
-        CnftEvent::VerifyCreator { tree, creator, noop } => {
+        CnftEvent::VerifyCreator {
+            tree,
+            creator,
+            noop,
+        } => {
             assert_eq!(tree, TREE);
             assert_eq!(creator, CREATOR);
             assert_eq!(noop.nonce, 5);
@@ -422,7 +469,11 @@ fn update_metadata_with_partial_args_carries_provided_fields() {
         .unwrap()
         .unwrap();
     match res {
-        CnftEvent::UpdateMetadata { new_metadata, noop: override_, .. } => {
+        CnftEvent::UpdateMetadata {
+            new_metadata,
+            noop: override_,
+            ..
+        } => {
             assert_eq!(new_metadata.name, "NewName");
             assert_eq!(override_.nonce, 2);
         }
@@ -480,9 +531,15 @@ fn create_tree_config_v2_yields_tree_info() {
         public: Some(false),
     }));
     let accounts = [FILLER, TREE, FILLER, FILLER, FILLER, FILLER, FILLER];
-    let res = parse_bubblegum_instruction(&data, &accounts, None).unwrap().unwrap();
+    let res = parse_bubblegum_instruction(&data, &accounts, None)
+        .unwrap()
+        .unwrap();
     match res {
-        CnftEvent::CreateTree { tree, depth, max_buffer_size } => {
+        CnftEvent::CreateTree {
+            tree,
+            depth,
+            max_buffer_size,
+        } => {
             assert_eq!(tree, TREE);
             assert_eq!(depth, 14);
             assert_eq!(max_buffer_size, 64);
@@ -502,9 +559,9 @@ fn mint_v2_with_noop_carries_authoritative_state() {
     // 13-slot layout; optional slots filled with Bubblegum placeholder.
     let mut accounts = vec![BUBBLEGUM_PROGRAM_ID_BYTES; 13];
     accounts[4] = OWNER; // leaf_owner
-    accounts[6] = TREE;  // merkle_tree
-    // leaf_delegate at 5 = placeholder → resolves to owner.
-    // core_collection at 7 = placeholder → verify_collection = None.
+    accounts[6] = TREE; // merkle_tree
+                        // leaf_delegate at 5 = placeholder → resolves to owner.
+                        // core_collection at 7 = placeholder → verify_collection = None.
 
     let noop_bytes = noop_event_v2(11);
     let noop = decode_leaf_schema_event(&noop_bytes).unwrap();
@@ -614,7 +671,12 @@ fn burn_v2_yields_burn_with_noop() {
         .unwrap()
         .unwrap();
     match res {
-        CnftEvent::Burn { tree, leaf_index, nonce, .. } => {
+        CnftEvent::Burn {
+            tree,
+            leaf_index,
+            nonce,
+            ..
+        } => {
             assert_eq!(tree, TREE);
             assert_eq!(leaf_index, 3);
             assert_eq!(nonce, 3);

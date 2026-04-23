@@ -45,7 +45,10 @@ pub fn extract_native_transfers(
 ) -> Vec<EnhancedNativeTransfer> {
     // Per-account net lamport change. Fee payer's net is post - pre +
     // fee so the diff reflects transfers only, not the fee outflow.
-    let n = account_keys.len().min(pre_balances.len()).min(post_balances.len());
+    let n = account_keys
+        .len()
+        .min(pre_balances.len())
+        .min(post_balances.len());
     let mut deltas: Vec<i128> = Vec::with_capacity(n);
     for i in 0..n {
         let pre = i128::from(pre_balances[i]);
@@ -148,18 +151,13 @@ pub fn extract_token_transfers(
     }
 
     // Group by mint, then greedy-match senders → receivers.
-    let mut by_mint: std::collections::BTreeMap<
-        String,
-        Vec<(u32, Option<String>, i128)>,
-    > = std::collections::BTreeMap::new();
+    let mut by_mint: std::collections::BTreeMap<String, Vec<(u32, Option<String>, i128)>> =
+        std::collections::BTreeMap::new();
     for (idx, (mint, owner, delta)) in deltas {
         if delta == 0 {
             continue;
         }
-        by_mint
-            .entry(mint)
-            .or_default()
-            .push((idx, owner, delta));
+        by_mint.entry(mint).or_default().push((idx, owner, delta));
     }
 
     let mut out = Vec::new();
