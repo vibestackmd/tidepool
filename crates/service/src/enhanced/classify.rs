@@ -37,6 +37,7 @@ pub struct EnhancedClass {
 /// `instructions` is the compact-ix array with base58 `data` strings
 /// and `program_id` resolved to base58 strings.
 #[must_use]
+#[allow(clippy::too_many_lines)] // priority-order lookup table; splitting hurts readability
 pub fn classify(instructions: &[InstructionView<'_>]) -> EnhancedClass {
     // Priority order: more specific classifications win.
 

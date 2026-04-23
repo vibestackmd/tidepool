@@ -14,6 +14,7 @@ use super::types::{AccountData, EnhancedEvents, EnhancedInstruction, EnhancedTra
 /// when the envelope is malformed enough that we can't produce a
 /// signature + slot.
 #[must_use]
+#[allow(clippy::too_many_lines)] // single-pass parser; factoring helpers hurts readability
 pub fn parse_enhanced_tx(signature: &str, tx: &Value) -> Option<EnhancedTransaction> {
     let slot = tx.get("slot").and_then(Value::as_u64)?;
     let timestamp = tx.get("blockTime").and_then(Value::as_i64);
