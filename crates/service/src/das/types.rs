@@ -147,6 +147,11 @@ pub struct DasCreator {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DasOwnership {
     pub frozen: bool,
+    /// Helius-era flag for Token-2022's NonTransferable extension.
+    /// Always emitted, defaulting to `false` when parsing pre-flag
+    /// responses. (Seen on cNFTs + Token-2022 in real traffic.)
+    #[serde(default)]
+    pub non_transferable: bool,
     pub delegated: bool,
     pub ownership_model: String,
     pub owner: String,
@@ -171,13 +176,19 @@ pub struct DasRoyalty {
 
 /// Supply metadata for editions. Helius returns this for
 /// Master/Edition mints; null for plain NFTs.
+///
+/// `print_max_supply`, `print_current_supply`, and `edition_nonce`
+/// always emit — Helius sends them even when null/zero, and round-
+/// tripping without the key is a silent drift. The edition-specific
+/// fields (`edition_number`, `master_edition_mint`) genuinely don't
+/// appear on non-edition mints; keep them opt-in via skip.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DasSupply {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub print_max_supply: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub print_current_supply: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub edition_nonce: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition_number: Option<u64>,
@@ -197,6 +208,15 @@ pub struct DasCompression {
     pub compressed: bool,
     pub data_hash: String,
     pub creator_hash: String,
+    /// Bubblegum V2 additions. Always emitted — default to empty
+    /// strings / zero when the underlying asset is pre-V2 so the
+    /// key set matches Helius regardless of tree age.
+    #[serde(default)]
+    pub collection_hash: String,
+    #[serde(default)]
+    pub asset_data_hash: String,
+    #[serde(default)]
+    pub flags: u64,
     pub asset_hash: String,
     pub tree: String,
     pub seq: u64,

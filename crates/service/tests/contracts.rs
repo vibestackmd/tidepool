@@ -125,58 +125,12 @@ fn contract_schemas_validate_against_their_source_fixtures() {
 }
 
 #[test]
-fn get_assets_by_owner_parses_into_das_asset_cleanly() {
-    use tidepool_rpc::das::DasAsset;
-
-    let response = load_fixture_response(
-        "getAssetsByOwner",
-        "getAssetsByOwner_small_wallet",
-    );
-    let items = response
-        .pointer("/result/items")
-        .and_then(Value::as_array)
-        .expect("items array");
-
-    let mut parsed = 0;
-    for (i, raw) in items.iter().enumerate() {
-        let _asset: DasAsset = serde_json::from_value(raw.clone()).unwrap_or_else(|e| {
-            panic!(
-                "item {i}: our DasAsset type rejected a real Helius response: {e}\nvalue: {raw}"
-            )
-        });
-        parsed += 1;
-    }
-    assert!(parsed > 0, "fixture produced zero items to validate");
-}
-
-#[test]
-fn get_assets_by_owner_roundtrip_drops_no_fields() {
-    // Round-trip a real Helius item through our DasAsset and back
-    // to JSON, then diff against the original. Any field Helius
-    // sends that we silently drop shows up here.
-    use tidepool_rpc::das::DasAsset;
-
-    let response = load_fixture_response(
-        "getAssetsByOwner",
-        "getAssetsByOwner_small_wallet",
-    );
-    let original = response
-        .pointer("/result/items/0")
-        .cloned()
-        .expect("first item");
-
-    let parsed: DasAsset = serde_json::from_value(original.clone())
-        .expect("parse first item as DasAsset");
-    let reserialized = serde_json::to_value(&parsed).expect("serialize DasAsset");
-
-    let dropped = missing_keys(&original, &reserialized, "");
-    assert!(
-        dropped.is_empty(),
-        "DasAsset drops fields Helius returns: {dropped:#?}\n\n\
-         These fields exist on Helius responses but don't survive the\n\
-         round-trip through our Rust type. Either add them to the type\n\
-         or document the omission."
-    );
+fn get_assets_by_owner_items_round_trip() {
+    // Covers the same invariant as the other by-X helpers but kept
+    // separate because the `small_wallet` fixture has the widest DAS
+    // variety (Token Metadata, pNFT, cNFT, fungible) and is our best
+    // canary for DAS shape regressions.
+    assert_das_items_round_trip("getAssetsByOwner", "getAssetsByOwner_small_wallet");
 }
 
 #[test]

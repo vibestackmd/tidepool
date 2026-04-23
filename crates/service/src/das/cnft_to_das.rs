@@ -75,6 +75,12 @@ pub fn leaf_record_to_das_asset(record: &LeafRecord) -> DasAsset {
             tree: bs58::encode(record.tree).into_string(),
             seq: 0,
             leaf_id: record.leaf_index,
+            // Bubblegum V2 fields — our V1 apply doesn't track them
+            // yet. Empty string / zero keeps the key set aligned with
+            // Helius without fabricating hashes.
+            collection_hash: String::new(),
+            asset_data_hash: String::new(),
+            flags: 0,
         }),
         ..Default::default()
     }
