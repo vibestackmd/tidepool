@@ -186,6 +186,7 @@ pub fn extract_token_transfers(
                     to_token_account,
                     mint: mint.clone(),
                     token_amount: u64::try_from(amount).unwrap_or(0),
+                    token_standard: None,
                 });
             }
             senders[si].2 -= amount;

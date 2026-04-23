@@ -106,7 +106,9 @@ mod tests {
             native_transfers: vec![],
             token_transfers: vec![],
             instructions: Vec::<EnhancedInstruction>::new(),
+            account_data: Vec::new(),
             events: EnhancedEvents::default(),
+            lighthouse_data: None,
             transaction_error: None,
         }
     }
@@ -137,6 +139,7 @@ mod tests {
             to_token_account: Some("ATA_B".into()),
             mint: "MINT_A".into(),
             token_amount: 1,
+            token_standard: None,
         }];
         tx.native_transfers = vec![EnhancedNativeTransfer {
             from_user_account: "BUYER".into(),
@@ -163,6 +166,7 @@ mod tests {
             to_token_account: Some("ATA_B".into()),
             mint: "USDC".into(),
             token_amount: 1_000_000, // fungible, not NFT
+            token_standard: None,
         }];
         let got = derive_nft_event(&tx).expect("Some");
         assert!(got.nfts.is_none());
@@ -179,6 +183,7 @@ mod tests {
                 to_token_account: None,
                 mint: "MINT_A".into(),
                 token_amount: 1,
+                token_standard: None,
             },
             EnhancedTokenTransfer {
                 from_user_account: None,
@@ -187,6 +192,7 @@ mod tests {
                 to_token_account: None,
                 mint: "MINT_A".into(),
                 token_amount: 1,
+                token_standard: None,
             },
         ];
         let got = derive_nft_event(&tx).expect("Some");

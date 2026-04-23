@@ -7,7 +7,7 @@ use serde_json::Value;
 use super::classify::{classify, instruction_views, RawInstruction};
 use super::events::derive_nft_event;
 use super::transfers::{extract_native_transfers, extract_token_transfers};
-use super::types::{EnhancedEvents, EnhancedInstruction, EnhancedTransaction};
+use super::types::{AccountData, EnhancedEvents, EnhancedInstruction, EnhancedTransaction};
 
 /// Parse a `getTransaction` JSON response (the `result` field, which
 /// itself has `{slot, blockTime, transaction, meta}`). Returns `None`
@@ -104,6 +104,13 @@ pub fn parse_enhanced_tx(signature: &str, tx: &Value) -> Option<EnhancedTransact
         })
         .collect();
 
+    // Per-account balance deltas. Helius emits one entry per account
+    // in `accountKeys`, including ones with no change (change == 0) —
+    // so downstream indexers can reconstruct the account list from
+    // this field alone. Token-balance-changes isn't populated by our
+    // classifier yet; we emit an empty array to keep the key present.
+    let account_data = build_account_data(&account_keys, &pre_balances, &post_balances);
+
     // Two-pass build: we need the `EnhancedTransaction` (minus
     // `events`) to feed to `derive_nft_event`, since that helper reads
     // `tx_type`, `source`, and both transfer lists to derive buyer /
@@ -121,11 +128,40 @@ pub fn parse_enhanced_tx(signature: &str, tx: &Value) -> Option<EnhancedTransact
         native_transfers,
         token_transfers,
         instructions,
+        account_data,
         events: EnhancedEvents::default(),
+        lighthouse_data: None,
         transaction_error,
     };
     out.events.nft = derive_nft_event(&out);
     Some(out)
+}
+
+/// Build per-account balance deltas from pre/postBalances. One entry
+/// per account in `accountKeys`, in the same order — including accounts
+/// with no change (delta == 0) so clients can use this as the
+/// authoritative participant list without re-reading `accountKeys`.
+fn build_account_data(
+    account_keys: &[String],
+    pre_balances: &[u64],
+    post_balances: &[u64],
+) -> Vec<AccountData> {
+    account_keys
+        .iter()
+        .enumerate()
+        .map(|(i, account)| {
+            let pre = pre_balances.get(i).copied().unwrap_or(0);
+            let post = post_balances.get(i).copied().unwrap_or(0);
+            // Cast through i128 so the signed diff can't overflow
+            // either direction of a u64 before we narrow to i64.
+            let delta = i128::from(post) - i128::from(pre);
+            AccountData {
+                account: account.clone(),
+                native_balance_change: i64::try_from(delta).unwrap_or(0),
+                token_balance_changes: Vec::new(),
+            }
+        })
+        .collect()
 }
 
 fn build_enhanced_ix(

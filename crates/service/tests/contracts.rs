@@ -310,9 +310,13 @@ fn get_balances_response_round_trips() {
 }
 
 #[test]
-fn get_transactions_by_address_response_is_array_of_enhanced() {
+fn get_transactions_by_address_response_round_trips() {
     // REST fixture: `GET /v0/addresses/<addr>/transactions?limit=3`.
     // Response is a bare array of enhanced-tx records, no envelope.
+    // Round-trips each record through EnhancedTransaction and asserts
+    // no top-level field is silently dropped — the deserialize-only
+    // pass can miss fields our type doesn't declare but that Helius
+    // populates (accountData, lighthouseData, etc.).
     use tidepool_rpc::enhanced::types::EnhancedTransaction;
 
     let response = load_fixture_response(
@@ -322,9 +326,18 @@ fn get_transactions_by_address_response_is_array_of_enhanced() {
     let items = response.as_array().expect("REST returns a bare array");
     assert!(!items.is_empty(), "small wallet should have at least one tx");
     for (i, raw) in items.iter().enumerate() {
-        let _parsed: EnhancedTransaction = serde_json::from_value(raw.clone()).unwrap_or_else(|e| {
+        let parsed: EnhancedTransaction = serde_json::from_value(raw.clone()).unwrap_or_else(|e| {
             panic!("item {i}: EnhancedTransaction rejected real Helius response: {e}\nvalue: {raw}")
         });
+        let reserialized = serde_json::to_value(&parsed).expect("serialize EnhancedTransaction");
+        let dropped = missing_keys(raw, &reserialized, "");
+        assert!(
+            dropped.is_empty(),
+            "item {i} drops fields on round-trip: {dropped:#?}\n\n\
+             These keys are present in Helius's response but don't\n\
+             survive round-trip through EnhancedTransaction. Add them\n\
+             to the type or document the omission."
+        );
     }
 }
 

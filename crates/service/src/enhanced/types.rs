@@ -16,6 +16,9 @@ pub struct EnhancedNativeTransfer {
 /// One SPL-Token transfer. `token_amount` is raw u64 (we don't divide
 /// by decimals — matches Helius's default behavior of returning the
 /// integer amount for precision). `mint` is the SPL mint pubkey.
+/// `token_standard` is Helius's classification string
+/// (`Fungible`, `FungibleAsset`, `NonFungible`, `ProgrammableNonFungible`, etc.)
+/// inferred from the mint's Metaplex metadata when available.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct EnhancedTokenTransfer {
@@ -25,6 +28,8 @@ pub struct EnhancedTokenTransfer {
     pub to_token_account: Option<String>,
     pub mint: String,
     pub token_amount: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_standard: Option<String>,
 }
 
 /// Skeleton of an instruction in the enhanced envelope. We preserve
@@ -41,9 +46,29 @@ pub struct EnhancedInstruction {
     pub inner_instructions: Vec<EnhancedInstruction>,
 }
 
+/// Per-account balance deltas Helius surfaces on every enhanced tx.
+/// `native_balance_change` is signed lamports; positives are credits,
+/// negatives debits. `token_balance_changes` is the raw per-SPL-token
+/// per-account diff shape — we keep it as opaque `Value` because the
+/// nested shape (raw_token_amount, decimals, mint, user_account, etc.)
+/// is wider than our classifier produces and re-serializing through
+/// a strict type would drop fields on real responses.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountData {
+    pub account: String,
+    pub native_balance_change: i64,
+    #[serde(default)]
+    pub token_balance_changes: Vec<serde_json::Value>,
+}
+
 /// One fully-enhanced transaction. `tx_type` + `source` drive the
 /// client's per-type rendering; everything else is raw data Helius
 /// surfaces at the top level.
+///
+/// `accountData`, `lighthouseData`, and `transactionError` are always
+/// serialized (no `skip_serializing_if`) because Helius always emits
+/// them — omitting them would be a wire-shape drift clients notice.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct EnhancedTransaction {
@@ -60,12 +85,24 @@ pub struct EnhancedTransaction {
     pub native_transfers: Vec<EnhancedNativeTransfer>,
     pub token_transfers: Vec<EnhancedTokenTransfer>,
     pub instructions: Vec<EnhancedInstruction>,
+    /// Per-account balance deltas. Helius derives these from the
+    /// pre/post balance diff; we mirror the shape even when our
+    /// classifier doesn't populate it (empty vec is still emitted).
+    #[serde(default)]
+    pub account_data: Vec<AccountData>,
     /// Per-type event breakouts. Currently populated only for NFT-
     /// flavored transactions (mints, sales, transfers, burns); empty
     /// object otherwise. Helius also surfaces `compressed`, `swap`,
     /// `stake` sub-fields — we don't populate those yet.
     pub events: EnhancedEvents,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Opaque — Lighthouse-program assertion metadata. Helius emits
+    /// `null` when the tx doesn't touch Lighthouse. Kept as
+    /// `Option<Value>` because the shape is niche enough that we're
+    /// not modeling it.
+    #[serde(default)]
+    pub lighthouse_data: Option<serde_json::Value>,
+    /// Solana transaction error envelope, or `null` on success.
+    #[serde(default)]
     pub transaction_error: Option<serde_json::Value>,
 }
 
