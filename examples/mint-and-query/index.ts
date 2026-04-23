@@ -1,9 +1,9 @@
 /**
- * mint-and-query — prove the full surfpool-helius loop works.
+ * mint-and-query — prove the full tidepool loop works.
  *
  * 1. Point a UMI instance at the PROXY (not Surfpool directly). Every RPC call
  *    the Metaplex SDK makes — getLatestBlockhash, sendTransaction,
- *    confirmTransaction, getAccountInfo — flows through surfpool-helius.
+ *    confirmTransaction, getAccountInfo — flows through tidepool.
  * 2. Generate a fresh keypair and airdrop SOL on the local validator.
  * 3. Mint assets:
  *      (a) a plain MplCore asset (validates the base-header decode path)
@@ -90,7 +90,7 @@ async function main() {
   console.log(`→ minting asset A (no plugins): ${assetA.publicKey}`);
   await create(umi, {
     asset: assetA,
-    name: "surfpool-helius demo",
+    name: "tidepool demo",
     uri: "https://example.com/demo.json",
   }).sendAndConfirm(umi);
 
@@ -104,7 +104,7 @@ async function main() {
   console.log(`→ minting asset B (with Royalties plugin): ${assetB.publicKey}`);
   await create(umi, {
     asset: assetB,
-    name: "surfpool-helius plugin demo",
+    name: "tidepool plugin demo",
     uri: "https://example.com/demo.json",
     plugins: [
       {
@@ -151,7 +151,7 @@ async function main() {
   );
   await createNft(umi, {
     mint: mintC,
-    name: "surfpool-helius legacy demo",
+    name: "tidepool legacy demo",
     uri: "https://example.com/demo.json",
     sellerFeeBasisPoints: percentAmount(5),
     creators: [
@@ -280,7 +280,7 @@ async function main() {
       "C interface is V1_NFT",
       dasC.interface === "V1_NFT",
     ],
-    ["C name matches", dasC.content.metadata.name === "surfpool-helius legacy demo"],
+    ["C name matches", dasC.content.metadata.name === "tidepool legacy demo"],
     [
       "C owner resolved via getProgramAccounts holder scan",
       dasC.ownership.owner === payer.publicKey.toString(),

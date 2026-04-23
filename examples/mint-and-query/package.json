@@ -1,9 +1,9 @@
 {
-  "name": "surfpool-helius-example-mint-and-query",
+  "name": "tidepool-example-mint-and-query",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Mint an MplCore asset and query it through surfpool-helius.",
+  "description": "Mint an MplCore asset and query it through tidepool.",
   "scripts": {
     "start": "tsx index.ts"
   },
