@@ -45,7 +45,7 @@ rust = { version = ">=1.77" }
 
 [runtime]
 
-# Minimum Node version the `@tidepool/rpc` npm package supports. Set
+# Minimum Node version the `@tidepool-rpc/node` npm package supports. Set
 # by `engines.node` in crates/node/package.json — mirrored here for
 # the same cross-surface visibility.
 node = { version = ">=18" }

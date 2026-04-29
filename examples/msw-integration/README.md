@@ -1,4 +1,4 @@
-# MSW integration — vitest + @tidepool/rpc
+# MSW integration — vitest + @tidepool-rpc/node
 
 Full runnable demo of using Tidepool in a JavaScript test suite via MSW. This is the pattern that makes Tidepool compose cleanly with any mock-HTTP setup you already use.
 
@@ -6,7 +6,7 @@ Full runnable demo of using Tidepool in a JavaScript test suite via MSW. This is
 
 ```bash
 cd examples/msw-integration
-pnpm install           # pulls MSW + vitest, links @tidepool/rpc from ../../crates/node
+pnpm install           # pulls MSW + vitest, links @tidepool-rpc/node from ../../crates/node
 pnpm test
 ```
 
@@ -21,7 +21,7 @@ You should see three passing tests covering:
 Three lines in your MSW setup:
 
 ```ts
-import { HeliusContext, handleJsonRpcBody } from "@tidepool/rpc";
+import { HeliusContext, handleJsonRpcBody } from "@tidepool-rpc/node";
 import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 
@@ -48,4 +48,4 @@ The only library-specific differences are how you express passthrough (MSW has `
 
 ## Note on `file:` dep
 
-The `package.json` links `@tidepool/rpc` via `file:../../crates/node` because this repo isn't published yet. In your real project after `v1.0.0` lands on npm, you'll just write `"@tidepool/rpc": "^1"`.
+The `package.json` links `@tidepool-rpc/node` via `file:../../crates/node` because this repo isn't published yet. In your real project after `v1.0.0` lands on npm, you'll just write `"@tidepool-rpc/node": "^1"`.

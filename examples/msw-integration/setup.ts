@@ -9,7 +9,7 @@
 
 import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
-import { HeliusContext, handleJsonRpcBody } from "@tidepool/rpc";
+import { HeliusContext, handleJsonRpcBody } from "@tidepool-rpc/node";
 
 // One context for the whole test run. In parallel test setups you'd
 // spin up one per worker; we're single-threaded here so one is enough.

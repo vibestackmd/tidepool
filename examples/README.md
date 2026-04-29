@@ -46,7 +46,7 @@ Pattern for in-process integration tests that embed Surfpool:
 
 ```ts
 import { Surfnet } from "surfpool-sdk";
-import { HeliusContext, handleJsonRpcBody } from "@tidepool/rpc";
+import { HeliusContext, handleJsonRpcBody } from "@tidepool-rpc/node";
 
 const surfnet = Surfnet.start();
 const ctx = new HeliusContext({ upstreamUrl: surfnet.rpcUrl });

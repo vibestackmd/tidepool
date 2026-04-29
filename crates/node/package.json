@@ -1,12 +1,12 @@
 {
-  "name": "@tidepool/rpc",
+  "name": "@tidepool-rpc/node",
   "version": "0.1.0",
   "description": "Helius-compatible Solana RPC primitives for test suites. Plug handleJsonRpcBody into MSW, Nock, undici, or any mock-HTTP layer.",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
     "binaryName": "tidepool",
-    "packageName": "@tidepool/rpc",
+    "packageName": "@tidepool-rpc/node",
     "targets": [
       "aarch64-apple-darwin",
       "x86_64-apple-darwin",
