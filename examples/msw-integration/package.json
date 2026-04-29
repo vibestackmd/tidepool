@@ -8,7 +8,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@tidepool-rpc/node": "file:../../crates/node"
+    "@vibestackmd/tidepool-rpc": "file:../../crates/node"
   },
   "devDependencies": {
     "msw": "^2.7.0",
