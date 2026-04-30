@@ -11,7 +11,7 @@ A Helius-compatible local dev environment for Solana — DAS, compressed NFTs, W
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![MSRV 1.77](https://img.shields.io/badge/MSRV-1.77-orange.svg)](./Cargo.toml)
-[![CI](https://github.com/TylerTheBuildor/tidepool/actions/workflows/ci.yml/badge.svg)](https://github.com/TylerTheBuildor/tidepool/actions/workflows/ci.yml)
+[![CI](https://github.com/vibestackmd/tidepool/actions/workflows/ci.yml/badge.svg)](https://github.com/vibestackmd/tidepool/actions/workflows/ci.yml)
 
 </div>
 
@@ -25,7 +25,7 @@ Three things you'll notice in the first five minutes.
 
 **⚡ &nbsp; `confirmTransaction()` actually works on Surfpool.** &nbsp; Surfpool's native WebSocket doesn't implement `signatureSubscribe`, so `@solana/web3.js`'s `confirmTransaction()` hangs. Tidepool polyfills it. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works.
 
-**🧪 &nbsp; Plugs into MSW / Nock / undici for tests.** &nbsp; Import `@vibestackmd/tidepool-rpc` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team uses. Your test suite gets deterministic Helius responses without standing up a validator.
+**🧪 &nbsp; Plugs into MSW / Nock / undici for tests.** &nbsp; Import `@vibestackmd/tidepool` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team uses. Your test suite gets deterministic Helius responses without standing up a validator.
 
 ---
 
@@ -71,11 +71,11 @@ Full example in [`examples/rust-integration/`](examples/rust-integration/).
 ### As a Node / JS test integration
 
 ```bash
-npm install @vibestackmd/tidepool-rpc msw vitest
+npm install @vibestackmd/tidepool msw vitest
 ```
 
 ```ts
-import { HeliusContext, handleJsonRpcBody } from "@vibestackmd/tidepool-rpc";
+import { HeliusContext, handleJsonRpcBody } from "@vibestackmd/tidepool";
 import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 
@@ -212,9 +212,9 @@ tidepool start --snapshot ./trees/foo.json --snapshot ./trees/bar.json
 | `tidepool-rpc` | Service layer: cNFT state machine, DAS handlers, cache, decoders, upstream trait. |
 | `tidepool-server` | axum HTTP + WS front-end. Method-enum dispatch. `HttpUpstream` via reqwest. |
 | `tidepool-cli` | `tidepool` binary. clap-derive args + env-var overlay. |
-| `tidepool-node` | napi-rs bridge → the `@vibestackmd/tidepool-rpc` npm package. |
+| `tidepool-node` | napi-rs bridge → the `@vibestackmd/tidepool` npm package. |
 
-Library consumers pull `tidepool-rpc`. Binary users `cargo install tidepool-cli`. JS users `npm install @vibestackmd/tidepool-rpc`. Server builders compose `tidepool-rpc` + `tidepool-server::HttpUpstream` themselves.
+Library consumers pull `tidepool-rpc`. Binary users `cargo install tidepool-cli`. JS users `npm install @vibestackmd/tidepool`. Server builders compose `tidepool-rpc` + `tidepool-server::HttpUpstream` themselves.
 
 ---
 
@@ -253,7 +253,7 @@ You'd burn rate limits, pollute prod monitoring, require internet on CI, and can
 <details>
 <summary><b>Why Rust?</b></summary>
 
-The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewrite earned: drop-in official `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum` crates (no Codama pipeline), exhaustive-match method dispatch (compile-time safety for adding new handlers), type-level noop-required-vs-optional enforcement on cNFT events, binary distribution via `cargo install`. The napi-rs bridge means JS consumers still get the test-integration story via `npm install @vibestackmd/tidepool-rpc` — one Rust core, two consumption ecosystems.
+The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewrite earned: drop-in official `mpl-core` / `mpl-token-metadata` / `mpl-bubblegum` crates (no Codama pipeline), exhaustive-match method dispatch (compile-time safety for adding new handlers), type-level noop-required-vs-optional enforcement on cNFT events, binary distribution via `cargo install`. The napi-rs bridge means JS consumers still get the test-integration story via `npm install @vibestackmd/tidepool` — one Rust core, two consumption ecosystems.
 </details>
 
 <details>

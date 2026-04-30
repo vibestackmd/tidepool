@@ -1,12 +1,12 @@
 {
-  "name": "@vibestackmd/tidepool-rpc",
+  "name": "@vibestackmd/tidepool",
   "version": "0.1.0",
   "description": "Helius-compatible Solana RPC primitives for test suites. Plug handleJsonRpcBody into MSW, Nock, undici, or any mock-HTTP layer.",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
     "binaryName": "tidepool",
-    "packageName": "@vibestackmd/tidepool-rpc",
+    "packageName": "@vibestackmd/tidepool",
     "targets": [
       "aarch64-apple-darwin",
       "x86_64-apple-darwin",
@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TylerTheBuildor/tidepool.git"
+    "url": "https://github.com/vibestackmd/tidepool.git"
   },
   "publishConfig": {
     "access": "public"

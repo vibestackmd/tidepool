@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Every release covers all five `tidepool-*` crates on crates.io and
-the `@vibestackmd/tidepool-rpc` npm package simultaneously — lockstep versioning so
+the `@vibestackmd/tidepool` npm package simultaneously — lockstep versioning so
 there's no "which version is compatible with which?" drift. Upstream
 pins for each release are in `compatibility.toml`.
 

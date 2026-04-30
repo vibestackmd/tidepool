@@ -505,7 +505,7 @@ const MANIFEST: &[MethodEntry] = &[
         compat: CompatLevel::Exact,
         transport: Transport::JsonRpc,
         since_version: Some("1.0.0"),
-        source_doc: "https://github.com/TylerTheBuildor/tidepool",
+        source_doc: "https://github.com/vibestackmd/tidepool",
         notes: Some("Returns this manifest + runtime summary."),
     },
     MethodEntry {
@@ -515,7 +515,7 @@ const MANIFEST: &[MethodEntry] = &[
         compat: CompatLevel::Exact,
         transport: Transport::JsonRpc,
         since_version: Some("1.0.0"),
-        source_doc: "https://github.com/TylerTheBuildor/tidepool",
+        source_doc: "https://github.com/vibestackmd/tidepool",
         notes: Some(
             "Runtime tree registration for the cNFT indexer. Params: { tree: string, maxSignatures?, pageSize? }.",
         ),
@@ -527,7 +527,7 @@ const MANIFEST: &[MethodEntry] = &[
         compat: CompatLevel::Exact,
         transport: Transport::JsonRpc,
         since_version: Some("1.0.0"),
-        source_doc: "https://github.com/TylerTheBuildor/tidepool",
+        source_doc: "https://github.com/vibestackmd/tidepool",
         notes: Some(
             "Export one tree's indexed state as a portable snapshot envelope (base64-wrapped JSON). Params: { tree: string }. Pair with tidepool_loadTreeSnapshot for fresh-boot preload.",
         ),
@@ -539,7 +539,7 @@ const MANIFEST: &[MethodEntry] = &[
         compat: CompatLevel::Exact,
         transport: Transport::JsonRpc,
         since_version: Some("1.0.0"),
-        source_doc: "https://github.com/TylerTheBuildor/tidepool",
+        source_doc: "https://github.com/vibestackmd/tidepool",
         notes: Some(
             "Apply a previously-dumped snapshot to the local store. Params: { snapshot: SnapshotBlob }. Overwrites any existing state for that tree.",
         ),

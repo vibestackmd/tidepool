@@ -41,13 +41,13 @@
 #
 #   1. Enable crates.io trusted publishing (OIDC):
 #        https://crates.io → each crate's settings → Trusted Publishing
-#        → "Add" → repo `tylerthebuildor/tidepool`, workflow
+#        → "Add" → repo `vibestackmd/tidepool`, workflow
 #        `release.yml`, environment `production`.
 #      Repeat for each of the 5 tidepool-* crates. No token stored
 #      anywhere; OIDC exchange happens at publish time.
 #
 #   2. Enable npm trusted publishing (OIDC):
-#        https://www.npmjs.com → "@vibestackmd/tidepool-rpc" package
+#        https://www.npmjs.com → "@vibestackmd/tidepool" package
 #        page → Settings → Trusted Publishers → "Add" → same repo,
 #        workflow, environment as above. For an unpublished package
 #        name, npm calls this a "pending publisher" — the first
@@ -112,7 +112,7 @@ jobs:
   preflight:
     name: preflight
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'tylerthebuildor'
+    if: github.repository_owner == 'vibestackmd'
     outputs:
       version: ${{ steps.tag.outputs.version }}
     steps:
@@ -175,7 +175,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       vars.ENABLED == 'true' &&
-      github.repository_owner == 'tylerthebuildor'
+      github.repository_owner == 'vibestackmd'
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -229,7 +229,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       vars.ENABLED == 'true' &&
-      github.repository_owner == 'tylerthebuildor'
+      github.repository_owner == 'vibestackmd'
     strategy:
       fail-fast: false
       matrix:
@@ -272,7 +272,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       vars.ENABLED == 'true' &&
-      github.repository_owner == 'tylerthebuildor'
+      github.repository_owner == 'vibestackmd'
     runs-on: ubuntu-latest
     environment: production
     permissions:
