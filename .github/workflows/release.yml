@@ -12,11 +12,14 @@
 #      package, all at the same version. Publish order is dependency
 #      order (core → service → server → cli → node), then npm.
 #
-#   2. **Provenance everywhere.** npm `--provenance` produces an OIDC
-#      attestation linking the tarball to this CI run + commit SHA.
-#      crates.io trusted publishing (OIDC) does the equivalent for cargo.
-#      No long-lived tokens anywhere except the npm auth token, which
-#      is fine-grained to the `tidepool-rpc` package only.
+#   2. **Provenance everywhere, zero long-lived tokens.** Both
+#      registries support OIDC trusted publishing: crates.io exchanges
+#      this job's GitHub OIDC token for a short-lived crates token,
+#      npm does the equivalent for the npm registry. `--provenance`
+#      adds the signed attestation linking the tarball to this CI
+#      run + commit SHA. No NPM_TOKEN, no CARGO_REGISTRY_TOKEN
+#      stored in repo secrets — the only secrets surface is the
+#      `production` environment's required-reviewers gate.
 #
 #   3. **Preflight is identical to local.** The `preflight` job runs
 #      `scripts/preflight.sh --release <tag>` — the same script a
@@ -36,17 +39,21 @@
 #
 # ── Enabling the pipeline ───────────────────────────────────────────
 #
-#   1. Create an npm automation token (fine-grained to the
-#      `tidepool-rpc` package only):
-#        Settings → Access Tokens → Generate → Granular → Read & Write
-#        Select package: tidepool-rpc
-#      Store as repo secret `NPM_TOKEN`:
-#        gh secret set NPM_TOKEN --repo tylerthebuildor/tidepool
+#   1. Enable crates.io trusted publishing (OIDC):
+#        https://crates.io → each crate's settings → Trusted Publishing
+#        → "Add" → repo `tylerthebuildor/tidepool`, workflow
+#        `release.yml`, environment `production`.
+#      Repeat for each of the 5 tidepool-* crates. No token stored
+#      anywhere; OIDC exchange happens at publish time.
 #
-#   2. Enable crates.io trusted publishing (OIDC, no token):
-#        https://crates.io/settings/tokens — add this repo under
-#        "Trusted Publishing" for each of the 5 tidepool-rpc* crates.
-#        Use workflow: `release.yml`, environment: `production`.
+#   2. Enable npm trusted publishing (OIDC):
+#        https://www.npmjs.com → "@vibestackmd/tidepool-rpc" package
+#        page → Settings → Trusted Publishers → "Add" → same repo,
+#        workflow, environment as above. For an unpublished package
+#        name, npm calls this a "pending publisher" — the first
+#        publish via the configured workflow auto-creates the
+#        package. Avoids the chicken-and-egg of "you need to publish
+#        before you can configure trusted publishing for it."
 #
 #   3. Create a `production` environment in repo settings with
 #      "required reviewers" = repo owner. Every publish job waits
@@ -54,6 +61,15 @@
 #
 #   4. Flip the `vars.ENABLED` repo variable to `true`. Belt + suspenders:
 #      the job is guarded on both the environment approval AND the var.
+#
+# Notes:
+#   - npm trusted publishing requires npm CLI ≥ 11.5.1 (which we get
+#     via `actions/setup-node@v4` + node 22) or pnpm ≥ 10.x (we use
+#     v10). Both pick up the OIDC token automatically when `id-token:
+#     write` is granted to the job.
+#   - You may still see a "Use Trusted Publishing instead" warning if
+#     you ever try to mint an automation token via the npm UI; that
+#     warning means npm is steering you to this same flow.
 #
 # ── Future Claude sessions: ─────────────────────────────────────────
 #
@@ -283,11 +299,17 @@ jobs:
         working-directory: crates/node
         run: pnpm exec napi artifacts --output-dir artifacts
 
-      - name: Publish with provenance
+      # Trusted publishing: npm exchanges this job's GitHub OIDC
+      # token for a short-lived publish credential. No NPM_TOKEN
+      # secret involved. Configured npm-side under the package's
+      # "Trusted Publishers" tab — see docs/release.md.
+      #
+      # `--provenance` is implicit when publishing via OIDC but we
+      # pass it explicitly so the intent is visible at the call
+      # site.
+      - name: Publish with trusted publishing + provenance
         working-directory: crates/node
         run: pnpm publish --access public --provenance --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ─────────────────────────────────────────────────────────────────
   # post-publish — install from the registries in a clean container,
