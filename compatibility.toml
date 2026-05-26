@@ -36,8 +36,11 @@
 # v0.1.3 (2026-05-26): fixed artifact layout; npm still failed at
 # the multi-package assemble step. No upstream pin changes.
 #
-# v0.1.4 (2026-05-26): switched to fat-package npm layout; first
-# truly-working multi-platform npm release. No upstream pin changes.
+# v0.1.4 (2026-05-26): fat-package npm layout; publish still failed
+# (Node 22 / npm 10 OIDC handshake bug). No upstream pin changes.
+#
+# v0.1.5 (2026-05-26): bumped CI Node to 24 (npm 11.5+) so the OIDC
+# handshake actually completes. No upstream pin changes.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

@@ -91,7 +91,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Install napi build deps
         working-directory: crates/node
         run: pnpm install --ignore-scripts

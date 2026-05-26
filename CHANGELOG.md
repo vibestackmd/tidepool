@@ -15,6 +15,17 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-05-26
+
+### Fixed
+- Release CI: bumped GitHub Actions Node version from 22 to 24 in
+  `actions/setup-node` steps. Node 22 ships with npm 10, which
+  doesn't support the latest OIDC handshake; the registry rejects
+  the publish with a misleading `404 "is not in this registry"`
+  *after* sigstore signs the provenance attestation. Node 24
+  brings npm 11.5+, which actually completes the OIDC exchange.
+  This is the documented npm trusted-publishing gotcha.
+
 ## [0.1.4] — 2026-05-26
 
 Fixed the npm-publish step end-to-end.

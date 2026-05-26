@@ -155,7 +155,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install pnpm deps (for npm dry-run)
         working-directory: crates/node
@@ -263,7 +263,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - working-directory: crates/node
         run: pnpm install --ignore-scripts
       - working-directory: crates/node
@@ -292,7 +292,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
       - uses: actions/download-artifact@v4
         with:
@@ -343,7 +343,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.94.1
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       # crates.io smoke: install the CLI from the registry, run
       # --version, assert it matches the tag.
