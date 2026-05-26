@@ -1,10 +1,12 @@
 //! Upstream compatibility pins — the versions of Surfpool, helius-sdk,
 //! Solana, etc. that this release of Tidepool was tested against.
 //!
-//! Source of truth is the repo-root `compatibility.toml`. Embedded at
-//! build time via `include_str!` so the running server can answer
-//! "what are you compatible with?" without shipping a runtime file
-//! dependency.
+//! Source of truth is the repo-root `compatibility.toml`. A symlink
+//! at `crates/service/compatibility.toml` points there; `include_str!`
+//! reads through it in dev and reads the dereferenced copy that
+//! `cargo publish` bakes into the package tarball. This keeps a
+//! single source of truth without duplicating the file or needing a
+//! build script.
 //!
 //! Release preflight (`scripts/preflight.sh`) asserts that every
 //! version bump either confirms these pins are still accurate or
@@ -16,7 +18,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 /// Embedded `compatibility.toml`. Parsed on first access + cached.
-const COMPATIBILITY_TOML: &str = include_str!("../../../compatibility.toml");
+const COMPATIBILITY_TOML: &str = include_str!("../compatibility.toml");
 
 /// One pin — a SemVer range plus optional context.
 #[derive(Debug, Clone, Serialize, Deserialize)]
