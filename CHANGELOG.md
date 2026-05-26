@@ -15,6 +15,22 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-05-26
+
+First lockstep release across both registries. Crates and npm
+package all at 0.1.2; npm package finally ships with multi-platform
+prebuilds (darwin x64/arm64, linux x64/arm64, windows x64).
+
+### Fixed
+- Release CI: pinned `dtolnay/rust-toolchain` action to 1.94.1 to
+  match `rust-toolchain.toml`. Floating `@stable` installed 1.95.0
+  with cross-compile targets, but cargo respected the pin and ran
+  1.94.1 without the target — broke darwin x86_64 prebuild.
+- Release CI: switched the linux ARM64 prebuild to the native
+  `ubuntu-24.04-arm` runner. Cross-compiling from x86_64 ubuntu
+  was missing `gcc-aarch64-linux-gnu`; native runner sidesteps
+  the C-toolchain install.
+
 ## [0.1.1] — 2026-05-26
 
 First release published via the OIDC CI pipeline. End-to-end exercise
