@@ -77,8 +77,8 @@ pub fn extract_native_transfers(
         .map(|(i, d)| (i, *d))
         .collect();
 
-    senders.sort_by(|a, b| b.1.cmp(&a.1));
-    receivers.sort_by(|a, b| b.1.cmp(&a.1));
+    senders.sort_by_key(|s| std::cmp::Reverse(s.1));
+    receivers.sort_by_key(|r| std::cmp::Reverse(r.1));
 
     let mut out = Vec::new();
     let mut si = 0;
@@ -168,8 +168,8 @@ pub fn extract_token_transfers(
         for e in &mut senders {
             e.2 = -e.2;
         }
-        senders.sort_by(|a, b| b.2.cmp(&a.2));
-        receivers.sort_by(|a, b| b.2.cmp(&a.2));
+        senders.sort_by_key(|s| std::cmp::Reverse(s.2));
+        receivers.sort_by_key(|r| std::cmp::Reverse(r.2));
         let mut si = 0;
         let mut ri = 0;
         while si < senders.len() && ri < receivers.len() {
