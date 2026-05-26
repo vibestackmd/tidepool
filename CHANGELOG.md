@@ -15,6 +15,16 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-05-26
+
+First truly-lockstep release: crates + multi-platform npm both ship.
+
+### Fixed
+- Release CI: `actions/download-artifact@v4` now uses
+  `merge-multiple: true`. Without it, each `bindings-<target>`
+  artifact landed in its own subdirectory and `napi artifacts`
+  couldn't find the `.node` files at the path it expects.
+
 ## [0.1.2] — 2026-05-26
 
 First lockstep release across both registries. Crates and npm
