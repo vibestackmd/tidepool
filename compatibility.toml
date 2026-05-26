@@ -26,6 +26,9 @@
 
 # v0.1.0 (2026-05-26): first published release; pins below are
 # verified as-tested against the listed upstreams.
+#
+# v0.1.1 (2026-05-26): first CI-driven release via OIDC trusted
+# publishing; no upstream pin changes since 0.1.0.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

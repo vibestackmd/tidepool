@@ -15,6 +15,32 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-26
+
+First release published via the OIDC CI pipeline. End-to-end exercise
+of trusted publishing on crates.io and npm; first npm release with
+multi-platform prebuilds (darwin x64/arm64, linux x64/arm64, windows
+x64). v0.1.0 of `@vibestackmd/tidepool` was skipped — `0.0.1` was
+published locally as a deprecated placeholder to enable the npm
+trusted-publisher form. The crates and the npm package are now in
+lockstep at 0.1.1.
+
+### Fixed
+- Release preflight: compare against the *prior* `release: v*` commit,
+  not HEAD itself (the old logic gave a trivially-empty diff in CI's
+  tag checkout and locally pre-tag).
+- Release preflight: missing signing key is now a warning, not an
+  error — CI's `git verify-tag` step remains the hard gate.
+- Release preflight: first-publish dry-run skips dependent crates
+  (their workspace siblings aren't on crates.io until the first
+  publish completes).
+- `tidepool-rpc`: `crates/service/compatibility.toml` symlinks the
+  workspace-root file so `cargo publish` bundles it in the package
+  tarball.
+- Release workflow smoke test: corrected stale `tidepool-rpc`
+  references to the actual CLI binary (`tidepool`) and npm package
+  (`@vibestackmd/tidepool`).
+
 ## [0.1.0] — 2026-05-26
 
 First public release of the Rust rewrite. Five `tidepool-*` crates publish
