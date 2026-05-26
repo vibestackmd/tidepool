@@ -8,10 +8,13 @@
 
 A Helius-compatible local dev environment for Solana — DAS, compressed NFTs, WebSocket subscriptions, Enhanced Transactions, and webhooks, all from a single Rust binary you run next to your validator. Your production `helius-sdk` integration works offline, without a key, without cost.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
-[![MSRV 1.77](https://img.shields.io/badge/MSRV-1.77-orange.svg)](./Cargo.toml)
+[![crates.io](https://img.shields.io/crates/v/tidepool-cli?label=tidepool-cli)](https://crates.io/crates/tidepool-cli)
+[![npm](https://img.shields.io/npm/v/@vibestackmd/tidepool?label=%40vibestackmd%2Ftidepool)](https://www.npmjs.com/package/@vibestackmd/tidepool)
 [![CI](https://github.com/vibestackmd/tidepool/actions/workflows/ci.yml/badge.svg)](https://github.com/vibestackmd/tidepool/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![MSRV 1.77](https://img.shields.io/badge/MSRV-1.77-orange.svg)](./Cargo.toml)
+
+Every release ships from GitHub Actions via OIDC trusted publishing — crates.io and npm both — with signed sigstore provenance on the npm tarball.
 
 </div>
 
@@ -58,7 +61,7 @@ const connection = new Connection("http://localhost:8897", "confirmed");
 ```toml
 # Cargo.toml
 [dependencies]
-tidepool-rpc = "1"
+tidepool-rpc = "0.1"
 ```
 
 ```rust
@@ -266,15 +269,16 @@ The polyfill polls `getSignatureStatuses`, which resolves any signature the vali
 
 ## Roadmap
 
-- ✅ **v1.0** — Rust rewrite with MplCore / Token Metadata / cNFT decoders, full DAS surface, WS polyfills (`signatureSubscribe`, `accountSubscribe`, `logsSubscribe`), axum server, CLI binary, napi bridge, REST transport, webhooks CRUD, Enhanced Transactions
-- **v1.1** — Token Metadata owner resolution for all interfaces, `tokenStandard` enrichment on enhanced tx, richer `accountData.tokenBalanceChanges`
-- **v1.2** — USD pricing pass-through (once we have a curated source), additional WS subscriptions (`programSubscribe`, `slotSubscribe`)
+- ✅ **v0.1.x** — Rust rewrite shipped. MplCore / Token Metadata / cNFT decoders, full DAS surface, WS polyfills (`signatureSubscribe`, `accountSubscribe`, `logsSubscribe`), axum server, CLI binary, napi bridge, REST transport, webhooks CRUD, Enhanced Transactions. End-to-end OIDC release pipeline (crates.io + multi-platform npm).
+- **0.2** — Token Metadata owner resolution polish for all interfaces, richer `accountData.tokenBalanceChanges`, full `tokenStandard` enrichment coverage
+- **0.3** — USD pricing pass-through (once we have a curated source), additional WS subscriptions (`programSubscribe`, `slotSubscribe`)
+- **1.0** — API freeze. Library crates (`tidepool-core`, `tidepool-rpc`, `tidepool-server`) become stable surfaces; right now they're publish-as-required-for-the-CLI, not promised.
 - **Maybe** — Dragon's Mouth (Yellowstone gRPC) polyfill
 
 ## Versions
 
-- **v0.1–v0.6** — TypeScript implementation. Preserved at tags `v0.1.0` through `v0.6.0`. No longer maintained.
-- **v1.0+** — Rust. This codebase.
+- **v0.1.0 – v0.6.0** (TypeScript) — original implementation, preserved at git tags `v0.1.0` through `v0.6.0`. Not on any registry. No longer maintained.
+- **v0.1.0+ (Rust, this codebase)** — distributed as `tidepool-cli` on crates.io and `@vibestackmd/tidepool` on npm. Versions are lockstep across both registries. `tidepool-cli` is the supported entry point; the other crates are internal until 1.0.
 
 ## Related
 
