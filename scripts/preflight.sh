@@ -112,12 +112,15 @@ else
 fi
 
 step "Tag signability"
+# Soft locally, hard in CI: the workflow's `git verify-tag` step
+# refuses unsigned tag pushes, so an unsigned release can't ship
+# through the OIDC pipeline even if this warns through.
 if ! git config --get user.signingkey >/dev/null; then
-  color_err "✖ "; printf "no git signing key configured — release tags MUST be signed\n"
+  color_warn "⚠ "; printf "no git signing key configured — local publish OK, CI tag-push will refuse unsigned tags\n"
   printf "   configure with: git config --global user.signingkey <keyid>\n"
-  exit 1
+else
+  color_ok "✔ "; printf "signing key configured\n"
 fi
-color_ok "✔ "; printf "signing key configured\n"
 
 step "cargo publish --dry-run (dep order)"
 # Dep order: core → service → server → cli → node. Every crate must
