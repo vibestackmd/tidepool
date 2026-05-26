@@ -37,39 +37,52 @@
 #      the tag. Catches "published but the binary was somehow wrong"
 #      immediately rather than post-mortem.
 #
-# ── Enabling the pipeline ───────────────────────────────────────────
+# ── Enabling the pipeline (one-time, already done for tidepool) ─────
 #
-#   1. Enable crates.io trusted publishing (OIDC):
-#        https://crates.io → each crate's settings → Trusted Publishing
-#        → "Add" → repo `vibestackmd/tidepool`, workflow
-#        `release.yml`, environment `production`.
-#      Repeat for each of the 5 tidepool-* crates. No token stored
-#      anywhere; OIDC exchange happens at publish time.
+#   1. crates.io trusted publishing — CHICKEN-AND-EGG. crates.io has
+#      NO pending-publisher flow: the per-crate settings page only
+#      exists after a manual `cargo publish` of v0.1.0 with your
+#      stored token. After v0.1.0 lands, configure at
+#      https://crates.io/crates/<name>/settings → Trusted Publishing
+#      → "Add" → repo `vibestackmd/tidepool`, workflow `release.yml`,
+#      environment `production`. Repeat per crate. v0.1.1+ then
+#      ships via OIDC.
 #
-#   2. Enable npm trusted publishing (OIDC):
-#        https://www.npmjs.com → "@vibestackmd/tidepool" package
-#        page → Settings → Trusted Publishers → "Add" → same repo,
-#        workflow, environment as above. For an unpublished package
-#        name, npm calls this a "pending publisher" — the first
-#        publish via the configured workflow auto-creates the
-#        package. Avoids the chicken-and-egg of "you need to publish
-#        before you can configure trusted publishing for it."
+#   2. npm trusted publishing — ALSO requires a placeholder publish
+#      first. npm's docs hint at a "pending publisher" flow but in
+#      practice (as of May 2026) the CLI hits 403 and the UI form
+#      isn't reachable until the package exists. Workaround: publish
+#      a `0.0.1` placeholder locally, then `npm trust github
+#      @vibestackmd/tidepool --file release.yml --repository
+#      vibestackmd/tidepool --environment production --allow-publish`.
+#      Or use the per-package /access page in the npm UI.
 #
 #   3. Create a `production` environment in repo settings with
 #      "required reviewers" = repo owner. Every publish job waits
 #      for approval.
 #
-#   4. Flip the `vars.ENABLED` repo variable to `true`. Belt + suspenders:
-#      the job is guarded on both the environment approval AND the var.
+#   4. Flip the `vars.ENABLED` repo variable to `true`. Belt +
+#      suspenders: the job is guarded on both env approval AND the
+#      var.
 #
 # Notes:
-#   - npm trusted publishing requires npm CLI ≥ 11.5.1 (which we get
-#     via `actions/setup-node@v4` + node 22) or pnpm ≥ 10.x (we use
-#     v10). Both pick up the OIDC token automatically when `id-token:
-#     write` is granted to the job.
-#   - You may still see a "Use Trusted Publishing instead" warning if
-#     you ever try to mint an automation token via the npm UI; that
-#     warning means npm is steering you to this same flow.
+#   - npm trusted publishing requires npm CLI ≥ 11.5.1. Node 22 ships
+#     npm 10 which DOES NOT complete the OIDC handshake — the publish
+#     gets a misleading 404 *after* sigstore signs provenance. Use
+#     `actions/setup-node@v4` with `node-version: 24` (gives npm 11.5+).
+#     This was hit between v0.1.4 and v0.1.5; documented at
+#     https://medium.com/@kenricktan11/npm-trusted-publishers-the-weird-404-error-and-the-node-js-24-fix-a9f1d717a5dd
+#   - The fat-package npm layout (all platform .node files bundled in
+#     the main pkg) keeps this single-trusted-publisher; do NOT switch
+#     to the per-platform sub-package layout without configuring a
+#     trusted publisher for each of the 5 sub-packages.
+#   - The C cross-compile toolchain for aarch64-linux is *not*
+#     pre-installed on `ubuntu-latest`; the prebuild matrix uses
+#     `ubuntu-24.04-arm` (native ARM) instead of cross-compiling.
+#   - `dtolnay/rust-toolchain` action MUST be pinned to the same
+#     version as `rust-toolchain.toml`. `@stable` installs latest stable
+#     but cargo respects the toml pin, leaving cross-compile targets
+#     installed for the wrong toolchain.
 #
 # ── Future Claude sessions: ─────────────────────────────────────────
 #
