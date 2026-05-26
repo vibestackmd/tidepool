@@ -307,9 +307,15 @@ jobs:
         working-directory: crates/node
         run: pnpm install --ignore-scripts
 
-      - name: Assemble per-platform npm dirs
+      - name: Place prebuilt .node files into the package
         working-directory: crates/node
-        run: pnpm exec napi artifacts --output-dir artifacts
+        # Fat-package layout: all platform .node files ship in the
+        # main package; index.js's loader picks the right one at
+        # require time. No per-platform sub-packages, no `napi
+        # artifacts` assemble step.
+        run: |
+          cp artifacts/*.node .
+          ls -la *.node
 
       # Trusted publishing: npm exchanges this job's GitHub OIDC
       # token for a short-lived publish credential. No NPM_TOKEN

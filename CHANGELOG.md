@@ -15,6 +15,27 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-05-26
+
+Fixed the npm-publish step end-to-end.
+
+### Fixed
+- Release CI: switched to "fat package" layout — all platform `.node`
+  files ship in the main `@vibestackmd/tidepool` package; the napi
+  loader picks the right one at require-time. Removes the dance
+  around publishing five per-platform sub-packages (each of which
+  would need its own trusted-publisher config).
+- Release CI: dropped `napi artifacts` step, which was assembling
+  the multi-package layout we no longer want. Replaced with a plain
+  `cp artifacts/*.node .` into the package root before publish.
+- `crates/node/index.js` + `crates/node/index.d.ts` are now
+  committed (no longer gitignored). They're auto-generated but only
+  change when napi config changes, so CI doesn't need a Rust
+  toolchain in the publish-npm step to regenerate them. Also fixes
+  an earlier stale-name issue (the previously-generated `index.js`
+  referenced `tidepool-rpc-*` sibling packages from the pre-rename
+  era).
+
 ## [0.1.3] — 2026-05-26
 
 First truly-lockstep release: crates + multi-platform npm both ship.

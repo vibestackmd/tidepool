@@ -33,8 +33,11 @@
 # v0.1.2 (2026-05-26): crates lockstep release; npm publish blocked
 # on artifact layout. No upstream pin changes since 0.1.1.
 #
-# v0.1.3 (2026-05-26): fixed artifact layout; npm now ships
-# multi-platform alongside crates. No upstream pin changes.
+# v0.1.3 (2026-05-26): fixed artifact layout; npm still failed at
+# the multi-package assemble step. No upstream pin changes.
+#
+# v0.1.4 (2026-05-26): switched to fat-package npm layout; first
+# truly-working multi-platform npm release. No upstream pin changes.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

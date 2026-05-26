@@ -2,6 +2,11 @@
 *.node
 node_modules/
 
-# Generated glue — regenerated on every `napi build`.
-index.js
-index.d.ts
+# Generated glue (`index.js`, `index.d.ts`) IS committed — it
+# changes only when napi config (binary name, targets, exports)
+# changes, so it's stable across normal Rust edits, and committing
+# it means CI's publish-npm step doesn't need a Rust toolchain to
+# regenerate it. Regenerate locally + commit when napi config
+# changes:
+#   pnpm exec napi build --platform --release \
+#     --manifest-path ../../Cargo.toml --package tidepool-node
