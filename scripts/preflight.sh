@@ -82,10 +82,23 @@ step "Changelog entry for $release"
 bash "$SCRIPT_DIR/verify-changelog.sh" --expected "$release"
 
 step "compatibility.toml touched since last release"
-# Heuristic: find the most recent `release: v*` commit and assert
-# compatibility.toml was modified since then. Forces a
-# "yes we re-verified" decision per release.
-last_release_commit=$(git log --grep='^release: v' --format=%H -n1 || true)
+# Heuristic: find the *prior* `release: v*` commit (not the one we're
+# currently cutting) and assert compatibility.toml was modified
+# between then and HEAD. Forces a "yes we re-verified" decision per
+# release.
+#
+# If the most recent release commit's subject matches the release
+# we're cutting, skip it and look for the one before. Without this,
+# the diff is trivially empty (the current release commit is being
+# diffed against itself or against descendants that don't touch
+# compatibility.toml).
+expected_subject="release: v$release"
+most_recent_subject=$(git log --grep='^release: v' -n1 --format=%s 2>/dev/null || true)
+if [ "$most_recent_subject" = "$expected_subject" ]; then
+  last_release_commit=$(git log --grep='^release: v' --format=%H --skip=1 -n1 2>/dev/null || true)
+else
+  last_release_commit=$(git log --grep='^release: v' --format=%H -n1 2>/dev/null || true)
+fi
 if [ -n "$last_release_commit" ]; then
   if ! git diff --quiet "$last_release_commit"..HEAD -- compatibility.toml; then
     color_ok "✔ "; printf "compatibility.toml modified since %s\n" "${last_release_commit:0:7}"
