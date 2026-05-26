@@ -334,7 +334,7 @@ jobs:
       - name: Verify CLI version
         run: |
           EXPECTED="${GITHUB_REF_NAME#v}"
-          ACTUAL=$(tidepool-rpc --version | head -n1 | awk '{print $2}')
+          ACTUAL=$(tidepool --version | head -n1 | awk '{print $2}')
           if [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "✖ CLI reports $ACTUAL, expected $EXPECTED"
             exit 1
@@ -342,12 +342,12 @@ jobs:
           echo "✔ CLI reports $ACTUAL"
 
       # npm smoke: install the package and require() it.
-      - name: Install tidepool-rpc from npm
+      - name: Install @vibestackmd/tidepool from npm
         run: |
           mkdir -p /tmp/npm-smoke && cd /tmp/npm-smoke && npm init -y >/dev/null
-          npm install "tidepool-rpc@${GITHUB_REF_NAME#v}"
+          npm install "@vibestackmd/tidepool@${GITHUB_REF_NAME#v}"
           node -e "
-            const t = require('tidepool-rpc');
+            const t = require('@vibestackmd/tidepool');
             if (typeof t.HeliusContext !== 'function') {
               console.error('✖ HeliusContext not exported');
               process.exit(1);
