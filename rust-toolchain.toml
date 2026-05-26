@@ -1,0 +1,11 @@
+[toolchain]
+# Pin Rust to a specific stable so CI's clippy matches what
+# maintainers run locally. Floating on `stable` makes every Rust
+# point-release a CI-only surprise via new lints; pinning forces
+# the toolchain bump to be an explicit, reviewable commit.
+#
+# MSRV (per compatibility.toml) is >=1.77; nothing in the codebase
+# requires being on the very latest stable. Bump deliberately.
+channel = "1.94.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

@@ -43,7 +43,7 @@ pub async fn enrich_token_standards<C: CacheStore + ?Sized>(
         .await
         .unwrap_or_else(|_| distinct_mints.iter().map(|_| None).collect());
     let mut lookup: HashMap<String, String> = HashMap::new();
-    for (mint, entry) in distinct_mints.iter().zip(batch.into_iter()) {
+    for (mint, entry) in distinct_mints.iter().zip(batch) {
         if let Some(asset) = entry {
             if let Some(ts) = asset.content.metadata.token_standard.clone() {
                 lookup.insert(mint.clone(), ts);
