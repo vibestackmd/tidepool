@@ -15,6 +15,13 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-05-26
+
+First public release of the Rust rewrite. Five `tidepool-*` crates publish
+to crates.io in lockstep; `@vibestackmd/tidepool` ships the napi bridge to
+npm. `tidepool-cli` is the supported entry point; the other crates are
+internal until 1.0.
+
 ### Added
 - Single-source versioning across the workspace — `[workspace.package].version`
   is inherited by every `tidepool-*` crate.
@@ -49,9 +56,6 @@ refuses to publish a version that doesn't have an entry here.
 
 ### Fixed
 - Integration-test port race eliminated via `pick_two_free_ports()`.
-
-## [0.1.0] — (unreleased; pre-alpha baseline)
-Initial Rust rewrite. Kept here as the first cut tag; do not publish.
 
 <!--
 Entry template for future releases:

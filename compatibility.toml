@@ -24,6 +24,9 @@
 
 [tested-against]
 
+# v0.1.0 (2026-05-26): first published release; pins below are
+# verified as-tested against the listed upstreams.
+
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify
 # against Surfpool in release preflight.
