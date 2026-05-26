@@ -126,10 +126,21 @@ step "cargo publish --dry-run (dep order)"
 # Dep order: core → service → server → cli → node. Every crate must
 # pass `--dry-run` individually — catches missing README/license/keyword
 # errors that only surface at publish time otherwise.
-for crate in tidepool-core tidepool-rpc tidepool-server tidepool-cli tidepool-node; do
-  printf "  %s…\n" "$crate"
-  cargo publish -p "$crate" --dry-run --allow-dirty 2>&1 | tail -3
-done
+#
+# First-release exception: dry-run for downstream crates resolves
+# workspace-sibling deps via crates.io, not via the local path —
+# so on a true first publish (no crate exists on crates.io yet) the
+# dependent dry-runs fail with "no matching package named tidepool-*".
+# In that case we only dry-run the leaf (`tidepool-core`).
+if curl -sfH "User-Agent: tidepool-preflight" "https://crates.io/api/v1/crates/tidepool-core" >/dev/null 2>&1; then
+  for crate in tidepool-core tidepool-rpc tidepool-server tidepool-cli tidepool-node; do
+    printf "  %s…\n" "$crate"
+    cargo publish -p "$crate" --dry-run --allow-dirty 2>&1 | tail -3
+  done
+else
+  color_warn "⚠ "; printf "tidepool-core not yet on crates.io — first release; only dry-running the leaf\n"
+  cargo publish -p tidepool-core --dry-run --allow-dirty 2>&1 | tail -3
+fi
 
 step "npm publish --dry-run"
 (cd crates/node && pnpm publish --dry-run --access public --no-git-checks 2>&1 | tail -6) || {
