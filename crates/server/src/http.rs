@@ -184,14 +184,16 @@ pub async fn run(config: ServerConfig) -> Result<(), Box<dyn std::error::Error +
         .layer(cors)
         .with_state(state);
 
-    // WS polyfill server. Defaults to `port + 1` when ws_port isn't
+    // WS reverse proxy. Defaults to `port + 1` when ws_port isn't
     // explicitly set — production CLI shape. Tests pre-bind both
     // ports and pass them explicitly to dodge parallel races.
+    // Forwards every connection to `upstream_ws_url`; uses
+    // `rpc_timeout` as the upstream-dial timeout.
     let ws_port = config.ws_port.unwrap_or(config.port + 1);
-    let ws_upstream_url = config.upstream_url.clone();
+    let upstream_ws = config.upstream_ws_url.clone();
     let ws_timeout = config.rpc_timeout;
     tokio::spawn(async move {
-        if let Err(e) = crate::ws::run_ws(ws_port, ws_upstream_url, ws_timeout).await {
+        if let Err(e) = crate::ws::run_ws(ws_port, upstream_ws, ws_timeout).await {
             tracing::error!(err = %e, "ws server exited with error");
         }
     });

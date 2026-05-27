@@ -30,6 +30,11 @@ futures-util = "0.3"
 # Async runtime.
 tokio = { version = "1", features = ["full"] }
 
+# WebSocket client for the upstream side of the WS reverse proxy.
+# The client side is served by axum's ws layer; tokio-tungstenite is
+# what we use to *dial* Surfpool's native WS endpoint.
+tokio-tungstenite = "0.24"
+
 # Upstream HTTP client. Plain `reqwest` rather than `solana-client` —
 # solana-client's typed API doesn't fit our arbitrary-method dispatch
 # (we need to handle Helius-specific methods and pass unknowns
@@ -57,10 +62,6 @@ tracing = "0.1"
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "test-util"] }
 tracing-subscriber = "0.3"
-
-# WebSocket client for integration tests of the signatureSubscribe
-# polyfill.
-tokio-tungstenite = "0.24"
 
 # Temp directories for --state-dir persistence round-trip tests.
 tempfile = "3"

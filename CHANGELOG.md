@@ -15,6 +15,18 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+### Changed
+- **WS server is now a thin reverse proxy** instead of an HTTP-polling
+  polyfill. Surfpool (v1.1+) natively implements `signatureSubscribe`,
+  `accountSubscribe`, `logsSubscribe` (incl. the `mentions` filter we
+  used to polyfill), `programSubscribe`, and `slotSubscribe`. Tidepool
+  now opens one WS connection to Surfpool's WS port (default 8900) per
+  client and pumps frames both directions. ~1,150 lines deleted; ~180
+  lines added. Single-endpoint UX preserved (clients still hit
+  `ws://tidepool:port+1`).
+- Three WS manifest entries (`signatureSubscribe`, `accountSubscribe`,
+  `logsSubscribe`) move from compat level `SHIM` → `EXACT`.
+
 ### Fixed
 - CI: `node --test __test__` failed on Node 24 — the bare directory
   is interpreted as a module path. Switched to an explicit glob

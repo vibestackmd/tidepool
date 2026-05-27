@@ -26,7 +26,7 @@ Three things you'll notice in the first five minutes.
 
 **🌊 &nbsp; Local DAS, including compressed NFTs.** &nbsp; `getAsset`, `getAssetBatch`, `getAssetProof`, the `getAssetsBy*` family, `searchAssets`. MplCore, Token Metadata (both Token and Token-2022), and Bubblegum cNFTs — all resolved locally from real on-chain bytes. cNFTs go through a full Bubblegum indexer that replays every tree-mutating instruction; authoritative state comes from the noop-CPI `LeafSchemaEvent`, so proofs match on-chain even after a `setAndVerifyCollection`.
 
-**⚡ &nbsp; `confirmTransaction()` actually works on Surfpool.** &nbsp; Surfpool's native WebSocket doesn't implement `signatureSubscribe`, so `@solana/web3.js`'s `confirmTransaction()` hangs. Tidepool polyfills it. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works.
+**⚡ &nbsp; `confirmTransaction()` works against a single Tidepool endpoint.** &nbsp; Surfpool now ships native WebSocket subscriptions, but on a separate port (8900 by default). Tidepool reverse-proxies WS through its own port so clients keep one base URL across HTTP, REST, and WS. Every `helius-sdk` method that composes "send, wait, assert" — `sendSmartTransaction`, `broadcastTransaction`, `pollTransactionConfirmation` — just works.
 
 **🧪 &nbsp; Plugs into MSW / Nock / undici for tests.** &nbsp; Import `@vibestackmd/tidepool` from npm, plug `handleJsonRpcBody` into whichever mock-HTTP layer your team uses. Your test suite gets deterministic Helius responses without standing up a validator.
 
@@ -110,7 +110,7 @@ const helius = new Helius(
 
 await helius.rpc.getAsset({ id: mintPubkey });             // JSON-RPC
 await helius.enhanced.getTransactions([signature]);        // REST
-await helius.ws.signatureNotifications(signature);         // WS polyfill
+await helius.ws.signatureNotifications(signature);         // WS proxied to upstream
 ```
 
 The `restUrl` + `url` split assumes a small PR landing in [`helius-labs/helius-sdk`](https://github.com/helius-labs/helius-sdk) to make the REST base URL configurable. Until it merges, JSON-RPC + WS work today; REST needs the SDK's internal base URL overridden via whatever escape hatch your SDK version provides.
@@ -119,7 +119,7 @@ The `restUrl` + `url` split assumes a small PR landing in [`helius-labs/helius-s
 
 ## How it works
 
-Tidepool sits between your app and Surfpool. Requests for methods we own (DAS, cNFT proofs, enhanced tx, webhooks, WS polyfills) are served from local state; everything else is forwarded to Surfpool unchanged.
+Tidepool sits between your app and Surfpool. Requests for methods we own (DAS, cNFT proofs, enhanced tx, webhooks) are served from local state; everything else is forwarded to Surfpool unchanged. The WS port is a thin reverse proxy onto Surfpool's native subscriptions.
 
 - **Uncompressed `getAsset`** fetches the account from the upstream, runs it through a pluggable decoder (`mpl-core` / `mpl-token-metadata`), returns a DAS-shaped response. The cache populates as a side effect so `searchAssets`, `getAssetsByOwner`, and the other secondary-index queries work immediately.
 - **Compressed `getAsset` / `getAssetProof`** resolve from a local Bubblegum indexer: `getSignaturesForAddress` walks the tree, `getTransaction` pulls each candidate tx, inner Bubblegum + noop CPIs are parsed for authoritative leaf state. Trees are registered via `--index-tree` at startup or `tidepool_indexTree` at runtime.
@@ -127,7 +127,7 @@ Tidepool sits between your app and Surfpool. Requests for methods we own (DAS, c
 
 ### Why Surfpool as the upstream?
 
-Tidepool works with any standard Solana RPC — `solana-test-validator` with `--clone`, real devnet, a self-hosted node. **Surfpool is recommended** because its mainnet-forking means any real account you ask about "just works" without pre-declaring it. That's what makes the dev-loop feel magic instead of tedious. The `signatureSubscribe` polyfill specifically exists because Surfpool doesn't implement it, so Tidepool delivers strictly more value here than against anything else.
+Tidepool works with any standard Solana RPC — `solana-test-validator` with `--clone`, real devnet, a self-hosted node. **Surfpool is recommended** because its mainnet-forking means any real account you ask about "just works" without pre-declaring it. That's what makes the dev-loop feel magic instead of tedious. Tidepool's WS reverse proxy specifically targets Surfpool's native subscription endpoint (default `ws://upstream:8900`), so against other validators the WS port may have nothing useful to forward to.
 
 ---
 
@@ -142,7 +142,7 @@ Full live truth: `POST {"method":"tidepool_info"}` returns the complete manifest
 | `getAssetsByOwner` / `Authority` / `Creator` / `Group` | ✅ LOCAL_INDEX | Cache-backed secondary indexes |
 | `searchAssets` | ✅ LOCAL_INDEX | Multi-filter AND, smallest-index-first narrowing |
 | `getNftEditions` | ✅ LOCAL_INDEX | Lazy edition-PDA indexing; master + print editions |
-| `signatureSubscribe` / `accountSubscribe` / `logsSubscribe` (+ `Unsubscribe`) | ✅ SHIM | HTTP polling polyfills on the WS port. `logsSubscribe` supports `{ mentions: [pubkey] }` only. |
+| `signatureSubscribe` / `accountSubscribe` / `logsSubscribe` (+ `Unsubscribe`) | ✅ EXACT | Reverse-proxied to Surfpool's native WS. All filters Surfpool supports work, including `logsSubscribe` with `{ mentions: [pubkey] }`. |
 | `getPriorityFeeEstimate` | ✅ BEST_EFFORT | Local percentile ladder over `getRecentPrioritizationFees` |
 | `helius-sdk` composed methods | ✅ SDK_WRAPPER | Send / broadcast / confirm / staking — all work transparently |
 | `getBalances` (REST) | ✅ SHIM | `GET /v0/addresses/{addr}/balances` |
@@ -260,9 +260,9 @@ The previous version was TypeScript (v0.6, preserved at that tag). The Rust rewr
 </details>
 
 <details>
-<summary><b>Does the WS polyfill work over compressed transactions?</b></summary>
+<summary><b>Does the WS proxy work over compressed transactions?</b></summary>
 
-The polyfill polls `getSignatureStatuses`, which resolves any signature the validator has seen. Works for compressed + uncompressed transactions identically.
+Surfpool's native `signatureSubscribe` resolves any signature the validator has seen — compressed + uncompressed identically. Tidepool just forwards frames; whatever Surfpool tracks is what clients see.
 </details>
 
 ---
