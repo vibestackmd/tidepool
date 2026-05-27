@@ -21,7 +21,7 @@
   "scripts": {
     "build": "napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-node",
     "build:debug": "napi build --platform --manifest-path ../../Cargo.toml --package tidepool-node",
-    "test": "node --test __test__"
+    "test": "node --test __test__/*.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.0.0"

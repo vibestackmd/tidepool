@@ -100,4 +100,6 @@ jobs:
         run: pnpm exec napi build --platform --release --manifest-path ../../Cargo.toml --package tidepool-node
       - name: Run JS smoke tests against built addon
         working-directory: crates/node
-        run: node --test __test__
+        # Node 24+ requires explicit globs; bare dir is treated as a
+        # module path and triggers `Cannot find module '__test__'`.
+        run: node --test '__test__/*.test.mjs'

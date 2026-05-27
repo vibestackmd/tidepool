@@ -38,7 +38,17 @@ require '[ -f "$changelog" ]' "CHANGELOG.md missing"
 step "Changelog entry check"
 
 if [ "$expected" = "unreleased" ]; then
-  # The Unreleased section exists and has at least one substantive bullet.
+  # The Unreleased section exists and has at least one substantive
+  # bullet — UNLESS the most recent commit is itself a release commit,
+  # in which case Unreleased is legitimately empty (just shipped, no
+  # new work yet). The check matters for PRs and in-flight main work,
+  # not for the immediate post-release commit.
+  head_subject=$(git log -1 --format=%s 2>/dev/null || echo "")
+  if [[ "$head_subject" =~ ^release:\ v ]]; then
+    color_ok "✔ "; printf "HEAD is a release commit — empty [Unreleased] is OK\n"
+    exit 0
+  fi
+
   if ! awk '
     /^## \[Unreleased\]/ { in_section = 1; next }
     /^## \[/ && in_section { exit }

@@ -15,6 +15,25 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+### Fixed
+- CI: `node --test __test__` failed on Node 24 — the bare directory
+  is interpreted as a module path. Switched to an explicit glob
+  (`__test__/*.test.mjs`).
+- CI: `verify-changelog.sh --expected unreleased` now treats a
+  release commit at HEAD as a legitimate empty `[Unreleased]`. The
+  bullet requirement applies to PRs and in-flight main commits,
+  not to the immediate post-release state.
+
+### Docs
+- README polish: live crates.io + npm version badges, fixed
+  `tidepool-rpc = "0.1"` (was "1"), Roadmap/Versions now match
+  shipped 0.1.x reality.
+- Launch announcement at `announcements/v0.1.5.md`.
+- Release workflow header rewritten to capture lessons from the
+  v0.1.1–v0.1.5 release iteration (Node 24 OIDC requirement, no
+  npm pending publisher, dtolnay/rust-toolchain pinning, native
+  ARM Linux runner, fat-package npm layout).
+
 ## [0.1.5] — 2026-05-26
 
 ### Fixed
