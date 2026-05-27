@@ -15,9 +15,9 @@ pub struct ServerConfig {
     pub ws_port: Option<u16>,
     /// Upstream Solana RPC endpoint for passthrough + DAS fetch flow.
     pub upstream_url: String,
-    /// Upstream WebSocket URL — used by the (future) signatureSubscribe
-    /// polyfill to forward non-polyfilled subscriptions. Defaults to
-    /// `ws://<upstream host>:8900`.
+    /// Upstream WebSocket URL — Tidepool's WS port is a reverse proxy
+    /// onto this. Defaults to `ws://127.0.0.1:8900`, matching Surfpool's
+    /// default WS port.
     pub upstream_ws_url: String,
     /// RPC call timeout applied to every upstream fetch.
     pub rpc_timeout: Duration,

@@ -66,7 +66,7 @@ enum Command {
 
 #[derive(clap::Args, Debug)]
 struct StartArgs {
-    /// HTTP port. WS polyfill binds on `port + 1`.
+    /// HTTP port. WS proxy binds on `port + 1`.
     #[arg(short, long, env = "TIDEPOOL_PORT", default_value_t = 8897)]
     port: u16,
 

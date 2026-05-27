@@ -5,11 +5,11 @@ End-to-end proof that tidepool works. This example:
 1. Points [Metaplex UMI](https://developers.metaplex.com/umi) at the proxy (not Surfpool directly) so every RPC and WS call flows through tidepool.
 2. Generates a fresh keypair and airdrops SOL on the local validator.
 3. Mints an MplCore asset via the real Metaplex `create` instruction.
-4. Waits for confirmation — `sendAndConfirm` uses `signatureSubscribe`, which Surfpool doesn't support natively. The **proxy's WS polyfill** is what makes this work.
+4. Waits for confirmation — `sendAndConfirm` uses `signatureSubscribe`. Tidepool reverse-proxies the WS connection to Surfpool's native subscription endpoint, so client code sees one URL while the actual subscription work happens upstream.
 5. Queries the asset back via `getAsset` — handled by the proxy's MplCore decoder.
 6. Asserts that the DAS response round-trips correctly (id, interface, name, owner).
 
-If every step passes, the whole loop — transaction sending, subscription polyfill, account decoding — is verified end to end.
+If every step passes, the whole loop — transaction sending, WS-proxied subscription, account decoding — is verified end to end.
 
 ## Run it
 
