@@ -26,6 +26,10 @@ refuses to publish a version that doesn't have an entry here.
   `ws://tidepool:port+1`).
 - Three WS manifest entries (`signatureSubscribe`, `accountSubscribe`,
   `logsSubscribe`) move from compat level `SHIM` → `EXACT`.
+- Upstream repo references updated from `txtx/surfpool` to
+  `solana-foundation/surfpool` (Surfpool moved to the Solana Foundation
+  org). `compatibility.toml` pin tightened to `>=1.1, <2` since the WS
+  reverse-proxy requires v1.1's native subscriptions.
 
 ### Fixed
 - CI: `node --test __test__` failed on Node 24 — the bare directory

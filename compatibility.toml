@@ -45,7 +45,7 @@
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify
 # against Surfpool in release preflight.
-surfpool = { version = "any", url = "https://github.com/txtx/surfpool", note = "pin once Surfpool reaches 1.0" }
+surfpool = { version = ">=1.1, <2", url = "https://github.com/solana-foundation/surfpool", note = "WS subscriptions (v1.1+) required — Tidepool's WS port is a reverse proxy onto Surfpool's native subs" }
 
 # helius-sdk is the JS consumer we care most about interop with.
 # When we bump, we verify that the current helius-sdk release resolves

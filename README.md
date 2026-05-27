@@ -187,7 +187,7 @@ curl -X POST http://localhost:8897 \
 
 ## Persistence
 
-Default is **in-memory** — state is lost on restart. Two flags turn that off, shaped after [Surfpool's own persistence UX](https://github.com/txtx/surfpool) so the two tools feel familiar.
+Default is **in-memory** — state is lost on restart. Two flags turn that off, shaped after [Surfpool's own persistence UX](https://github.com/solana-foundation/surfpool) so the two tools feel familiar.
 
 ```bash
 # Single SQLite file holds cNFT index + DAS cache + webhook registry
@@ -282,7 +282,7 @@ Surfpool's native `signatureSubscribe` resolves any signature the validator has 
 
 ## Related
 
-- [Surfpool](https://github.com/txtx/surfpool) — the local Solana validator Tidepool runs on top of
+- [Surfpool](https://github.com/solana-foundation/surfpool) — the local Solana validator Tidepool runs on top of
 - [Helius DAS](https://www.helius.dev/docs/api-reference/das) — the production API Tidepool mimics
 - [Metaplex MplCore](https://developers.metaplex.com/core), [Bubblegum](https://developers.metaplex.com/bubblegum) — the asset standards
 - [mpl-core](https://crates.io/crates/mpl-core), [mpl-token-metadata](https://crates.io/crates/mpl-token-metadata), [mpl-bubblegum](https://crates.io/crates/mpl-bubblegum) — the official Rust crates Tidepool uses
