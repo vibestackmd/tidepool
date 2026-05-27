@@ -16,7 +16,7 @@ workspace = true
 
 [dependencies]
 # Pure algorithms (keccak, merkle proof).
-tidepool-core = { version = "0.2", path = "../core" }
+tidepool-core = { version = "0.3", path = "../core" }
 
 # Async utilities. tokio::sync for the memory store's locking;
 # tokio::time for the webhook delivery loop's poll interval. We pick

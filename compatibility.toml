@@ -46,6 +46,10 @@
 # reverse proxy onto Surfpool's native subs (v1.1+); pin tightened
 # from "any" to ">=1.1, <2". Repo refs updated to the new
 # solana-foundation/surfpool org.
+#
+# v0.3.0 (2026-05-27): Helius Historical APIs catch-up.
+# getTransfersByAddress + getTransactionsForAddress added as
+# BEST_EFFORT. No upstream pin changes.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

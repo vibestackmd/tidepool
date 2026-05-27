@@ -285,6 +285,26 @@ const MANIFEST: &[MethodEntry] = &[
         source_doc: "https://www.helius.dev/docs/enhanced-transactions",
         notes: Some("REST: GET /v0/addresses/:address/transactions. Resolves signatures via getSignaturesForAddress + runs classifier. Same narrow scope as getTransactions."),
     },
+    MethodEntry {
+        method: "getTransfersByAddress",
+        namespace: Namespace::Enhanced,
+        helius_sdk_path: "helius.rpc.getTransfersByAddress",
+        compat: CompatLevel::BestEffort,
+        transport: Transport::JsonRpc,
+        since_version: Some("0.3.0"),
+        source_doc: "https://www.helius.dev/docs/api-reference/getTransfersByAddress",
+        notes: Some("JSON-RPC. Flattens native+SPL transfers per signature into per-event records with `from/to`, `mint`, `amount`, `uiAmount`. Helius's claim of 'full history from genesis' isn't matched — Tidepool only sees what Surfpool has streamed. SPL `decimals` defaults to 0 until we wire a token-info cache. p-token batch transfers surface as one event per inner transfer."),
+    },
+    MethodEntry {
+        method: "getTransactionsForAddress",
+        namespace: Namespace::Enhanced,
+        helius_sdk_path: "helius.rpc.getTransactionsForAddress",
+        compat: CompatLevel::BestEffort,
+        transport: Transport::JsonRpc,
+        since_version: Some("0.3.0"),
+        source_doc: "https://www.helius.dev/blog/introducing-gettransactionsforaddress",
+        notes: Some("JSON-RPC. Combined getSignaturesForAddress + getTransaction + classify. Supersedes the REST `getTransactionsByAddress`. Supports `limit`, `paginationToken`, `minSlot`, `maxSlot`, `status` (success/failure). Same history limitation as getTransfersByAddress."),
+    },
     // ─── tx ───────────────────────────────────────────────────────────
     MethodEntry {
         method: "getPriorityFeeEstimate",

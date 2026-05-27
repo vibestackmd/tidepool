@@ -16,8 +16,8 @@ workspace = true
 
 [dependencies]
 # Service layer + core primitives.
-tidepool-rpc = { version = "0.2", path = "../service" }
-tidepool-core = { version = "0.2", path = "../core" }
+tidepool-rpc = { version = "0.3", path = "../service" }
+tidepool-core = { version = "0.3", path = "../core" }
 
 # Web server.
 axum = { version = "0.8", features = ["ws"] }

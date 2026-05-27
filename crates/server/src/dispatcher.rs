@@ -22,7 +22,9 @@ use tidepool_rpc::das::{
 };
 use tidepool_rpc::enhanced::{
     enrich_token_standards, get_transactions, get_transactions_by_address,
-    TransactionsByAddressOptions,
+    get_transactions_for_address, get_transfers_by_address, Direction, Sort,
+    TransactionsByAddressOptions, TransactionsForAddressOptions, TransfersByAddressOptions,
+    TxStatus,
 };
 use tidepool_rpc::priority_fee::{compute_levels, percentile_at, PriorityLevel};
 use tidepool_rpc::upstream::UpstreamClient;
@@ -50,9 +52,13 @@ pub enum Method {
     // Helius v2 (cursor-paginated)
     GetProgramAccountsV2,
     GetTokenAccountsByOwnerV2,
+    // Helius Historical APIs (JSON-RPC, Apr–May 2026)
+    GetTransfersByAddress,
+    GetTransactionsForAddress,
     // NOTE: getBalances, createWebhook/getAllWebhooks/... ,
-    // getTransactions, and getTransactionsByAddress are deliberately
-    // absent from this enum. Helius serves them via REST
+    // getTransactions, and getTransactionsByAddress (the older REST
+    // variant — superseded by getTransactionsForAddress above) are
+    // deliberately absent from this enum. Helius serves them via REST
     // (`api.helius.xyz/v0/...`), not JSON-RPC. Serving them here
     // would let users write local code that'd fail against real
     // Helius. They live in `crate::rest` instead, routed to the
@@ -87,6 +93,8 @@ impl Method {
             "getTokenAccounts" => Self::GetTokenAccounts,
             "getProgramAccountsV2" => Self::GetProgramAccountsV2,
             "getTokenAccountsByOwnerV2" => Self::GetTokenAccountsByOwnerV2,
+            "getTransfersByAddress" => Self::GetTransfersByAddress,
+            "getTransactionsForAddress" => Self::GetTransactionsForAddress,
             "getPriorityFeeEstimate" => Self::GetPriorityFeeEstimate,
             "sendTransactionWithSender" => Self::SendTransactionWithSender,
             "tidepool_info" => Self::TidepoolInfo,
@@ -114,6 +122,8 @@ impl Method {
             Self::GetTokenAccounts => "getTokenAccounts",
             Self::GetProgramAccountsV2 => "getProgramAccountsV2",
             Self::GetTokenAccountsByOwnerV2 => "getTokenAccountsByOwnerV2",
+            Self::GetTransfersByAddress => "getTransfersByAddress",
+            Self::GetTransactionsForAddress => "getTransactionsForAddress",
             Self::GetPriorityFeeEstimate => "getPriorityFeeEstimate",
             Self::SendTransactionWithSender => "sendTransactionWithSender",
             Self::TidepoolInfo => "tidepool_info",
@@ -184,6 +194,8 @@ where
         // wired to any `Method` variant here.
         Method::GetProgramAccountsV2 => handle_get_program_accounts_v2(ctx, req).await,
         Method::GetTokenAccountsByOwnerV2 => handle_get_token_accounts_by_owner_v2(ctx, req).await,
+        Method::GetTransfersByAddress => handle_get_transfers_by_address(ctx, req).await,
+        Method::GetTransactionsForAddress => handle_get_transactions_for_address(ctx, req).await,
         Method::GetPriorityFeeEstimate => handle_get_priority_fee_estimate(ctx, req).await,
         Method::SendTransactionWithSender => handle_send_transaction_with_sender(ctx, req).await,
         Method::TidepoolInfo => handle_tidepool_info(ctx, req).await,
@@ -823,6 +835,107 @@ where
     let mut out = get_transactions_by_address(&*ctx.upstream, &address, &options).await;
     enrich_token_standards(&*ctx.cache, &mut out).await;
     ok(&req.id, serde_json::to_value(out).unwrap_or(Value::Null))
+}
+
+/// `getTransfersByAddress(address, options)` — JSON-RPC. Returns a
+/// flat list of parsed SOL + SPL transfer events per signature,
+/// filtered by mint/direction. BEST_EFFORT: only sees what Surfpool
+/// has streamed.
+pub(crate) async fn handle_get_transfers_by_address<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
+where
+    S: CnftStore + ?Sized,
+    C: CacheStore + ?Sized,
+    U: UpstreamClient + ?Sized + 'static,
+{
+    // Real Helius accepts positional `[address, options]` over JSON-RPC.
+    // Our dispatcher normalizes that into req.params {address, ...opts}
+    // via the json_rpc layer; both shapes resolve here the same way.
+    let Some(address) = req
+        .params
+        .get("address")
+        .and_then(Value::as_str)
+        .map(String::from)
+    else {
+        return fail(
+            &req.id,
+            codes::INVALID_PARAMS,
+            "getTransfersByAddress requires `address`",
+        );
+    };
+    let opts = TransfersByAddressOptions {
+        mint: req
+            .params
+            .get("mint")
+            .and_then(Value::as_str)
+            .map(String::from),
+        direction: req
+            .params
+            .get("direction")
+            .and_then(Value::as_str)
+            .and_then(Direction::parse),
+        limit: req.params.get("limit").and_then(Value::as_u64),
+        sort: req
+            .params
+            .get("sort")
+            .and_then(Value::as_str)
+            .map(Sort::parse)
+            .unwrap_or_default(),
+        pagination_token: req
+            .params
+            .get("paginationToken")
+            .and_then(Value::as_str)
+            .map(String::from),
+    };
+    let result = get_transfers_by_address(&*ctx.upstream, &address, &opts).await;
+    ok(&req.id, serde_json::to_value(result).unwrap_or(Value::Null))
+}
+
+/// `getTransactionsForAddress(address, options)` — JSON-RPC. Combined
+/// sig fetch + tx fetch + classify. Returns enhanced transactions
+/// (full bodies, not just signatures). BEST_EFFORT: history limited
+/// to what the upstream has.
+pub(crate) async fn handle_get_transactions_for_address<S, C, U>(
+    ctx: &Ctx<S, C, U>,
+    req: &JsonRpcRequest,
+) -> Value
+where
+    S: CnftStore + ?Sized,
+    C: CacheStore + ?Sized,
+    U: UpstreamClient + ?Sized + 'static,
+{
+    let Some(address) = req
+        .params
+        .get("address")
+        .and_then(Value::as_str)
+        .map(String::from)
+    else {
+        return fail(
+            &req.id,
+            codes::INVALID_PARAMS,
+            "getTransactionsForAddress requires `address`",
+        );
+    };
+    let opts = TransactionsForAddressOptions {
+        limit: req.params.get("limit").and_then(Value::as_u64),
+        pagination_token: req
+            .params
+            .get("paginationToken")
+            .and_then(Value::as_str)
+            .map(String::from),
+        min_slot: req.params.get("minSlot").and_then(Value::as_u64),
+        max_slot: req.params.get("maxSlot").and_then(Value::as_u64),
+        status: req
+            .params
+            .get("status")
+            .and_then(Value::as_str)
+            .and_then(TxStatus::parse),
+    };
+    let mut result = get_transactions_for_address(&*ctx.upstream, &address, &opts).await;
+    enrich_token_standards(&*ctx.cache, &mut result.data).await;
+    ok(&req.id, serde_json::to_value(result).unwrap_or(Value::Null))
 }
 
 /// `getProgramAccountsV2` — cursor-paginated passthrough over

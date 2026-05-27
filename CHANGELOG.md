@@ -15,11 +15,38 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-27
+
+Helius catch-up release. Adds two new JSON-RPC methods from Helius's
+Historical APIs surface that shipped in April–May 2026.
+
+### Added
+- **`getTransfersByAddress`** (JSON-RPC, BEST_EFFORT). Returns parsed
+  native + SPL transfer events per wallet with `from`/`to`, `mint`,
+  `amount`, `uiAmount`, `decimals`, `confirmationStatus`. Filters:
+  `mint`, `direction` (`in` / `out`), `limit`, `sort` (`asc` / `desc`),
+  `paginationToken` (cursor). Helius's "full Solana history" claim
+  isn't matched — Tidepool only sees what the upstream has streamed.
+  Documented in the manifest `notes`. p-token batch transfers surface
+  as one event per inner transfer.
+- **`getTransactionsForAddress`** (JSON-RPC, BEST_EFFORT). Combined
+  `getSignaturesForAddress` + `getTransaction` + classify in one
+  call. Filters: `limit`, `paginationToken`, `minSlot`, `maxSlot`,
+  `status` (`success` / `failure`). Supersedes the older REST
+  `getTransactionsByAddress` (which remains available for backward
+  compatibility).
+- README method table updated with both new entries.
+
 ### Changed
 - Maintainer contact in workspace `Cargo.toml` switched from
   `Tyler Buchea <tyler.buchea@gmail.com>` to `Tyler <tyler@vibestack.md>`.
   Past published crate versions retain their original metadata
-  (immutable on crates.io); future v0.3+ releases carry the new value.
+  (immutable on crates.io); v0.3.0 onward carries the new value.
+- Inter-crate dependency specs bumped to `"0.3"` (lockstep with the
+  workspace version).
+
+### Compatibility
+- No upstream pin changes since 0.2.0.
 
 ## [0.2.0] — 2026-05-27
 

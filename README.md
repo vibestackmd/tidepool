@@ -147,6 +147,8 @@ Full live truth: `POST {"method":"tidepool_info"}` returns the complete manifest
 | `helius-sdk` composed methods | ✅ SDK_WRAPPER | Send / broadcast / confirm / staking — all work transparently |
 | `getBalances` (REST) | ✅ SHIM | `GET /v0/addresses/{addr}/balances` |
 | `getTransactions` / `getTransactionsByAddress` (REST) | ✅ SHIM | Enhanced Transactions parsers on `/v0/transactions` and `/v0/addresses/{addr}/transactions` |
+| `getTransactionsForAddress` (JSON-RPC) | ✅ BEST_EFFORT | Combined sig fetch + tx + classify. `limit`, `paginationToken`, `minSlot`, `maxSlot`, `status` filters. History limited to what the upstream has streamed. |
+| `getTransfersByAddress` (JSON-RPC) | ✅ BEST_EFFORT | Parsed SOL + SPL transfer history per wallet. `mint`, `direction`, `limit`, `sort`, `paginationToken`. Same history caveat. SPL `decimals` defaults to 0 pending token-info cache. |
 | `createWebhook` family (REST) | ✅ SHIM | Polling-simulator on `/v0/webhooks` + `/v0/webhooks/{id}` — full CRUD |
 | Everything else | ✅ Passthrough | Forwarded to the upstream unchanged |
 

@@ -38,6 +38,7 @@ pub mod events;
 pub mod fetch;
 pub mod parse;
 pub mod transfers;
+pub mod transfers_history;
 pub mod types;
 
 pub use classify::{classify, EnhancedClass};
@@ -46,6 +47,11 @@ pub use events::derive_nft_event;
 pub use fetch::{get_transactions, get_transactions_by_address, TransactionsByAddressOptions};
 pub use parse::{parse_enhanced_tx, signatures_matching};
 pub use transfers::{extract_native_transfers, extract_token_transfers};
+pub use transfers_history::{
+    get_transactions_for_address, get_transfers_by_address, Direction, Sort,
+    TransactionsForAddressOptions, TransactionsForAddressResult, Transfer,
+    TransfersByAddressOptions, TransfersByAddressResult, TxStatus,
+};
 pub use types::{
     AccountData, EnhancedEvents, EnhancedInstruction, EnhancedNativeTransfer,
     EnhancedTokenTransfer, EnhancedTransaction, NftEvent, NftEventMint,
