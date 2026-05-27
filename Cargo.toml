@@ -28,7 +28,7 @@ version = "0.2.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/vibestackmd/tidepool"
-authors = ["Tyler Buchea <tyler.buchea@gmail.com>"]
+authors = ["Tyler <tyler@vibestack.md>"]
 rust-version = "1.77"
 
 [workspace.lints.clippy]

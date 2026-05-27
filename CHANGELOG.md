@@ -15,6 +15,12 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+### Changed
+- Maintainer contact in workspace `Cargo.toml` switched from
+  `Tyler Buchea <tyler.buchea@gmail.com>` to `Tyler <tyler@vibestack.md>`.
+  Past published crate versions retain their original metadata
+  (immutable on crates.io); future v0.3+ releases carry the new value.
+
 ## [0.2.0] — 2026-05-27
 
 First post-launch cleanup release. Tidepool catches up to Surfpool's
