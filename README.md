@@ -270,10 +270,11 @@ Surfpool's native `signatureSubscribe` resolves any signature the validator has 
 ## Roadmap
 
 - ✅ **v0.1.x** — Rust rewrite shipped. MplCore / Token Metadata / cNFT decoders, full DAS surface, WS polyfills (`signatureSubscribe`, `accountSubscribe`, `logsSubscribe`), axum server, CLI binary, napi bridge, REST transport, webhooks CRUD, Enhanced Transactions. End-to-end OIDC release pipeline (crates.io + multi-platform npm).
-- **0.2** — Token Metadata owner resolution polish for all interfaces, richer `accountData.tokenBalanceChanges`, full `tokenStandard` enrichment coverage
-- **0.3** — USD pricing pass-through (once we have a curated source), additional WS subscriptions (`programSubscribe`, `slotSubscribe`)
+- ✅ **v0.2.0** — Surfpool catch-up. WS polyfills replaced by a thin reverse proxy onto Surfpool's native subscription endpoint (v1.1+). Upstream refs updated to `solana-foundation/surfpool`. ~1,000 lines of polling polyfill deleted.
+- **0.3** — Helius catch-up. `getTransactionsForAddress`, `getTransfersByAddress`, `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, Wallet REST API stubs, optionally an MCP server variant mirroring Helius for Agents.
+- **0.4** — USD pricing pass-through, Token Metadata owner-resolution polish across all interfaces.
 - **1.0** — API freeze. Library crates (`tidepool-core`, `tidepool-rpc`, `tidepool-server`) become stable surfaces; right now they're publish-as-required-for-the-CLI, not promised.
-- **Maybe** — Dragon's Mouth (Yellowstone gRPC) polyfill
+- **Maybe** — LaserStream-compatible event emitter, Dragon's Mouth (Yellowstone gRPC) polyfill.
 
 ## Versions
 

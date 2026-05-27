@@ -15,6 +15,12 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-27
+
+First post-launch cleanup release. Tidepool catches up to Surfpool's
+recent native-WS support, scrubs stale upstream references, and
+tightens the compatibility pin.
+
 ### Changed
 - **WS server is now a thin reverse proxy** instead of an HTTP-polling
   polyfill. Surfpool (v1.1+) natively implements `signatureSubscribe`,
@@ -49,6 +55,15 @@ refuses to publish a version that doesn't have an entry here.
   v0.1.1–v0.1.5 release iteration (Node 24 OIDC requirement, no
   npm pending publisher, dtolnay/rust-toolchain pinning, native
   ARM Linux runner, fat-package npm layout).
+- Stale "WS polyfill" mentions scrubbed from active claims (config
+  doc comment, CLI clap help, mint-and-query example README).
+  Historical mentions in code comments and the v0.1.x Roadmap line
+  left as-is — they accurately describe what was.
+
+### Compatibility
+- Surfpool pin: `any` → `>=1.1, <2`. Users running Surfpool < 1.1
+  must upgrade — the WS proxy depends on native subscription
+  methods that landed in v1.1.0.
 
 ## [0.1.5] — 2026-05-26
 

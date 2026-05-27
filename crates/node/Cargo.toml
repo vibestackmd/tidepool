@@ -19,8 +19,8 @@ workspace = true
 
 [dependencies]
 # Service layer + core.
-tidepool-rpc = { version = "0.1", path = "../service" }
-tidepool-server = { version = "0.1", path = "../server" }
+tidepool-rpc = { version = "0.2", path = "../service" }
+tidepool-server = { version = "0.2", path = "../server" }
 
 # napi-rs runtime. `napi4` pins the Node-API version — 4 gives us
 # access to async/Promise conversion and typed arrays, which is

@@ -41,6 +41,11 @@
 #
 # v0.1.5 (2026-05-26): bumped CI Node to 24 (npm 11.5+) so the OIDC
 # handshake actually completes. No upstream pin changes.
+#
+# v0.2.0 (2026-05-27): cleanup release. WS polyfill replaced by
+# reverse proxy onto Surfpool's native subs (v1.1+); pin tightened
+# from "any" to ">=1.1, <2". Repo refs updated to the new
+# solana-foundation/surfpool org.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

@@ -19,8 +19,8 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
-tidepool-server = { version = "0.1", path = "../server" }
-tidepool-rpc = { version = "0.1", path = "../service" }
+tidepool-server = { version = "0.2", path = "../server" }
+tidepool-rpc = { version = "0.2", path = "../service" }
 
 # Arg parsing.
 clap = { version = "4", features = ["derive", "env"] }
