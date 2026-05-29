@@ -19,6 +19,13 @@ use tidepool_rpc::upstream::{AccountData, UpstreamClient, UpstreamError, Upstrea
 /// hostile or runaway URI.
 const OFFCHAIN_MAX_BYTES: usize = 2 * 1024 * 1024;
 
+/// Dedicated timeout for off-chain metadata fetches. Deliberately
+/// short and independent of the (longer) RPC timeout: a slow or dead
+/// metadata URI must not stall `getAsset`. Especially matters in
+/// network-restricted CI, where the fetch fails fast and degrades to
+/// on-chain fields rather than blocking for the whole RPC timeout.
+const OFFCHAIN_TIMEOUT: Duration = Duration::from_secs(3);
+
 #[derive(Debug, Clone)]
 pub struct HttpUpstream {
     client: Client,
@@ -150,7 +157,13 @@ impl UpstreamClient for HttpUpstream {
             return Some(bytes);
         }
         if uri.starts_with("http://") || uri.starts_with("https://") {
-            let resp = self.client.get(uri).send().await.ok()?;
+            let resp = self
+                .client
+                .get(uri)
+                .timeout(OFFCHAIN_TIMEOUT)
+                .send()
+                .await
+                .ok()?;
             if !resp.status().is_success() {
                 return None;
             }

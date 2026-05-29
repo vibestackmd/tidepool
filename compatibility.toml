@@ -53,6 +53,9 @@
 #
 # v0.4.0 (2026-05-29): off-chain metadata enrichment for getAsset
 # (http(s):// + file://, fail-soft). No upstream pin changes.
+#
+# v0.4.1 (2026-05-29): MplCore collection owner = update authority;
+# dedicated 3s off-chain fetch timeout. No upstream pin changes.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

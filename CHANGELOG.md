@@ -15,6 +15,24 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-05-29
+
+Two fixes surfaced by dogfooding Tidepool into a real MplCore project.
+Both are generic Helius-parity bugs, not project-specific.
+
+### Fixed
+- **MplCore Collections now report an owner.** The decoder left
+  `ownership.owner` empty for `CollectionV1` assets (collections have
+  no holder, only an update authority). That broke owner-scoped
+  queries — `searchAssets { ownerAddress, interface: "MplCoreCollection" }`
+  and `getAssetsByOwner` returned no collections. Now the update
+  authority is reported as the collection's owner, matching Helius.
+- **Off-chain metadata fetch has its own 3s timeout** instead of
+  inheriting the (longer) RPC timeout. A slow or dead metadata URI
+  was able to block `getAsset` for the full RPC timeout (~10s);
+  acutely bad in network-restricted CI where every fetch would stall.
+  Now off-chain fetches fail fast and degrade to on-chain fields.
+
 ## [0.4.0] — 2026-05-29
 
 Off-chain metadata enrichment — the first improvement surfaced by

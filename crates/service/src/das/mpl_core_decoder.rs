@@ -59,7 +59,26 @@ impl AccountDecoder for MplCoreDecoder {
 }
 
 fn to_das_asset(pubkey: &str, ix: &IndexableAsset, key: Key) -> DasAsset {
-    let owner = ix.owner.as_ref().map(Pubkey::to_string).unwrap_or_default();
+    // Assets carry an explicit `owner`. Collections don't — they have
+    // no holder, only an update authority — so Helius DAS reports that
+    // authority as the collection's owner. Without this, owner-scoped
+    // queries (`searchAssets` `ownerAddress`, `getAssetsByOwner`) never
+    // return collections, since their owner would be blank.
+    let owner = ix.owner.as_ref().map_or_else(
+        || {
+            if key == Key::CollectionV1 {
+                match &ix.update_authority {
+                    UpdateAuthority::Address(pk) | UpdateAuthority::Collection(pk) => {
+                        pk.to_string()
+                    }
+                    UpdateAuthority::None => String::new(),
+                }
+            } else {
+                String::new()
+            }
+        },
+        Pubkey::to_string,
+    );
 
     // Creators: Royalties plugin carries canonical royalty splits;
     // VerifiedCreators plugin tracks which creator addresses have

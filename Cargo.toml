@@ -24,7 +24,7 @@ resolver = "2"
 # (`scripts/verify-version-sync.sh`) asserts that the npm package's
 # version matches this value; `make bump` updates everything in one
 # atomic edit. **Never hand-edit a version in a leaf Cargo.toml.**
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/vibestackmd/tidepool"
