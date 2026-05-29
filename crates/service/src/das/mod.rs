@@ -8,6 +8,7 @@ pub mod decoder;
 pub mod fetch;
 pub mod handlers;
 pub mod mpl_core_decoder;
+pub mod offchain;
 pub mod token_metadata_decoder;
 pub mod types;
 
@@ -23,6 +24,7 @@ pub use handlers::{
     TokenAccountsFilter,
 };
 pub use mpl_core_decoder::MplCoreDecoder;
+pub use offchain::{enrich_offchain_metadata, merge_offchain_json};
 pub use token_metadata_decoder::TokenMetadataDecoder;
 pub use types::{
     DasAsset, DasAssetProof, DasAuthority, DasBalances, DasCompression, DasContent, DasCreator,

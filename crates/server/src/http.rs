@@ -64,10 +64,10 @@ pub async fn run(config: ServerConfig) -> Result<(), Box<dyn std::error::Error +
         )
     };
 
-    let upstream: Arc<dyn UpstreamClient> = Arc::new(HttpUpstream::new(
-        config.upstream_url.clone(),
-        config.rpc_timeout,
-    )?);
+    let upstream: Arc<dyn UpstreamClient> = Arc::new(
+        HttpUpstream::new(config.upstream_url.clone(), config.rpc_timeout)?
+            .with_offchain_metadata(config.offchain_metadata),
+    );
     let decoders: Arc<[Arc<dyn AccountDecoder>]> = Arc::from(vec![
         Arc::new(MplCoreDecoder) as Arc<dyn AccountDecoder>,
         Arc::new(TokenMetadataDecoder) as Arc<dyn AccountDecoder>,

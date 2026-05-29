@@ -110,6 +110,15 @@ struct StartArgs {
     /// server starts serving requests.
     #[arg(long = "snapshot", env = "TIDEPOOL_SNAPSHOTS", value_delimiter = ',')]
     snapshots: Vec<std::path::PathBuf>,
+
+    /// Disable off-chain metadata fetching. By default `getAsset`
+    /// fetches the JSON at an asset's `uri` and folds image /
+    /// description / attributes / files into the response (matching
+    /// real Helius). Pass this for hermetic / fully-offline runs where
+    /// you don't want Tidepool reaching out to `http(s)://` or reading
+    /// `file://` metadata.
+    #[arg(long = "no-offchain-metadata", env = "TIDEPOOL_NO_OFFCHAIN_METADATA")]
+    no_offchain_metadata: bool,
 }
 
 impl StartArgs {
@@ -126,6 +135,7 @@ impl StartArgs {
             index_trees: self.index_tree,
             db: self.db,
             snapshots: self.snapshots,
+            offchain_metadata: !self.no_offchain_metadata,
         }
     }
 }
@@ -263,6 +273,7 @@ mod tests {
             rpc_timeout_ms: 10_000,
             db: None,
             snapshots: vec![],
+            no_offchain_metadata: false,
         };
         let cfg = args.into_config();
         assert_eq!(cfg.upstream_ws_url, "ws://127.0.0.1:8900");
@@ -278,6 +289,7 @@ mod tests {
             rpc_timeout_ms: 10_000,
             db: None,
             snapshots: vec![],
+            no_offchain_metadata: false,
         };
         let cfg = args.into_config();
         assert_eq!(cfg.upstream_ws_url, "wss://custom:9999");

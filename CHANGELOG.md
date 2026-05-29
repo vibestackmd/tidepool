@@ -15,6 +15,42 @@ refuses to publish a version that doesn't have an entry here.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-29
+
+Off-chain metadata enrichment — the first improvement surfaced by
+dogfooding Tidepool into a real consumer project.
+
+### Added
+- **`getAsset` now fetches off-chain metadata** and folds it into the
+  DAS response, matching real Helius. An NFT's on-chain account carries
+  only `name` + `uri`; the image, description, attributes, and extra
+  files live in the JSON at that `uri`. Tidepool now fetches that JSON
+  and populates `content.links.image`, `content.links.animation_url`,
+  `content.links.external_url`, `content.metadata.description`,
+  `content.metadata.attributes`, `content.files[]`, and
+  `content.category`. Previously these came back empty.
+  - Supports `http(s)://` and `file://` (the latter for locally-seeded
+    dev metadata).
+  - **Fail-soft**: a blocked, slow, or missing URI degrades the
+    response to its on-chain fields rather than erroring the call —
+    safe for network-restricted CI.
+  - 2 MiB size cap, inherits the RPC client timeout, cached per asset
+    (fetched once).
+  - New `--no-offchain-metadata` flag (env `TIDEPOOL_NO_OFFCHAIN_METADATA`)
+    disables fetching entirely for hermetic / fully-offline runs.
+- `UpstreamClient::fetch_uri` trait method (default `None`);
+  `FixtureUpstream::with_offchain` for testing enrichment without
+  network I/O.
+
+### Notes
+- This is the first concrete output of the W3M dogfooding exercise.
+  Off-chain metadata fetching is a generic Helius-parity improvement
+  (every DAS consumer — CLI, mobile, web — needs rendered images +
+  descriptions), not a W3M-specific feature. Search-index-on-mint and
+  `searchAssets` `sortBy`/`showCollectionMetadata` were considered and
+  deliberately left out of scope (the former stays a consumer-side
+  concern; the latter are backlog).
+
 ## [0.3.0] — 2026-05-27
 
 Helius catch-up release. Adds two new JSON-RPC methods from Helius's

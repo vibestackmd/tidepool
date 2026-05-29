@@ -14,11 +14,20 @@ use serde_json::{json, Value};
 
 use tidepool_rpc::upstream::{AccountData, UpstreamClient, UpstreamError, UpstreamResult};
 
+/// Max bytes we'll read from an off-chain metadata document. Metaplex
+/// JSON is a few KB; 2 MiB is a generous ceiling that still caps a
+/// hostile or runaway URI.
+const OFFCHAIN_MAX_BYTES: usize = 2 * 1024 * 1024;
+
 #[derive(Debug, Clone)]
 pub struct HttpUpstream {
     client: Client,
     url: String,
     timeout: Duration,
+    /// When false, `fetch_uri` always returns `None` — disables
+    /// off-chain DAS metadata enrichment (the `--no-offchain-metadata`
+    /// flag). Useful for hermetic / fully-offline CI.
+    offchain_enabled: bool,
 }
 
 impl HttpUpstream {
@@ -31,7 +40,15 @@ impl HttpUpstream {
             client,
             url: url.into(),
             timeout,
+            offchain_enabled: true,
         })
+    }
+
+    /// Toggle off-chain metadata fetching. Defaults to enabled.
+    #[must_use]
+    pub fn with_offchain_metadata(mut self, enabled: bool) -> Self {
+        self.offchain_enabled = enabled;
+        self
     }
 
     async fn post_rpc(&self, method: &str, params: Value) -> UpstreamResult<Value> {
@@ -111,6 +128,49 @@ impl UpstreamClient for HttpUpstream {
             owner: owner_bytes,
             lamports,
         }))
+    }
+
+    /// Fetch off-chain metadata. Supports `http(s)://` (via reqwest,
+    /// inheriting the client timeout, capped at `OFFCHAIN_MAX_BYTES`)
+    /// and `file://` (local read, for dev-seeded metadata). Fail-soft:
+    /// every error path returns `None` so a `getAsset` degrades to its
+    /// on-chain fields rather than failing.
+    async fn fetch_uri(&self, uri: &str) -> Option<Vec<u8>> {
+        if !self.offchain_enabled {
+            return None;
+        }
+        if let Some(path) = uri.strip_prefix("file://") {
+            // file:///abs/path → "/abs/path"; file://host/path is rare
+            // for metadata, so we treat everything after the scheme as
+            // a filesystem path.
+            let bytes = tokio::fs::read(path).await.ok()?;
+            if bytes.len() > OFFCHAIN_MAX_BYTES {
+                return None;
+            }
+            return Some(bytes);
+        }
+        if uri.starts_with("http://") || uri.starts_with("https://") {
+            let resp = self.client.get(uri).send().await.ok()?;
+            if !resp.status().is_success() {
+                return None;
+            }
+            // Cap the body. content-length is advisory; enforce on the
+            // actual bytes too.
+            if let Some(len) = resp.content_length() {
+                if len > OFFCHAIN_MAX_BYTES as u64 {
+                    return None;
+                }
+            }
+            let bytes = resp.bytes().await.ok()?;
+            if bytes.len() > OFFCHAIN_MAX_BYTES {
+                return None;
+            }
+            return Some(bytes.to_vec());
+        }
+        // Unknown scheme (ipfs://, ar://, data:, …) — not resolved
+        // locally. Real Helius runs gateways for these; Tidepool
+        // leaves them to the consumer. Fail-soft.
+        None
     }
 }
 

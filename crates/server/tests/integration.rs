@@ -99,6 +99,7 @@ async fn spawn_tidepool_with_state(upstream_url: String, db: Option<std::path::P
         index_trees: vec![],
         db,
         snapshots: vec![],
+        offchain_metadata: false,
     };
     tokio::spawn(async move {
         run(config).await.unwrap();
@@ -849,6 +850,7 @@ async fn snapshot_flag_preloads_tree_before_serving() {
         index_trees: vec![],
         db: None,
         snapshots: vec![tmp.path().to_path_buf()],
+        offchain_metadata: false,
     };
     tokio::spawn(async move {
         run(config).await.unwrap();

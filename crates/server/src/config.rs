@@ -37,6 +37,12 @@ pub struct ServerConfig {
     /// `tidepool_exportTreeSnapshot`. Applied before the HTTP server
     /// starts accepting requests. Mirrors Surfpool's `--snapshot`.
     pub snapshots: Vec<PathBuf>,
+    /// Fetch off-chain metadata JSON (image/description/attributes/
+    /// files) during `getAsset` and fold it into the DAS response —
+    /// matches real Helius. Supports `http(s)://` + `file://`, fails
+    /// soft on any error. Set `false` (CLI `--no-offchain-metadata`)
+    /// for hermetic / fully-offline runs. Default: true.
+    pub offchain_metadata: bool,
 }
 
 impl Default for ServerConfig {
@@ -50,6 +56,7 @@ impl Default for ServerConfig {
             index_trees: Vec::new(),
             db: None,
             snapshots: Vec::new(),
+            offchain_metadata: true,
         }
     }
 }

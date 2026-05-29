@@ -100,6 +100,12 @@ where
                         asset.ownership.owner = owner;
                     }
                 }
+                // Fold off-chain JSON (image/description/attributes/
+                // files) into the asset before caching. Fail-soft: a
+                // blocked or slow fetch leaves the on-chain fields and
+                // returns quietly. Cached as part of the asset, so the
+                // fetch happens once per asset.
+                crate::das::enrich_offchain_metadata(upstream, &mut asset).await;
                 cache.put_asset(asset.clone()).await?;
                 // Token Metadata side-effect: index the mint's Edition
                 // PDA (if any) so `getNftEditions` can serve it later.

@@ -50,6 +50,9 @@
 # v0.3.0 (2026-05-27): Helius Historical APIs catch-up.
 # getTransfersByAddress + getTransactionsForAddress added as
 # BEST_EFFORT. No upstream pin changes.
+#
+# v0.4.0 (2026-05-29): off-chain metadata enrichment for getAsset
+# (http(s):// + file://, fail-soft). No upstream pin changes.
 
 # Surfpool is Tidepool's intended upstream. Users *can* run against
 # `solana-test-validator` or any mainnet RPC, but we only verify

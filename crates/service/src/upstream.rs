@@ -50,6 +50,21 @@ pub trait UpstreamClient: Send + Sync {
     /// Returns `Ok(None)` when the account doesn't exist; `Err` for
     /// transport failure.
     async fn get_account(&self, address: &str) -> UpstreamResult<Option<AccountData>>;
+
+    /// Fetch arbitrary off-chain content by URI for DAS metadata
+    /// enrichment (the JSON an NFT's on-chain `uri` points at).
+    /// Implementations should support `http(s)://` and `file://`,
+    /// apply a timeout + size cap, and **fail soft** — returning
+    /// `None` on any error rather than propagating, so a blocked or
+    /// slow fetch degrades a `getAsset` response to its on-chain
+    /// fields instead of failing the whole call.
+    ///
+    /// The default returns `None` (no enrichment). The HTTP-backed
+    /// impl overrides it; fixture impls override it to serve canned
+    /// bytes for tests.
+    async fn fetch_uri(&self, _uri: &str) -> Option<Vec<u8>> {
+        None
+    }
 }
 
 /// Closure shape for a fixture RPC method producer. Named to keep the
@@ -65,6 +80,7 @@ type FixtureRpcHandler =
 pub struct FixtureUpstream {
     accounts: HashMap<String, AccountData>,
     rpc_responses: HashMap<String, FixtureRpcHandler>,
+    offchain: HashMap<String, Vec<u8>>,
 }
 
 impl FixtureUpstream {
@@ -73,7 +89,17 @@ impl FixtureUpstream {
         Self {
             accounts: HashMap::new(),
             rpc_responses: HashMap::new(),
+            offchain: HashMap::new(),
         }
+    }
+
+    /// Register canned off-chain content for a URI, consulted by
+    /// `fetch_uri`. Lets tests exercise metadata enrichment without
+    /// real network I/O.
+    #[must_use]
+    pub fn with_offchain(mut self, uri: impl Into<String>, body: impl Into<Vec<u8>>) -> Self {
+        self.offchain.insert(uri.into(), body.into());
+        self
     }
 
     /// Register an account under its base58 address. The same address
@@ -118,5 +144,9 @@ impl UpstreamClient for FixtureUpstream {
 
     async fn get_account(&self, address: &str) -> UpstreamResult<Option<AccountData>> {
         Ok(self.accounts.get(address).cloned())
+    }
+
+    async fn fetch_uri(&self, uri: &str) -> Option<Vec<u8>> {
+        self.offchain.get(uri).cloned()
     }
 }

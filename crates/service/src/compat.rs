@@ -155,7 +155,7 @@ const MANIFEST: &[MethodEntry] = &[
         since_version: Some("1.0.0"),
         source_doc: "https://www.helius.dev/docs/api-reference/das/getasset",
         notes: Some(
-            "Hybrid: uncompressed NFTs (Token Metadata, MplCore) work cold — resolve via upstream getAccountInfo + decoder on cache miss. Compressed NFTs require local Bubblegum indexing (no upstream equivalent exists) and return null for trees we haven't observed. LOCAL_INDEX reflects the cNFT constraint.",
+            "Hybrid: uncompressed NFTs (Token Metadata, MplCore) work cold — resolve via upstream getAccountInfo + decoder on cache miss, then enrich with off-chain JSON (image/description/attributes/files) fetched from the asset's uri (http(s):// + file://, fail-soft, cached). Compressed NFTs require local Bubblegum indexing (no upstream equivalent exists) and return null for trees we haven't observed. LOCAL_INDEX reflects the cNFT constraint.",
         ),
     },
     MethodEntry {

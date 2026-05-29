@@ -1,6 +1,6 @@
 {
   "name": "@vibestackmd/tidepool",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Helius-compatible Solana RPC primitives for test suites. Plug handleJsonRpcBody into MSW, Nock, undici, or any mock-HTTP layer.",
   "main": "index.js",
   "types": "index.d.ts",
